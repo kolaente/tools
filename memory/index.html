@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Game Card Generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f3f4f6;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 28px;
+      color: #1f2937;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #6b7280;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card h2 {
+      font-size: 18px;
+      color: #374151;
+      margin-bottom: 16px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #4b5563;
+      margin-bottom: 8px;
+    }
+
+    .form-group input[type="text"] {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input[type="text"]:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-group input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .preview-area {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      background: #f9fafb;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    .preview-card {
+      width: 80px;
+      height: 112px;
+      border: 2px dashed #d1d5db;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      overflow: hidden;
+    }
+
+    .preview-card.has-content {
+      border-style: solid;
+      border-color: #9ca3af;
+    }
+
+    .preview-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .preview-card span {
+      font-size: 12px;
+      font-weight: 500;
+      text-align: center;
+      padding: 4px;
+      word-break: break-word;
+    }
+
+    .preview-placeholder {
+      color: #d1d5db;
+      font-size: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    .btn-primary:disabled {
+      background: #d1d5db;
+      cursor: not-allowed;
+    }
+
+    .btn-success {
+      background: #16a34a;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #15803d;
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: #ef4444;
+      padding: 8px;
+    }
+
+    .btn-danger:hover {
+      background: #fef2f2;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .pairs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .pair-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      background: #f9fafb;
+      border-radius: 8px;
+    }
+
+    .pair-number {
+      font-size: 14px;
+      font-weight: 500;
+      color: #6b7280;
+      width: 32px;
+    }
+
+    .pair-cards {
+      display: flex;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .pair-card {
+      width: 56px;
+      height: 72px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .pair-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .pair-card span {
+      font-size: 10px;
+      font-weight: 500;
+      text-align: center;
+      padding: 2px;
+      word-break: break-word;
+    }
+
+    .tips {
+      background: #eff6ff;
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 14px;
+      color: #1e40af;
+    }
+
+    .tips strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .tips ul {
+      margin-left: 20px;
+    }
+
+    .tips li {
+      margin-bottom: 4px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px;
+      color: #9ca3af;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Memory Game Card Generator</h1>
+    <p class="subtitle">Create matching pairs with text and images. Each pair becomes two cards.</p>
+
+    <!-- Add pair form -->
+    <div class="card">
+      <h2>Add a Card Pair</h2>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="textInput">Text for card</label>
+          <input type="text" id="textInput" placeholder="e.g., Cat">
+        </div>
+        <div class="form-group">
+          <label for="imageInput">Image for card</label>
+          <input type="file" id="imageInput" accept="image/*">
+        </div>
+      </div>
+
+      <div class="preview-area">
+        <div class="preview-card" id="textPreview">
+          <span class="preview-placeholder">Text</span>
+        </div>
+        <div class="preview-card" id="imagePreview">
+          <span class="preview-placeholder">Image</span>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="addBtn" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Add Pair
+      </button>
+    </div>
+
+    <!-- Pairs list -->
+    <div class="card" id="pairsCard">
+      <div class="header-row">
+        <h2 id="pairsTitle">Your Card Pairs (0 pairs = 0 cards)</h2>
+        <button class="btn btn-success" id="generateBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Generate PDF
+        </button>
+      </div>
+      
+      <div id="pairsList" class="pairs-list">
+        <div class="empty-state">No pairs added yet. Add your first pair above!</div>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div class="tips">
+      <strong>Printing tips:</strong>
+      <ul>
+        <li>PDF is formatted for A4 paper with 8 cards per page (A7 size)</li>
+        <li>Card backs are included at the end – print double-sided or glue back-to-back</li>
+        <li>Backs are mirrored for correct double-sided printing alignment</li>
+        <li>Cut along the card borders</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const { jsPDF } = window.jspdf;
+
+    let pairs = [];
+    let currentText = '';
+    let currentImage = null;
+
+    const textInput = document.getElementById('textInput');
+    const imageInput = document.getElementById('imageInput');
+    const textPreview = document.getElementById('textPreview');
+    const imagePreview = document.getElementById('imagePreview');
+    const addBtn = document.getElementById('addBtn');
+    const pairsList = document.getElementById('pairsList');
+    const pairsTitle = document.getElementById('pairsTitle');
+    const pairsCard = document.getElementById('pairsCard');
+    const generateBtn = document.getElementById('generateBtn');
+
+    function updateAddButton() {
+      addBtn.disabled = !(currentText.trim() && currentImage);
+    }
+
+    function updateTextPreview() {
+      if (currentText.trim()) {
+        textPreview.innerHTML = `<span>${escapeHtml(currentText)}</span>`;
+        textPreview.classList.add('has-content');
+      } else {
+        textPreview.innerHTML = '<span class="preview-placeholder">Text</span>';
+        textPreview.classList.remove('has-content');
+      }
+    }
+
+    function updateImagePreview() {
+      if (currentImage) {
+        imagePreview.innerHTML = `<img src="${currentImage}" alt="Preview">`;
+        imagePreview.classList.add('has-content');
+      } else {
+        imagePreview.innerHTML = '<span class="preview-placeholder">Image</span>';
+        imagePreview.classList.remove('has-content');
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    textInput.addEventListener('input', (e) => {
+      currentText = e.target.value;
+      updateTextPreview();
+      updateAddButton();
+    });
+
+    imageInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          currentImage = event.target.result;
+          updateImagePreview();
+          updateAddButton();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    addBtn.addEventListener('click', () => {
+      if (currentText.trim() && currentImage) {
+        pairs.push({
+          id: Date.now(),
+          text: currentText.trim(),
+          image: currentImage
+        });
+
+        currentText = '';
+        currentImage = null;
+        textInput.value = '';
+        imageInput.value = '';
+        updateTextPreview();
+        updateImagePreview();
+        updateAddButton();
+        renderPairs();
+      }
+    });
+
+    function removePair(id) {
+      pairs = pairs.filter(p => p.id !== id);
+      renderPairs();
+    }
+
+    function renderPairs() {
+      pairsTitle.textContent = `Your Card Pairs (${pairs.length} pairs = ${pairs.length * 2} cards)`;
+
+      if (pairs.length === 0) {
+        pairsList.innerHTML = '<div class="empty-state">No pairs added yet. Add your first pair above!</div>';
+        generateBtn.style.display = 'none';
+        return;
+      }
+
+      generateBtn.style.display = 'inline-flex';
+
+      pairsList.innerHTML = pairs.map((pair, index) => `
+        <div class="pair-item">
+          <span class="pair-number">#${index + 1}</span>
+          <div class="pair-cards">
+            <div class="pair-card">
+              <span>${escapeHtml(pair.text)}</span>
+            </div>
+            <div class="pair-card">
+              <img src="${pair.image}" alt="${escapeHtml(pair.text)}">
+            </div>
+          </div>
+          <button class="btn btn-danger" onclick="removePair(${pair.id})">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    generateBtn.addEventListener('click', generatePDF);
+
+    function generatePDF() {
+      if (pairs.length === 0) return;
+
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const cardWidth = 74;
+      const cardHeight = 105;
+      const cols = 2;
+      const rows = 4;
+      const marginX = (pageWidth - cols * cardWidth) / 2;
+      const marginY = (pageHeight - rows * cardHeight) / 2;
+
+      const allCards = [];
+      pairs.forEach(pair => {
+        allCards.push({ type: 'text', content: pair.text });
+        allCards.push({ type: 'image', content: pair.image });
+      });
+
+      // Shuffle cards
+      const shuffled = [...allCards].sort(() => Math.random() - 0.5);
+
+      // Draw cards on pages
+      let cardIndex = 0;
+      while (cardIndex < shuffled.length) {
+        if (cardIndex > 0) pdf.addPage();
+
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            if (cardIndex >= shuffled.length) break;
+
+            const x = marginX + col * cardWidth;
+            const y = marginY + row * cardHeight;
+            const card = shuffled[cardIndex];
+
+            // Card border
+            pdf.setDrawColor(180);
+            pdf.setLineWidth(0.3);
+
+            if (card.type === 'text') {
+              // Text card background
+              pdf.setFillColor(250, 250, 250);
+              pdf.rect(x, y, cardWidth, cardHeight, 'FD');
+
+              pdf.setFontSize(18);
+              pdf.setTextColor(30, 30, 30);
+
+              const innerWidth = cardWidth - 10;
+              const textLines = pdf.splitTextToSize(card.content, innerWidth);
+              const lineHeight = 8;
+              const textBlockHeight = textLines.length * lineHeight;
+              const startY = y + (cardHeight - textBlockHeight) / 2 + lineHeight / 2;
+
+              textLines.forEach((line, i) => {
+                const textWidth = pdf.getTextWidth(line);
+                pdf.text(line, x + (cardWidth - textWidth) / 2, startY + i * lineHeight);
+              });
+            } else {
+              // Image card background
+              pdf.setFillColor(255, 255, 255);
+              pdf.rect(x, y, cardWidth, cardHeight, 'FD');
+
+              try {
+                const imgPadding = 8;
+                const maxWidth = cardWidth - imgPadding * 2;
+                const maxHeight = cardHeight - imgPadding * 2;
+
+                pdf.addImage(
+                  card.content,
+                  'JPEG',
+                  x + imgPadding,
+                  y + imgPadding,
+                  maxWidth,
+                  maxHeight,
+                  undefined,
+                  'MEDIUM'
+                );
+              } catch (e) {
+                console.error('Error adding image:', e);
+              }
+            }
+
+            cardIndex++;
+          }
+        }
+      }
+
+      // Add card backs pages
+      const totalCards = shuffled.length;
+      const cardsPerPage = cols * rows;
+      const backPages = Math.ceil(totalCards / cardsPerPage);
+
+      for (let page = 0; page < backPages; page++) {
+        pdf.addPage();
+
+        const cardsOnThisPage = Math.min(cardsPerPage, totalCards - page * cardsPerPage);
+
+        for (let i = 0; i < cardsOnThisPage; i++) {
+          const row = Math.floor(i / cols);
+          const col = i % cols;
+
+          // Mirror horizontally for double-sided printing
+          const x = marginX + (cols - 1 - col) * cardWidth;
+          const y = marginY + row * cardHeight;
+
+          // Card back design
+          pdf.setFillColor(70, 100, 140);
+          pdf.rect(x, y, cardWidth, cardHeight, 'F');
+
+          pdf.setDrawColor(255, 255, 255);
+          pdf.setLineWidth(0.5);
+          pdf.rect(x + 4, y + 4, cardWidth - 8, cardHeight - 8);
+
+          // Simple dot pattern
+          pdf.setFillColor(80, 115, 160);
+          for (let py = y + 12; py < y + cardHeight - 10; py += 16) {
+            for (let px = x + 12; px < x + cardWidth - 10; px += 16) {
+              pdf.circle(px, py, 2, 'F');
+            }
+          }
+
+          // Outer border
+          pdf.setDrawColor(180);
+          pdf.setLineWidth(0.3);
+          pdf.rect(x, y, cardWidth, cardHeight);
+        }
+      }
+
+      pdf.save('memory-game-cards.pdf');
+    }
+
+    // Initial render
+    renderPairs();
+  </script>
+</body>
+</html>
