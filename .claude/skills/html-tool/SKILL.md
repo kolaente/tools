@@ -13,10 +13,11 @@ Use this skill when asked to create:
 ## Core Principles
 
 1. **Single-file structure**: All HTML, CSS, and JavaScript in one file
-2. **No build steps**: Avoid React and frameworks requiring compilation
-3. **CDN dependencies**: Load external libraries from jsDelivr or cdnjs
-4. **Compact scope**: Keep it simple - a few hundred lines max
-5. **No server required**: Everything runs in the browser
+2. **Own subdirectory**: Each tool gets its own subdirectory (e.g., `tools/json-formatter/index.html`)
+3. **No build steps**: Avoid React and frameworks requiring compilation
+4. **CDN dependencies**: Load external libraries from jsDelivr or cdnjs
+5. **Compact scope**: Keep it simple - a few hundred lines max
+6. **No server required**: Everything runs in the browser
 
 ## Standard Template
 
