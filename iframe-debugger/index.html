@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iframe Debugger</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            line-height: 1.6;
+            background: #f5f5f5;
+        }
+        h1 { margin-bottom: 0.5rem; }
+        .description { color: #666; margin-bottom: 1.5rem; }
+
+        .input-section {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        input[type="url"] {
+            flex: 1;
+            padding: 0.75rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+        }
+        input[type="url"]:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        button {
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .controls label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .controls input[type="number"] {
+            width: 80px;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .iframe-container {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        .iframe-header {
+            background: #e9ecef;
+            padding: 0.5rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ddd;
+        }
+        .iframe-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+        .status-dot.loading { background: #ffc107; }
+        .status-dot.success { background: #28a745; }
+        .status-dot.error { background: #dc3545; }
+
+        iframe {
+            width: 100%;
+            border: none;
+            display: block;
+            background: white;
+        }
+
+        .debug-panel {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .debug-panel h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1rem;
+            color: #333;
+        }
+        .debug-info {
+            font-family: monospace;
+            font-size: 0.9rem;
+            background: #f8f9fa;
+            padding: 0.75rem;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .debug-info.error { background: #f8d7da; color: #721c24; }
+        .debug-info.warning { background: #fff3cd; color: #856404; }
+        .debug-info.success { background: #d4edda; color: #155724; }
+
+        .tips {
+            background: #e7f3ff;
+            border: 1px solid #b3d7ff;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .tips h3 {
+            margin: 0 0 0.5rem 0;
+            color: #004085;
+        }
+        .tips ul {
+            margin: 0;
+            padding-left: 1.5rem;
+            color: #004085;
+        }
+        .tips li { margin-bottom: 0.25rem; }
+        .tips code {
+            background: rgba(0,0,0,0.1);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Iframe Debugger</h1>
+    <p class="description">Enter a URL to test if it can be embedded in an iframe. This tool helps debug iframe embedding issues.</p>
+
+    <div class="input-section">
+        <input type="url" id="urlInput" placeholder="https://example.com" value="">
+        <button onclick="loadIframe()">Load</button>
+    </div>
+
+    <div class="controls">
+        <label>
+            Width:
+            <input type="number" id="widthInput" value="100" min="10" max="100">%
+        </label>
+        <label>
+            Height:
+            <input type="number" id="heightInput" value="500" min="100" max="2000">px
+        </label>
+        <label>
+            <input type="checkbox" id="sandboxToggle">
+            Sandbox mode
+        </label>
+        <button onclick="checkHeaders()" style="background: #6c757d;">Check Headers</button>
+    </div>
+
+    <div class="iframe-container">
+        <div class="iframe-header">
+            <span id="currentUrl">No URL loaded</span>
+            <div class="iframe-status">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Ready</span>
+            </div>
+        </div>
+        <iframe id="testIframe" height="500"></iframe>
+    </div>
+
+    <div class="debug-panel">
+        <h3>Debug Information</h3>
+        <div class="debug-info" id="debugInfo">Enter a URL and click "Load" to see debug information.</div>
+    </div>
+
+    <div class="debug-panel">
+        <h3>Header Check Results</h3>
+        <div class="debug-info" id="headerInfo">Click "Check Headers" to fetch and analyze response headers.</div>
+    </div>
+
+    <div class="tips">
+        <h3>Common Iframe Blocking Reasons</h3>
+        <ul>
+            <li><strong>X-Frame-Options: DENY</strong> - Site explicitly blocks all iframe embedding</li>
+            <li><strong>X-Frame-Options: SAMEORIGIN</strong> - Only allows embedding from same domain</li>
+            <li><strong>Content-Security-Policy: frame-ancestors 'none'</strong> - CSP blocks iframe embedding</li>
+            <li><strong>Content-Security-Policy: frame-ancestors 'self'</strong> - CSP allows only same-origin</li>
+            <li><strong>Mixed Content</strong> - HTTPS page can't embed HTTP content</li>
+            <li><strong>CORS Issues</strong> - Cross-origin requests may be blocked</li>
+        </ul>
+    </div>
+
+    <script>
+        const iframe = document.getElementById('testIframe');
+        const urlInput = document.getElementById('urlInput');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const currentUrl = document.getElementById('currentUrl');
+        const debugInfo = document.getElementById('debugInfo');
+        const headerInfo = document.getElementById('headerInfo');
+        const widthInput = document.getElementById('widthInput');
+        const heightInput = document.getElementById('heightInput');
+        const sandboxToggle = document.getElementById('sandboxToggle');
+
+        // Update iframe dimensions
+        widthInput.addEventListener('change', updateDimensions);
+        heightInput.addEventListener('change', updateDimensions);
+
+        function updateDimensions() {
+            iframe.style.width = widthInput.value + '%';
+            iframe.style.height = heightInput.value + 'px';
+        }
+
+        // Handle sandbox toggle
+        sandboxToggle.addEventListener('change', () => {
+            if (iframe.src) {
+                loadIframe();
+            }
+        });
+
+        // Load iframe
+        function loadIframe() {
+            let url = urlInput.value.trim();
+            if (!url) {
+                showDebug('Please enter a URL', 'error');
+                return;
+            }
+
+            // Add protocol if missing
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+                urlInput.value = url;
+            }
+
+            // Validate URL
+            try {
+                new URL(url);
+            } catch (e) {
+                showDebug('Invalid URL: ' + e.message, 'error');
+                return;
+            }
+
+            setStatus('loading', 'Loading...');
+            currentUrl.textContent = url;
+
+            const startTime = Date.now();
+            let loadTimeout;
+
+            // Clear previous listeners
+            iframe.onload = null;
+            iframe.onerror = null;
+
+            // Set up load handler
+            iframe.onload = () => {
+                clearTimeout(loadTimeout);
+                const loadTime = Date.now() - startTime;
+                setStatus('success', 'Loaded');
+
+                let info = `URL: ${url}\n`;
+                info += `Load time: ${loadTime}ms\n`;
+                info += `Sandbox: ${sandboxToggle.checked ? 'Enabled' : 'Disabled'}\n\n`;
+
+                // Try to access iframe content (will fail for cross-origin)
+                try {
+                    const doc = iframe.contentDocument || iframe.contentWindow.document;
+                    info += `Content accessible: Yes\n`;
+                    info += `Document title: ${doc.title || '(empty)'}\n`;
+                    info += `Document URL: ${doc.URL}\n`;
+                } catch (e) {
+                    info += `Content accessible: No (cross-origin restriction)\n`;
+                    info += `This is normal for external sites.\n`;
+                }
+
+                showDebug(info, 'success');
+            };
+
+            iframe.onerror = (e) => {
+                clearTimeout(loadTimeout);
+                setStatus('error', 'Error');
+                showDebug(`Failed to load iframe.\n\nPossible reasons:\n- Site blocks iframe embedding (X-Frame-Options)\n- CSP frame-ancestors directive\n- Network error\n- Invalid URL`, 'error');
+            };
+
+            // Set timeout for slow loads
+            loadTimeout = setTimeout(() => {
+                showDebug(`Loading is taking longer than expected...\n\nThe page might:\n- Be very slow to load\n- Be blocked (check browser console for errors)\n- Have redirected to a blocked page`, 'warning');
+            }, 5000);
+
+            // Apply sandbox if enabled
+            if (sandboxToggle.checked) {
+                iframe.sandbox = 'allow-scripts allow-same-origin allow-forms';
+            } else {
+                iframe.removeAttribute('sandbox');
+            }
+
+            // Load the URL
+            iframe.src = url;
+            updateDimensions();
+        }
+
+        // Check headers using a CORS proxy (limited functionality)
+        async function checkHeaders() {
+            let url = urlInput.value.trim();
+            if (!url) {
+                showHeaderInfo('Please enter a URL first', 'error');
+                return;
+            }
+
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url;
+            }
+
+            showHeaderInfo('Checking headers...\n\nNote: Due to browser CORS restrictions, we can only fetch headers if the server allows it.', '');
+
+            try {
+                // Try a simple fetch - most will fail due to CORS
+                const response = await fetch(url, {
+                    method: 'HEAD',
+                    mode: 'cors'
+                });
+
+                let info = `Status: ${response.status} ${response.statusText}\n\n`;
+                info += `Headers:\n`;
+
+                const importantHeaders = [
+                    'x-frame-options',
+                    'content-security-policy',
+                    'access-control-allow-origin',
+                    'content-type'
+                ];
+
+                response.headers.forEach((value, key) => {
+                    const isImportant = importantHeaders.includes(key.toLowerCase());
+                    info += `${isImportant ? '>>> ' : '    '}${key}: ${value}\n`;
+                });
+
+                // Analyze iframe-blocking headers
+                const xfo = response.headers.get('x-frame-options');
+                const csp = response.headers.get('content-security-policy');
+
+                info += '\n--- Analysis ---\n';
+
+                if (xfo) {
+                    if (xfo.toLowerCase() === 'deny') {
+                        info += `X-Frame-Options: DENY - Site blocks ALL iframe embedding\n`;
+                    } else if (xfo.toLowerCase() === 'sameorigin') {
+                        info += `X-Frame-Options: SAMEORIGIN - Site only allows same-origin embedding\n`;
+                    } else {
+                        info += `X-Frame-Options: ${xfo}\n`;
+                    }
+                } else {
+                    info += `X-Frame-Options: Not set\n`;
+                }
+
+                if (csp && csp.includes('frame-ancestors')) {
+                    const match = csp.match(/frame-ancestors\s+([^;]+)/);
+                    if (match) {
+                        info += `CSP frame-ancestors: ${match[1]}\n`;
+                        if (match[1].includes("'none'")) {
+                            info += `  -> This blocks all iframe embedding\n`;
+                        } else if (match[1].includes("'self'")) {
+                            info += `  -> This allows only same-origin embedding\n`;
+                        }
+                    }
+                } else {
+                    info += `CSP frame-ancestors: Not set\n`;
+                }
+
+                showHeaderInfo(info, xfo || (csp && csp.includes('frame-ancestors')) ? 'warning' : 'success');
+
+            } catch (e) {
+                let info = `Could not fetch headers directly.\n\n`;
+                info += `Error: ${e.message}\n\n`;
+                info += `This usually means:\n`;
+                info += `- The server doesn't allow CORS requests\n`;
+                info += `- The server is unreachable\n`;
+                info += `- There's a network error\n\n`;
+                info += `Tip: Open your browser's Developer Tools (F12)\n`;
+                info += `and check the Console and Network tabs for more details.\n\n`;
+                info += `You can also use these tools to check headers:\n`;
+                info += `- curl -I "${url}"\n`;
+                info += `- https://securityheaders.com\n`;
+                info += `- Browser DevTools Network tab`;
+
+                showHeaderInfo(info, 'warning');
+            }
+        }
+
+        function setStatus(status, text) {
+            statusDot.className = 'status-dot ' + status;
+            statusText.textContent = text;
+        }
+
+        function showDebug(message, type) {
+            debugInfo.textContent = message;
+            debugInfo.className = 'debug-info' + (type ? ' ' + type : '');
+        }
+
+        function showHeaderInfo(message, type) {
+            headerInfo.textContent = message;
+            headerInfo.className = 'debug-info' + (type ? ' ' + type : '');
+        }
+
+        // Allow Enter key to submit
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadIframe();
+            }
+        });
+
+        // Log any console errors related to iframe
+        window.addEventListener('error', (e) => {
+            if (e.message && e.message.includes('frame')) {
+                showDebug(debugInfo.textContent + '\n\nConsole error: ' + e.message, 'error');
+            }
+        });
+
+        // Listen for security policy violations
+        document.addEventListener('securitypolicyviolation', (e) => {
+            let info = debugInfo.textContent;
+            info += `\n\nSecurity Policy Violation:\n`;
+            info += `Directive: ${e.violatedDirective}\n`;
+            info += `Blocked URI: ${e.blockedURI}\n`;
+            showDebug(info, 'error');
+        });
+    </script>
+</body>
+</html>
