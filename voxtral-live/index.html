@@ -17,14 +17,42 @@
         h1 { margin-bottom: 0.25rem; }
         .description { color: #666; margin-bottom: 1.5rem; }
 
-        .config {
+        .config-section { margin-bottom: 1.5rem; }
+
+        .mode-switch {
+            display: flex;
+            gap: 0;
+            margin-bottom: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+            width: fit-content;
+        }
+        .mode-switch label {
+            padding: 0.5rem 1.25rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            background: white;
+            color: #555;
+            border-right: 1px solid #ddd;
+            user-select: none;
+        }
+        .mode-switch label:last-child { border-right: none; }
+        .mode-switch input { display: none; }
+        .mode-switch input:checked + label {
+            background: #007bff;
+            color: white;
+        }
+
+        .config-row {
             display: flex;
             gap: 0.5rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.5rem;
             align-items: center;
         }
-        .config label { font-size: 0.9rem; color: #555; white-space: nowrap; }
-        .config input {
+        .config-row label { font-size: 0.9rem; color: #555; white-space: nowrap; min-width: 65px; }
+        .config-row input {
             flex: 1;
             padding: 0.5rem 0.75rem;
             font-size: 0.9rem;
@@ -32,7 +60,7 @@
             border-radius: 6px;
             font-family: monospace;
         }
-        .config input:focus { outline: none; border-color: #007bff; }
+        .config-row input:focus { outline: none; border-color: #007bff; }
 
         .controls {
             display: flex;
@@ -150,9 +178,27 @@
     <h1>Voxtral Live Transcription</h1>
     <p class="description">Record audio from your microphone and get real-time transcription powered by Voxtral.</p>
 
-    <div class="config">
-        <label for="serverUrl">Server:</label>
-        <input type="text" id="serverUrl" value="ws://localhost:18000/v1/realtime">
+    <div class="config-section">
+        <div class="mode-switch">
+            <input type="radio" name="mode" id="modeLocal" value="local" checked>
+            <label for="modeLocal">Local vLLM</label>
+            <input type="radio" name="mode" id="modeMistral" value="mistral">
+            <label for="modeMistral">Mistral API</label>
+        </div>
+
+        <div id="localConfig">
+            <div class="config-row">
+                <label for="serverUrl">Server:</label>
+                <input type="text" id="serverUrl" value="ws://localhost:18000/v1/realtime">
+            </div>
+        </div>
+
+        <div id="mistralConfig" hidden>
+            <div class="config-row">
+                <label for="apiKey">API Key:</label>
+                <input type="password" id="apiKey" placeholder="sk-...">
+            </div>
+        </div>
     </div>
 
     <div class="controls">
@@ -177,7 +223,12 @@
     </details>
 
     <script>
+        const modeLocal = document.getElementById('modeLocal');
+        const modeMistral = document.getElementById('modeMistral');
+        const localConfig = document.getElementById('localConfig');
+        const mistralConfig = document.getElementById('mistralConfig');
         const serverUrlInput = document.getElementById('serverUrl');
+        const apiKeyInput = document.getElementById('apiKey');
         const recordBtn = document.getElementById('recordBtn');
         const copyBtn = document.getElementById('copyBtn');
         const clearBtn = document.getElementById('clearBtn');
@@ -197,6 +248,26 @@
         let isRecording = false;
         let currentSegment = null;
 
+        // Persist API key and mode
+        apiKeyInput.value = localStorage.getItem('voxtral_api_key') || '';
+        apiKeyInput.addEventListener('input', () => localStorage.setItem('voxtral_api_key', apiKeyInput.value));
+
+        const savedMode = localStorage.getItem('voxtral_mode');
+        if (savedMode === 'mistral') modeMistral.checked = true;
+        updateModeUI();
+
+        modeLocal.addEventListener('change', updateModeUI);
+        modeMistral.addEventListener('change', updateModeUI);
+
+        function updateModeUI() {
+            const isMistral = modeMistral.checked;
+            localConfig.hidden = isMistral;
+            mistralConfig.hidden = !isMistral;
+            localStorage.setItem('voxtral_mode', isMistral ? 'mistral' : 'local');
+        }
+
+        function getMode() { return modeMistral.checked ? 'mistral' : 'local'; }
+
         function log(msg, type = '') {
             const line = document.createElement('div');
             if (type) line.className = type;
@@ -211,11 +282,8 @@
         }
 
         recordBtn.addEventListener('click', () => {
-            if (isRecording) {
-                stopRecording();
-            } else {
-                startRecording();
-            }
+            if (isRecording) stopRecording();
+            else startRecording();
         });
 
         copyBtn.addEventListener('click', async () => {
@@ -233,10 +301,128 @@
             copyBtn.disabled = true;
         });
 
+        function float32ToInt16(float32) {
+            const int16 = new Int16Array(float32.length);
+            for (let i = 0; i < float32.length; i++) {
+                const s = Math.max(-1, Math.min(1, float32[i]));
+                int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            return int16;
+        }
+
+        function buildWebSocketUrl() {
+            const mode = getMode();
+            if (mode === 'local') {
+                return serverUrlInput.value.trim();
+            }
+            const key = apiKeyInput.value.trim();
+            if (!key) return null;
+            const model = 'voxtral-mini-transcribe-realtime-2602';
+            return `wss://api.mistral.ai/v1/audio/transcriptions/realtime?model=${model}&api_key=${key}`;
+        }
+
+        function sendSessionConfig(sampleRate) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            const mode = getMode();
+            if (mode === 'local') {
+                ws.send(JSON.stringify({
+                    type: 'session.update',
+                    session: {
+                        input_audio_format: 'pcm16',
+                        input_audio_sample_rate: sampleRate,
+                        temperature: 0.0,
+                        transcription_delay_ms: 480,
+                    }
+                }));
+                log(`Session: pcm16, ${sampleRate} Hz, delay 480ms`);
+            } else {
+                ws.send(JSON.stringify({
+                    type: 'session.update',
+                    session: {
+                        audio_format: {
+                            encoding: 'pcm_s16le',
+                            sample_rate: sampleRate,
+                        }
+                    }
+                }));
+                log(`Session: pcm_s16le, ${sampleRate} Hz`);
+            }
+        }
+
+        function sendAudioChunk(int16) {
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            if (getMode() === 'local') {
+                ws.send(int16.buffer);
+            } else {
+                // Mistral API expects base64-encoded audio in JSON
+                const bytes = new Uint8Array(int16.buffer);
+                let binary = '';
+                for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+                ws.send(JSON.stringify({
+                    type: 'input_audio.append',
+                    audio: btoa(binary),
+                }));
+            }
+        }
+
+        function sendEndSignal() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) return;
+            if (getMode() === 'local') {
+                ws.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
+            } else {
+                ws.send(JSON.stringify({ type: 'input_audio.end' }));
+            }
+        }
+
+        function handleMessage(data) {
+            const type = data.type;
+
+            // Local vLLM (OpenAI-compatible)
+            if (type === 'response.audio_transcript.delta') {
+                appendDelta(data.delta || '');
+            } else if (type === 'response.audio_transcript.done') {
+                finishSegment();
+            }
+
+            // Mistral API
+            else if (type === 'transcription.text.delta') {
+                appendDelta(data.text || '');
+            } else if (type === 'transcription.done') {
+                finishSegment();
+            } else if (type === 'session.created' || type === 'session.updated') {
+                log(`${type}`, 'info');
+            }
+
+            // Errors
+            else if (type === 'error') {
+                const msg = data.error?.message || data.message || JSON.stringify(data);
+                log(`Server error: ${msg}`, 'error');
+            }
+        }
+
+        function appendDelta(text) {
+            if (!text) return;
+            if (!currentSegment) {
+                currentSegment = document.createElement('span');
+                currentSegment.className = 'segment active';
+                transcriptEl.appendChild(currentSegment);
+            }
+            currentSegment.textContent += text;
+            transcriptEl.scrollTop = transcriptEl.scrollHeight;
+            copyBtn.disabled = false;
+        }
+
+        function finishSegment() {
+            if (currentSegment) {
+                currentSegment.classList.remove('active');
+                currentSegment = null;
+            }
+        }
+
         async function startRecording() {
-            const url = serverUrlInput.value.trim();
+            const url = buildWebSocketUrl();
             if (!url) {
-                log('Please enter a server URL', 'error');
+                log(getMode() === 'mistral' ? 'Please enter an API key' : 'Please enter a server URL', 'error');
                 return;
             }
 
@@ -258,44 +444,27 @@
 
                 log(`Microphone active (${sampleRate} Hz)`);
 
-                // Audio level analyser
                 analyserNode = audioContext.createAnalyser();
                 analyserNode.fftSize = 256;
                 source.connect(analyserNode);
                 levelMeter.hidden = false;
                 updateLevel();
 
-                // Connect WebSocket
                 setStatus('', 'Connecting...');
                 ws = new WebSocket(url);
                 ws.binaryType = 'arraybuffer';
 
                 ws.onopen = () => {
-                    log('WebSocket connected', 'info');
+                    log(`WebSocket connected (${getMode()})`, 'info');
                     setStatus('connected', 'Connected');
 
-                    ws.send(JSON.stringify({
-                        type: 'session.update',
-                        session: {
-                            input_audio_format: 'pcm16',
-                            input_audio_sample_rate: sampleRate,
-                            temperature: 0.0,
-                            transcription_delay_ms: 480,
-                        }
-                    }));
-                    log(`Session: pcm16, ${sampleRate} Hz, delay 480ms`);
+                    sendSessionConfig(sampleRate);
 
-                    // ScriptProcessor to capture PCM16 chunks (~256ms at 16kHz)
                     processorNode = audioContext.createScriptProcessor(4096, 1, 1);
                     processorNode.onaudioprocess = (e) => {
                         if (!isRecording || !ws || ws.readyState !== WebSocket.OPEN) return;
                         const float32 = e.inputBuffer.getChannelData(0);
-                        const int16 = new Int16Array(float32.length);
-                        for (let i = 0; i < float32.length; i++) {
-                            const s = Math.max(-1, Math.min(1, float32[i]));
-                            int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-                        }
-                        ws.send(int16.buffer);
+                        sendAudioChunk(float32ToInt16(float32));
                     };
 
                     source.connect(processorNode);
@@ -305,16 +474,15 @@
                     recordBtn.disabled = false;
                     recordBtn.textContent = 'Stop Recording';
                     recordBtn.classList.add('recording');
-                    serverUrlInput.disabled = true;
+                    setInputsDisabled(true);
                     setStatus('recording', 'Recording');
                     log('Streaming audio...');
                 };
 
                 ws.onmessage = (event) => {
                     if (typeof event.data !== 'string') return;
-                    try {
-                        handleMessage(JSON.parse(event.data));
-                    } catch (e) { /* ignore parse errors */ }
+                    try { handleMessage(JSON.parse(event.data)); }
+                    catch (e) { /* ignore */ }
                 };
 
                 ws.onerror = () => {
@@ -338,27 +506,20 @@
         function stopRecording() {
             isRecording = false;
 
-            if (processorNode) {
-                processorNode.disconnect();
-                processorNode = null;
-            }
-            if (mediaStream) {
-                mediaStream.getTracks().forEach(t => t.stop());
-                mediaStream = null;
-            }
+            if (processorNode) { processorNode.disconnect(); processorNode = null; }
+            if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
 
             stopLevel();
             recordBtn.textContent = 'Start Recording';
             recordBtn.classList.remove('recording');
-            serverUrlInput.disabled = false;
+            setInputsDisabled(false);
             log('Recording stopped');
 
             if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
-                log('Sent commit, waiting for final transcript...');
+                sendEndSignal();
+                log('Sent end signal, waiting for final transcript...');
                 setStatus('connected', 'Finishing...');
 
-                // Close after timeout to receive remaining transcript
                 setTimeout(() => {
                     if (ws) { ws.close(); ws = null; }
                     if (audioContext) { audioContext.close(); audioContext = null; }
@@ -380,33 +541,17 @@
             recordBtn.textContent = 'Start Recording';
             recordBtn.classList.remove('recording');
             recordBtn.disabled = false;
-            serverUrlInput.disabled = false;
+            setInputsDisabled(false);
             setStatus('', 'Disconnected');
         }
 
-        function handleMessage(data) {
-            const type = data.type;
-
-            if (type === 'response.audio_transcript.delta') {
-                if (!currentSegment) {
-                    currentSegment = document.createElement('span');
-                    currentSegment.className = 'segment active';
-                    transcriptEl.appendChild(currentSegment);
-                }
-                currentSegment.textContent += data.delta || '';
-                transcriptEl.scrollTop = transcriptEl.scrollHeight;
-                copyBtn.disabled = false;
-            } else if (type === 'response.audio_transcript.done') {
-                if (currentSegment) {
-                    currentSegment.classList.remove('active');
-                    currentSegment = null;
-                }
-            } else if (type === 'error') {
-                log(`Server error: ${data.error?.message || JSON.stringify(data)}`, 'error');
-            }
+        function setInputsDisabled(disabled) {
+            serverUrlInput.disabled = disabled;
+            apiKeyInput.disabled = disabled;
+            modeLocal.disabled = disabled;
+            modeMistral.disabled = disabled;
         }
 
-        // Audio level meter
         function updateLevel() {
             if (!analyserNode) return;
             const data = new Uint8Array(analyserNode.frequencyBinCount);
@@ -415,10 +560,8 @@
             for (let i = 0; i < data.length; i++) sum += data[i];
             const avg = sum / data.length;
             const pct = Math.min(100, (avg / 128) * 100);
-
             levelBar.style.width = pct + '%';
             levelBar.className = 'level-bar' + (pct > 80 ? ' clipping' : pct > 50 ? ' loud' : '');
-
             levelRAF = requestAnimationFrame(updateLevel);
         }
 
