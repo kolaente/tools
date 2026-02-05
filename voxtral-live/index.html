@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voxtral Live Transcription</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            line-height: 1.6;
+            background: #f5f5f5;
+        }
+        h1 { margin-bottom: 0.25rem; }
+        .description { color: #666; margin-bottom: 1.5rem; }
+
+        .config {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+        .config label { font-size: 0.9rem; color: #555; white-space: nowrap; }
+        .config input {
+            flex: 1;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+        .config input:focus { outline: none; border-color: #007bff; }
+
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 0.6rem 1.25rem;
+            font-size: 0.95rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-record { background: #dc3545; color: white; min-width: 160px; }
+        .btn-record:hover:not(:disabled) { background: #c82333; }
+        .btn-record.recording { background: #6c757d; }
+        .btn-record.recording:hover:not(:disabled) { background: #5a6268; }
+
+        .btn-secondary { background: #e9ecef; color: #333; }
+        .btn-secondary:hover:not(:disabled) { background: #dde0e3; }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #666;
+            margin-left: auto;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ccc;
+            flex-shrink: 0;
+        }
+        .status-dot.connected { background: #28a745; }
+        .status-dot.recording { background: #dc3545; animation: pulse 1s infinite; }
+        .status-dot.error { background: #dc3545; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .level-meter {
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        .level-bar {
+            height: 100%;
+            width: 0%;
+            background: #28a745;
+            border-radius: 3px;
+            transition: width 50ms;
+        }
+        .level-bar.loud { background: #ffc107; }
+        .level-bar.clipping { background: #dc3545; }
+
+        .transcript-panel {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            min-height: 300px;
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 1.25rem;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .transcript-panel:empty::before {
+            content: 'Transcript will appear here once you start recording...';
+            color: #bbb;
+        }
+        .segment { margin-bottom: 0.25rem; }
+        .segment.active { color: #007bff; }
+
+        details.log-panel {
+            margin-top: 1rem;
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+        }
+        details.log-panel summary {
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: #888;
+            user-select: none;
+        }
+        .log-content {
+            font-family: monospace;
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 0.5rem;
+            color: #555;
+        }
+        .log-content div { padding: 1px 0; }
+        .log-content .error { color: #dc3545; }
+        .log-content .info { color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>Voxtral Live Transcription</h1>
+    <p class="description">Record audio from your microphone and get real-time transcription powered by Voxtral.</p>
+
+    <div class="config">
+        <label for="serverUrl">Server:</label>
+        <input type="text" id="serverUrl" value="ws://localhost:18000/v1/realtime">
+    </div>
+
+    <div class="controls">
+        <button class="btn-record" id="recordBtn">Start Recording</button>
+        <button class="btn-secondary" id="copyBtn" disabled>Copy</button>
+        <button class="btn-secondary" id="clearBtn">Clear</button>
+        <div class="status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Disconnected</span>
+        </div>
+    </div>
+
+    <div class="level-meter" id="levelMeter" hidden>
+        <div class="level-bar" id="levelBar"></div>
+    </div>
+
+    <div class="transcript-panel" id="transcript"></div>
+
+    <details class="log-panel">
+        <summary>Connection Log</summary>
+        <div class="log-content" id="log"></div>
+    </details>
+
+    <script>
+        const serverUrlInput = document.getElementById('serverUrl');
+        const recordBtn = document.getElementById('recordBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const transcriptEl = document.getElementById('transcript');
+        const logEl = document.getElementById('log');
+        const levelMeter = document.getElementById('levelMeter');
+        const levelBar = document.getElementById('levelBar');
+
+        let ws = null;
+        let mediaStream = null;
+        let audioContext = null;
+        let processorNode = null;
+        let analyserNode = null;
+        let levelRAF = null;
+        let isRecording = false;
+        let currentSegment = null;
+
+        function log(msg, type = '') {
+            const line = document.createElement('div');
+            if (type) line.className = type;
+            line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            logEl.appendChild(line);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function setStatus(state, text) {
+            statusDot.className = 'status-dot ' + state;
+            statusText.textContent = text;
+        }
+
+        recordBtn.addEventListener('click', () => {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+
+        copyBtn.addEventListener('click', async () => {
+            const text = transcriptEl.innerText;
+            if (text) {
+                await navigator.clipboard.writeText(text);
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
+            }
+        });
+
+        clearBtn.addEventListener('click', () => {
+            transcriptEl.innerHTML = '';
+            currentSegment = null;
+            copyBtn.disabled = true;
+        });
+
+        async function startRecording() {
+            const url = serverUrlInput.value.trim();
+            if (!url) {
+                log('Please enter a server URL', 'error');
+                return;
+            }
+
+            recordBtn.disabled = true;
+
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        channelCount: 1,
+                        sampleRate: 16000,
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                    }
+                });
+
+                audioContext = new AudioContext({ sampleRate: 16000 });
+                const source = audioContext.createMediaStreamSource(mediaStream);
+                const sampleRate = audioContext.sampleRate;
+
+                log(`Microphone active (${sampleRate} Hz)`);
+
+                // Audio level analyser
+                analyserNode = audioContext.createAnalyser();
+                analyserNode.fftSize = 256;
+                source.connect(analyserNode);
+                levelMeter.hidden = false;
+                updateLevel();
+
+                // Connect WebSocket
+                setStatus('', 'Connecting...');
+                ws = new WebSocket(url);
+                ws.binaryType = 'arraybuffer';
+
+                ws.onopen = () => {
+                    log('WebSocket connected', 'info');
+                    setStatus('connected', 'Connected');
+
+                    ws.send(JSON.stringify({
+                        type: 'session.update',
+                        session: {
+                            input_audio_format: 'pcm16',
+                            input_audio_sample_rate: sampleRate,
+                            temperature: 0.0,
+                            transcription_delay_ms: 480,
+                        }
+                    }));
+                    log(`Session: pcm16, ${sampleRate} Hz, delay 480ms`);
+
+                    // ScriptProcessor to capture PCM16 chunks (~256ms at 16kHz)
+                    processorNode = audioContext.createScriptProcessor(4096, 1, 1);
+                    processorNode.onaudioprocess = (e) => {
+                        if (!isRecording || !ws || ws.readyState !== WebSocket.OPEN) return;
+                        const float32 = e.inputBuffer.getChannelData(0);
+                        const int16 = new Int16Array(float32.length);
+                        for (let i = 0; i < float32.length; i++) {
+                            const s = Math.max(-1, Math.min(1, float32[i]));
+                            int16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                        }
+                        ws.send(int16.buffer);
+                    };
+
+                    source.connect(processorNode);
+                    processorNode.connect(audioContext.destination);
+
+                    isRecording = true;
+                    recordBtn.disabled = false;
+                    recordBtn.textContent = 'Stop Recording';
+                    recordBtn.classList.add('recording');
+                    serverUrlInput.disabled = true;
+                    setStatus('recording', 'Recording');
+                    log('Streaming audio...');
+                };
+
+                ws.onmessage = (event) => {
+                    if (typeof event.data !== 'string') return;
+                    try {
+                        handleMessage(JSON.parse(event.data));
+                    } catch (e) { /* ignore parse errors */ }
+                };
+
+                ws.onerror = () => {
+                    log('WebSocket error', 'error');
+                    setStatus('error', 'Connection error');
+                    cleanup();
+                };
+
+                ws.onclose = (e) => {
+                    log(`WebSocket closed (${e.code})`, e.code === 1000 ? 'info' : 'error');
+                    if (isRecording) cleanup();
+                };
+
+            } catch (e) {
+                log(`Error: ${e.message}`, 'error');
+                setStatus('error', 'Error');
+                cleanup();
+            }
+        }
+
+        function stopRecording() {
+            isRecording = false;
+
+            if (processorNode) {
+                processorNode.disconnect();
+                processorNode = null;
+            }
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(t => t.stop());
+                mediaStream = null;
+            }
+
+            stopLevel();
+            recordBtn.textContent = 'Start Recording';
+            recordBtn.classList.remove('recording');
+            serverUrlInput.disabled = false;
+            log('Recording stopped');
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
+                log('Sent commit, waiting for final transcript...');
+                setStatus('connected', 'Finishing...');
+
+                // Close after timeout to receive remaining transcript
+                setTimeout(() => {
+                    if (ws) { ws.close(); ws = null; }
+                    if (audioContext) { audioContext.close(); audioContext = null; }
+                    setStatus('', 'Disconnected');
+                }, 5000);
+            } else {
+                if (audioContext) { audioContext.close(); audioContext = null; }
+                setStatus('', 'Disconnected');
+            }
+        }
+
+        function cleanup() {
+            isRecording = false;
+            if (processorNode) { processorNode.disconnect(); processorNode = null; }
+            if (audioContext) { audioContext.close(); audioContext = null; }
+            if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+            if (ws) { ws.close(); ws = null; }
+            stopLevel();
+            recordBtn.textContent = 'Start Recording';
+            recordBtn.classList.remove('recording');
+            recordBtn.disabled = false;
+            serverUrlInput.disabled = false;
+            setStatus('', 'Disconnected');
+        }
+
+        function handleMessage(data) {
+            const type = data.type;
+
+            if (type === 'response.audio_transcript.delta') {
+                if (!currentSegment) {
+                    currentSegment = document.createElement('span');
+                    currentSegment.className = 'segment active';
+                    transcriptEl.appendChild(currentSegment);
+                }
+                currentSegment.textContent += data.delta || '';
+                transcriptEl.scrollTop = transcriptEl.scrollHeight;
+                copyBtn.disabled = false;
+            } else if (type === 'response.audio_transcript.done') {
+                if (currentSegment) {
+                    currentSegment.classList.remove('active');
+                    currentSegment = null;
+                }
+            } else if (type === 'error') {
+                log(`Server error: ${data.error?.message || JSON.stringify(data)}`, 'error');
+            }
+        }
+
+        // Audio level meter
+        function updateLevel() {
+            if (!analyserNode) return;
+            const data = new Uint8Array(analyserNode.frequencyBinCount);
+            analyserNode.getByteFrequencyData(data);
+            let sum = 0;
+            for (let i = 0; i < data.length; i++) sum += data[i];
+            const avg = sum / data.length;
+            const pct = Math.min(100, (avg / 128) * 100);
+
+            levelBar.style.width = pct + '%';
+            levelBar.className = 'level-bar' + (pct > 80 ? ' clipping' : pct > 50 ? ' loud' : '');
+
+            levelRAF = requestAnimationFrame(updateLevel);
+        }
+
+        function stopLevel() {
+            if (levelRAF) { cancelAnimationFrame(levelRAF); levelRAF = null; }
+            levelMeter.hidden = true;
+            levelBar.style.width = '0%';
+            analyserNode = null;
+        }
+    </script>
+</body>
+</html>
