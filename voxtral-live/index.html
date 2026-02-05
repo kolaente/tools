@@ -203,6 +203,7 @@
 
     <div class="controls">
         <button class="btn-record" id="recordBtn">Start Recording</button>
+        <button class="btn-secondary" id="testBtn">Test</button>
         <button class="btn-secondary" id="copyBtn" disabled>Copy</button>
         <button class="btn-secondary" id="clearBtn">Clear</button>
         <div class="status">
@@ -230,6 +231,7 @@
         const serverUrlInput = document.getElementById('serverUrl');
         const apiKeyInput = document.getElementById('apiKey');
         const recordBtn = document.getElementById('recordBtn');
+        const testBtn = document.getElementById('testBtn');
         const copyBtn = document.getElementById('copyBtn');
         const clearBtn = document.getElementById('clearBtn');
         const statusDot = document.getElementById('statusDot');
@@ -299,6 +301,55 @@
             transcriptEl.innerHTML = '';
             currentSegment = null;
             copyBtn.disabled = true;
+        });
+
+        testBtn.addEventListener('click', () => {
+            const url = buildWebSocketUrl();
+            if (!url) {
+                log(getMode() === 'mistral' ? 'Please enter an API key' : 'Please enter a server URL', 'error');
+                return;
+            }
+            testBtn.disabled = true;
+            testBtn.textContent = 'Testing...';
+            setStatus('', 'Connecting...');
+            log(`Testing connection to ${getMode() === 'mistral' ? 'Mistral API' : url}...`);
+
+            const testWs = new WebSocket(url);
+            const timeout = setTimeout(() => {
+                testWs.close();
+                log('Connection timed out', 'error');
+                setStatus('error', 'Timeout');
+                testBtn.disabled = false;
+                testBtn.textContent = 'Test';
+            }, 5000);
+
+            testWs.onopen = () => {
+                clearTimeout(timeout);
+                log('Connection successful', 'info');
+                setStatus('connected', 'Connected');
+                testWs.close();
+                setTimeout(() => {
+                    setStatus('', 'Disconnected');
+                    testBtn.disabled = false;
+                    testBtn.textContent = 'Test';
+                }, 1500);
+            };
+            testWs.onerror = () => {
+                clearTimeout(timeout);
+                log('Connection failed', 'error');
+                setStatus('error', 'Failed');
+                testBtn.disabled = false;
+                testBtn.textContent = 'Test';
+            };
+            testWs.onclose = (e) => {
+                clearTimeout(timeout);
+                if (e.code !== 1000 && e.code !== 1005) {
+                    log(`Connection closed (${e.code}: ${e.reason || 'no reason'})`, 'error');
+                    setStatus('error', 'Failed');
+                }
+                testBtn.disabled = false;
+                testBtn.textContent = 'Test';
+            };
         });
 
         function float32ToInt16(float32) {
@@ -550,6 +601,7 @@
             apiKeyInput.disabled = disabled;
             modeLocal.disabled = disabled;
             modeMistral.disabled = disabled;
+            testBtn.disabled = disabled;
         }
 
         function updateLevel() {
