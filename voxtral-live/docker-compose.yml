@@ -3,7 +3,7 @@ services:
     image: vllm/vllm-openai:nightly
     runtime: nvidia
     ports:
-      - "8000:8000"
+      - "18000:8000"
     volumes:
       - voxtral-cache:/root/.cache/huggingface
     environment:
@@ -17,6 +17,8 @@ services:
       - '{"cudagraph_mode": "PIECEWISE"}'
       - --dtype
       - bfloat16
+      - --gpu-memory-utilization
+      - "0.80"
       # Reduce max context if you want to save VRAM
       # Default 131072 (~3h of audio). 45000 = ~1h
       # - --max-model-len
