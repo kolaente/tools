@@ -10,19 +10,15 @@ services:
       - VLLM_DISABLE_COMPILE_CACHE=1
       # Set your HuggingFace token if the model requires auth
       # - HF_TOKEN=hf_xxxxx
+    entrypoint: ["/bin/sh", "-c"]
     command:
-      - --model
-      - mistralai/Voxtral-Mini-4B-Realtime-2602
-      - --compilation_config
-      - '{"cudagraph_mode": "PIECEWISE"}'
-      - --dtype
-      - bfloat16
-      - --gpu-memory-utilization
-      - "0.80"
-      # Reduce max context if you want to save VRAM
-      # Default 131072 (~3h of audio). 45000 = ~1h
-      # - --max-model-len
-      # - "45000"
+      - |
+        pip install -q 'mistral-common[soundfile]' &&
+        vllm serve mistralai/Voxtral-Mini-4B-Realtime-2602 \
+          --compilation_config '{"cudagraph_mode": "PIECEWISE"}' \
+          --dtype bfloat16 \
+          --gpu-memory-utilization 0.50 \
+          --max-model-len 16384
     deploy:
       resources:
         reservations:
