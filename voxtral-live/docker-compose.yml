@@ -1,0 +1,34 @@
+services:
+  voxtral:
+    image: vllm/vllm-openai:nightly
+    runtime: nvidia
+    ports:
+      - "8000:8000"
+    volumes:
+      - voxtral-cache:/root/.cache/huggingface
+    environment:
+      - VLLM_DISABLE_COMPILE_CACHE=1
+      # Set your HuggingFace token if the model requires auth
+      # - HF_TOKEN=hf_xxxxx
+    command:
+      - --model
+      - mistralai/Voxtral-Mini-4B-Realtime-2602
+      - --compilation_config
+      - '{"cudagraph_mode": "PIECEWISE"}'
+      - --dtype
+      - bfloat16
+      # Reduce max context if you want to save VRAM
+      # Default 131072 (~3h of audio). 45000 = ~1h
+      # - --max-model-len
+      # - "45000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  voxtral-cache:
