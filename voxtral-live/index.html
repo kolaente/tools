@@ -314,7 +314,7 @@
             setStatus('', 'Connecting...');
             log(`Testing connection to ${getMode() === 'mistral' ? 'Mistral API' : url}...`);
 
-            const testWs = new WebSocket(url);
+            const testWs = openWebSocket(url);
             const timeout = setTimeout(() => {
                 testWs.close();
                 log('Connection timed out', 'error');
@@ -369,7 +369,16 @@
             const key = apiKeyInput.value.trim();
             if (!key) return null;
             const model = 'voxtral-mini-transcribe-realtime-2602';
-            return `wss://api.mistral.ai/v1/audio/transcriptions/realtime?model=${model}&api_key=${key}`;
+            return `wss://api.mistral.ai/v1/audio/transcriptions/realtime?model=${model}`;
+        }
+
+        function openWebSocket(url) {
+            if (getMode() === 'mistral') {
+                const key = apiKeyInput.value.trim();
+                // Browser WebSocket can't set headers, so pass bearer token via subprotocol
+                return new WebSocket(url, [`Bearer-${key}`]);
+            }
+            return new WebSocket(url);
         }
 
         function sendSessionConfig(sampleRate) {
@@ -502,7 +511,7 @@
                 updateLevel();
 
                 setStatus('', 'Connecting...');
-                ws = new WebSocket(url);
+                ws = openWebSocket(url);
                 ws.binaryType = 'arraybuffer';
 
                 ws.onopen = () => {
