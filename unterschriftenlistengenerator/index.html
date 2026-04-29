@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unterschriftenlistengenerator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        
+        .upload-area.dragover {
+            border-color: #28a745;
+            background-color: #d4edda;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-text {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .upload-hint {
+            font-size: 14px;
+            color: #999;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .btn-success {
+            background: #28a745;
+        }
+        
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        
+        .preview-section {
+            margin-top: 30px;
+        }
+        
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 12px;
+        }
+        
+        .preview-table th,
+        .preview-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .preview-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .preview-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .header-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .footer-inputs {
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .input-group input,
+        .input-group textarea {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Unterschriftenlistengenerator</h1>
+        
+        <div class="header-inputs">
+            <div class="input-group">
+                <label for="headerText">Header Text (oben links):</label>
+                <textarea id="headerText" rows="3" placeholder="Header Text eingeben (Zeilenumbrüche werden unterstützt)&#10;Markdown: **fett**, *kursiv*, _unterstrichen_">Unterschriftenliste</textarea>
+            </div>
+            <div class="input-group">
+                <label for="logoFile">Logo Datei (oben rechts):</label>
+                <input type="file" id="logoFile" accept="image/*" placeholder="Logo auswählen (optional)">
+                <div id="logoPreview" style="margin-top: 10px; display: none;">
+                    <img id="logoImg" style="max-width: 100px; max-height: 50px; border: 1px solid #ddd; border-radius: 4px;" />
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-inputs">
+            <div class="input-group">
+                <label for="footerText">Footer Text (unten links):</label>
+                <textarea id="footerText" rows="3" placeholder="Footer Text eingeben (optional)&#10;Markdown: **fett**, *kursiv*, _unterstrichen_"></textarea>
+            </div>
+        </div>
+        
+        <div class="upload-area" onclick="document.getElementById('csvFile').click()">
+            <div class="upload-text">CSV-Datei hier hinziehen oder klicken zum Auswählen</div>
+            <div class="upload-hint">Unterstützte Formate: .csv</div>
+            <input type="file" id="csvFile" class="file-input" accept=".csv" />
+        </div>
+        
+        <div class="status" id="status"></div>
+        
+        <div class="controls">
+            <button class="btn" id="previewBtn" onclick="previewData()" disabled>Vorschau anzeigen</button>
+            <button class="btn btn-success" id="generateBtn" onclick="generatePDF()" disabled>PDF generieren</button>
+            <button class="btn" onclick="generateShareLink()" style="background: #6c757d; color: white;">Template-Link erstellen</button>
+        </div>
+        
+        <div class="preview-section" id="previewSection" style="display: none;">
+            <h3>Datenvorschau</h3>
+            <div id="previewContainer"></div>
+        </div>
+        
+        <div class="template-link-share" id="shareSection" style="display: none; margin-top: 20px;">
+            <h3>Template-Link</h3>
+            <p>Teile diesen Link, um Header, Footer und Logo vorauszufüllen:</p>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="text" id="templateShareLink" readonly style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px;">
+                <button class="btn" onclick="copyShareLink()">Kopieren</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let csvData = [];
+        let parsedData = [];
+        let logoImageData = null;
+        
+        // Load template from URL hash on page load
+        window.addEventListener('load', function() {
+            loadTemplateFromURL();
+        });
+        
+        // Logo file handling
+        let logoImageDimensions = null;
+        
+        document.getElementById('logoFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    logoImageData = e.target.result;
+                    
+                    // Get image dimensions for aspect ratio calculation
+                    const img = new Image();
+                    img.onload = function() {
+                        logoImageDimensions = {
+                            width: img.width,
+                            height: img.height
+                        };
+                        
+                        // Show preview
+                        const preview = document.getElementById('logoPreview');
+                        const previewImg = document.getElementById('logoImg');
+                        previewImg.src = logoImageData;
+                        preview.style.display = 'block';
+                        
+                        showStatus(`Logo "${file.name}" erfolgreich geladen.`, 'success');
+                    };
+                    img.src = logoImageData;
+                };
+                reader.readAsDataURL(file);
+            } else if (file) {
+                showStatus('Bitte wählen Sie eine Bilddatei aus.', 'error');
+                e.target.value = '';
+            } else {
+                // File was cleared
+                logoImageData = null;
+                logoImageDimensions = null;
+                document.getElementById('logoPreview').style.display = 'none';
+            }
+        });
+        
+        // Drag and drop functionality
+        const uploadArea = document.querySelector('.upload-area');
+        const fileInput = document.getElementById('csvFile');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    status.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        function handleFile(file) {
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                showStatus('Bitte wählen Sie eine CSV-Datei aus.', 'error');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                csvData = e.target.result;
+                parseCSV();
+                document.getElementById('previewBtn').disabled = false;
+                document.getElementById('generateBtn').disabled = false;
+                showStatus(`Datei "${file.name}" erfolgreich geladen.`, 'success');
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+        
+        function parseCSV() {
+            const lines = csvData.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) {
+                showStatus('CSV-Datei muss mindestens Header und eine Datenzeile enthalten.', 'error');
+                return;
+            }
+            
+            // Parse header
+            const header = parseCSVLine(lines[0]);
+            
+            // Parse data rows
+            parsedData = [];
+            for (let i = 1; i < lines.length; i++) {
+                const row = parseCSVLine(lines[i]);
+                if (row.length === header.length) {
+                    const rowData = {};
+                    header.forEach((col, index) => {
+                        rowData[col] = row[index];
+                    });
+                    parsedData.push(rowData);
+                }
+            }
+        }
+        
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current.trim());
+            return result;
+        }
+        
+        function previewData() {
+            if (parsedData.length === 0) {
+                showStatus('Keine Daten zum Anzeigen verfügbar.', 'error');
+                return;
+            }
+            
+            const previewSection = document.getElementById('previewSection');
+            const container = document.getElementById('previewContainer');
+            
+            // Create preview table with PDF structure
+            let html = '<table class="preview-table"><thead><tr>';
+            const columns = [
+                'Nr',
+                'Funktion oder Juleica<br>(> 27 Jahre)',
+                'Nachname',
+                'Vorname',
+                'Geschlecht<br>m/w/d',
+                'Straße',
+                'PLZ',
+                'Ort',
+                'Geb.Datum',
+                'Alter',
+                'Unterschrift'
+            ];
+            
+            columns.forEach(col => {
+                html += `<th>${col}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            
+            parsedData.forEach((row, index) => {
+                html += '<tr>';
+                html += `<td>${index + 1}</td>`;  // Nr
+                html += '<td></td>';  // Funktion oder Juleica (empty)
+                html += `<td>${row['Nachname'] || ''}</td>`;
+                html += `<td>${row['Vorname'] || ''}</td>`;
+                html += `<td>${mapGeschlecht(row['Geschlecht'] || '')}</td>`;
+                html += `<td>${row['Straße'] || ''}</td>`;
+                html += `<td>${row['PLZ'] || ''}</td>`;
+                html += `<td>${row['Ort'] || ''}</td>`;
+                html += `<td>${row['Geburtsdatum'] || ''}</td>`;
+                html += `<td>${row['Alter während Event'] || ''}</td>`;
+                html += '<td></td>';  // Unterschrift (empty)
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+            previewSection.style.display = 'block';
+            
+            showStatus('Vorschau erfolgreich generiert.', 'success');
+        }
+        
+        function mapGeschlecht(geschlecht) {
+            const lower = geschlecht.toLowerCase();
+            if (lower.includes('männlich') || lower === 'm') return 'm';
+            if (lower.includes('weiblich') || lower === 'w') return 'w';
+            if (lower.includes('divers') || lower === 'd') return 'd';
+            return geschlecht;
+        }
+        
+        // Compression helper functions using pako
+        function compressData(text) {
+            try {
+                // Use pako to compress the text
+                const compressed = pako.gzip(text);
+                // Convert Uint8Array to binary string
+                return String.fromCharCode(...compressed);
+            } catch (error) {
+                console.warn('Compression failed, using uncompressed data:', error);
+                return text;
+            }
+        }
+        
+        function decompressData(compressedBinaryString) {
+            try {
+                // Convert binary string back to Uint8Array
+                const compressed = new Uint8Array(compressedBinaryString.length);
+                for (let i = 0; i < compressedBinaryString.length; i++) {
+                    compressed[i] = compressedBinaryString.charCodeAt(i);
+                }
+                
+                // Use pako to decompress
+                const decompressed = pako.ungzip(compressed, { to: 'string' });
+                return decompressed;
+            } catch (error) {
+                console.warn('Decompression failed, treating as uncompressed data:', error);
+                return compressedBinaryString;
+            }
+        }
+        
+        function loadTemplateFromURL() {
+            // Check for hash fragment with compressed base64 encoded template data
+            const hash = window.location.hash;
+            if (hash.startsWith('#t=')) {
+                const templateData = hash.substring(3); // Remove '#t='
+                try {
+                    // Convert URL-safe base64 back to regular base64
+                    const regularBase64 = templateData.replace(/-/g, '+').replace(/_/g, '/');
+                    // Add padding if needed
+                    const paddedBase64 = regularBase64 + '='.repeat((4 - regularBase64.length % 4) % 4);
+                    
+                    // Decode base64 to get compressed data
+                    const compressedData = atob(paddedBase64);
+                    
+                    // Decompress the data
+                    const decompressedData = decompressData(compressedData);
+                    const templateObj = JSON.parse(decompressedData);
+                    
+                    // Load header text
+                    if (templateObj.header) {
+                        document.getElementById('headerText').value = templateObj.header;
+                    }
+                    
+                    // Load footer text
+                    if (templateObj.footer) {
+                        document.getElementById('footerText').value = templateObj.footer;
+                    }
+                    
+                    // Load logo
+                    if (templateObj.logo && templateObj.logoW && templateObj.logoH) {
+                        logoImageData = templateObj.logo;
+                        logoImageDimensions = {
+                            width: templateObj.logoW,
+                            height: templateObj.logoH
+                        };
+                        
+                        // Show preview
+                        const preview = document.getElementById('logoPreview');
+                        const img = document.getElementById('logoImg');
+                        img.src = logoImageData;
+                        preview.style.display = 'block';
+                    }
+                    
+                    showStatus('Template erfolgreich geladen.', 'success');
+                } catch (e) {
+                    console.error('Could not load template:', e);
+                    showStatus('Fehler beim Laden des Templates.', 'error');
+                }
+            }
+        }
+        
+        function generateShareLink() {
+            const headerText = document.getElementById('headerText').value;
+            const footerText = document.getElementById('footerText').value;
+            
+            // Create template object
+            const templateObj = {};
+            
+            // Add header text if provided
+            if (headerText && headerText.trim()) {
+                templateObj.header = headerText;
+            }
+            
+            // Add footer text if provided
+            if (footerText && footerText.trim()) {
+                templateObj.footer = footerText;
+            }
+            
+            // Add logo if provided
+            if (logoImageData && logoImageDimensions) {
+                templateObj.logo = logoImageData;
+                templateObj.logoW = logoImageDimensions.width;
+                templateObj.logoH = logoImageDimensions.height;
+            }
+            
+            // Generate the complete URL
+            const baseUrl = window.location.href.split('#')[0].split('?')[0]; // Remove existing hash and query params
+            let shareUrl = baseUrl;
+            
+            try {
+                // If there's any template data, compress and encode it
+                if (Object.keys(templateObj).length > 0) {
+                    const jsonString = JSON.stringify(templateObj);
+                    
+                    // Compress the data
+                    const compressedData = compressData(jsonString);
+                    
+                    // Encode to base64
+                    const base64Data = btoa(compressedData);
+                    
+                    // Convert to URL-safe base64 (replace + with -, / with _, remove padding =)
+                    const urlSafeBase64 = base64Data.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+                    shareUrl = `${baseUrl}#t=${urlSafeBase64}`;
+                }
+            } catch (error) {
+                console.error('Error in generateShareLink:', error);
+                showStatus('Fehler beim Erstellen des Template-Links.', 'error');
+                return;
+            }
+            
+            // Display the share link
+            const shareInput = document.getElementById('templateShareLink');
+            const shareSection = document.getElementById('shareSection');
+            
+            if (shareInput) shareInput.value = shareUrl;
+            if (shareSection) shareSection.style.display = 'block';
+
+            showStatus('Template-Link erfolgreich erstellt.', 'success');
+        }
+        
+        function copyShareLink() {
+            const templateShareLink = document.getElementById('templateShareLink');
+            templateShareLink.select();
+            templateShareLink.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                document.execCommand('copy');
+                showStatus('Link in Zwischenablage kopiert.', 'success');
+            } catch (err) {
+                // Fallback for modern browsers
+                navigator.clipboard.writeText(templateShareLink.value).then(() => {
+                    showStatus('Link in Zwischenablage kopiert.', 'success');
+                }).catch(() => {
+                    showStatus('Fehler beim Kopieren. Bitte manuell kopieren.', 'error');
+                });
+            }
+        }
+        
+        function parseMarkdownText(text, doc, x, y, fontSize = 14, direction = 'down') {
+            const parts = [];
+            let currentY = y;
+            
+            // Split by lines first
+            const lines = text.split('\n');
+            
+            lines.forEach((line, lineIndex) => {
+                if (lineIndex > 0) {
+                    currentY += direction === 'down' ? 5 : -5; // Line spacing (down or up)
+                }
+                
+                let currentX = x;
+                
+                // Parse markdown in each line
+                let remainingText = line;
+                
+                while (remainingText.length > 0) {
+                    // Look for markdown patterns
+                    const boldMatch = remainingText.match(/^\*\*(.*?)\*\*/);
+                    const italicMatch = remainingText.match(/^\*(.*?)\*/);
+                    const underlineMatch = remainingText.match(/^_(.*?)_/);
+                    
+                    if (boldMatch) {
+                        // Bold text
+                        doc.setFontSize(fontSize);
+                        doc.setFont(undefined, 'bold');
+                        doc.text(boldMatch[1], currentX, currentY);
+                        currentX += doc.getTextWidth(boldMatch[1]);
+                        remainingText = remainingText.substring(boldMatch[0].length);
+                    } else if (italicMatch) {
+                        // Italic text
+                        doc.setFontSize(fontSize);
+                        doc.setFont(undefined, 'italic');
+                        doc.text(italicMatch[1], currentX, currentY);
+                        currentX += doc.getTextWidth(italicMatch[1]);
+                        remainingText = remainingText.substring(italicMatch[0].length);
+                    } else if (underlineMatch) {
+                        // Underlined text
+                        doc.setFontSize(fontSize);
+                        doc.setFont(undefined, 'normal');
+                        const text = underlineMatch[1];
+                        const textWidth = doc.getTextWidth(text);
+                        doc.text(text, currentX, currentY);
+                        // Draw underline
+                        doc.line(currentX, currentY + 1, currentX + textWidth, currentY + 1);
+                        currentX += textWidth;
+                        remainingText = remainingText.substring(underlineMatch[0].length);
+                    } else {
+                        // Regular text - find next markdown or end
+                        const nextMarkdown = remainingText.search(/[\*_]/);
+                        const textToPrint = nextMarkdown === -1 ? remainingText : remainingText.substring(0, nextMarkdown);
+                        
+                        if (textToPrint.length > 0) {
+                            doc.setFontSize(fontSize);
+                            doc.setFont(undefined, 'normal');
+                            doc.text(textToPrint, currentX, currentY);
+                            currentX += doc.getTextWidth(textToPrint);
+                        }
+                        
+                        remainingText = nextMarkdown === -1 ? '' : remainingText.substring(nextMarkdown);
+                    }
+                }
+            });
+            
+            return currentY + (direction === 'down' ? 5 : -5); // Return the Y position after all text
+        }
+        
+        
+        function generatePDF() {
+            if (parsedData.length === 0) {
+                showStatus('Keine Daten zum Generieren verfügbar.', 'error');
+                return;
+            }
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF({
+                    orientation: 'landscape',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                // Get header and footer text
+                const headerText = document.getElementById('headerText').value || 'Unterschriftenliste';
+                const headerLines = headerText.split('\n');
+                const footerText = document.getElementById('footerText').value;
+                
+                // Function to add header and logo to current page
+                function addHeaderToPage() {
+                    // Add header text (top left) - support multi-line and markdown formatting
+                    parseMarkdownText(headerText, doc, 10, 20, 14);
+                    
+                    // Add logo (top right) if provided and loaded
+                    if (logoImageData && logoImageDimensions) {
+                        try {
+                            // Calculate dimensions maintaining aspect ratio
+                            const maxWidth = 40;  // Maximum width in mm
+                            const maxHeight = 25; // Maximum height in mm
+                            
+                            const aspectRatio = logoImageDimensions.width / logoImageDimensions.height;
+                            
+                            let imgWidth, imgHeight;
+                            
+                            if (aspectRatio > maxWidth / maxHeight) {
+                                // Image is wider, constrain by width
+                                imgWidth = maxWidth;
+                                imgHeight = maxWidth / aspectRatio;
+                            } else {
+                                // Image is taller, constrain by height
+                                imgHeight = maxHeight;
+                                imgWidth = maxHeight * aspectRatio;
+                            }
+                            
+                            // Position on the right side
+                            const xPos = 297 - imgWidth - 10;  // A4 landscape width (297mm) - image width - margin
+                            
+                            doc.addImage(logoImageData, 'PNG', xPos, 15, imgWidth, imgHeight);
+                        } catch (e) {
+                            console.warn('Error adding logo to PDF:', e);
+                        }
+                    }
+                }
+                
+                // Add header to first page
+                addHeaderToPage();
+                
+                // Prepare table data
+                const columns = [
+                    'Nr',
+                    'Funktion oder\nJuleica\n(> 27 Jahre)',
+                    'Nachname',
+                    'Vorname',
+                    'Ge-\nschlecht\nm/w/d',
+                    'Straße',
+                    'PLZ',
+                    'Ort',
+                    'Geb.Datum',
+                    'Alter',
+                    'Unterschrift'
+                ];
+                
+                const tableData = parsedData.map((row, index) => [
+                    index + 1,  // Nr
+                    '',  // Funktion oder Juleica (empty)
+                    row['Nachname'] || '',
+                    row['Vorname'] || '',
+                    mapGeschlecht(row['Geschlecht'] || ''),
+                    row['Straße'] || '',
+                    row['PLZ'] || '',
+                    row['Ort'] || '',
+                    row['Geburtsdatum'] || '',
+                    row['Alter während Event'] || '',
+                    ''  // Unterschrift (empty)
+                ]);
+                
+                // Calculate startY based on header lines (moved closer to header)
+                const startY = Math.max(30, 20 + (headerLines.length * 5) + 5);
+                
+                // Generate table with headers on each page
+                doc.autoTable({
+                    head: [columns],
+                    body: tableData,
+                    startY: startY,
+                    styles: {
+                        fontSize: 8,
+                        cellPadding: 2,
+                        lineColor: [0, 0, 0],
+                        lineWidth: 0.1,
+                    },
+                    headStyles: {
+                        fillColor: [240, 240, 240],
+                        textColor: [0, 0, 0],
+                        fontStyle: 'bold',
+                        halign: 'center',
+                        valign: 'middle'
+                    },
+                    didParseCell: function (data) {
+                        // Make Geschlecht header cell text smaller to prevent overflow
+                        if (data.section === 'head' && data.column.index === 4) {
+                            data.cell.styles.fontSize = 7;
+                        }
+                    },
+                    columnStyles: {
+                        0: { halign: 'center', cellWidth: 15 },  // Nr
+                        1: { cellWidth: 25 },  // Funktion
+                        2: { cellWidth: 30 },  // Nachname
+                        3: { cellWidth: 30 },  // Vorname
+                        4: { halign: 'center', cellWidth: 15 },  // Geschlecht
+                        5: { cellWidth: 35 },  // Straße
+                        6: { halign: 'center', cellWidth: 20 },  // PLZ
+                        7: { cellWidth: 25 },  // Ort
+                        8: { halign: 'center', cellWidth: 25 },  // Geburtsdatum
+                        9: { halign: 'center', cellWidth: 15 },  // Alter
+                        10: { cellWidth: 40 }  // Unterschrift
+                    },
+                    margin: { 
+                        left: 10, 
+                        right: 10, 
+                        top: startY,
+                        bottom: footerText && footerText.trim() ? 25 : 15 // Add bottom margin for footer
+                    },
+                    tableWidth: 'auto',
+                    didDrawPage: function (data) {
+                        // Add header to each new page (except the first one which already has it)
+                        if (data.pageNumber > 1) {
+                            addHeaderToPage();
+                        }
+                    },
+                    didDrawCell: function (data) {
+                        // This gets called after the table is complete, we'll add page numbers after
+                    },
+                    showHead: 'everyPage'
+                });
+                
+                // Add page numbers and footers to all pages
+                const totalPages = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= totalPages; i++) {
+                    doc.setPage(i);
+                    
+                    // Add footer text at bottom left (if provided)
+                    if (footerText && footerText.trim()) {
+                        const footerLines = footerText.split('\n');
+                        const startY = 210 - 10 - (footerLines.length - 1) * 5; // Start from bottom and work up
+                        parseMarkdownText(footerText, doc, 10, startY, 10, 'down');
+                    }
+                    
+                    // Add page number at bottom right
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'normal');
+                    const pageText = `Seite ${i} von ${totalPages}`;
+                    const textWidth = doc.getTextWidth(pageText);
+                    const xPos = 297 - textWidth - 10; // A4 landscape width - text width - margin
+                    const yPos = 210 - 10; // A4 landscape height - margin
+                    
+                    doc.text(pageText, xPos, yPos);
+                    
+                    // Add signature section on last page (bottom middle)
+                    if (i === totalPages) {
+                        const signatureText = `Die Richtigkeit der o.a. Angaben bestätigt:
+Name / Unterschrift`;
+                        const signatureLines = signatureText.split('\n');
+                        const middleX = 297 / 2; // Center of A4 landscape
+                        let signatureY = 210 - 20; // Closer to bottom
+                        
+                        doc.setFontSize(10);
+                        doc.setFont(undefined, 'normal');
+                        
+                        // Add the text lines
+                        signatureLines.forEach((line, index) => {
+                            if (line.trim()) {
+                                const lineWidth = doc.getTextWidth(line);
+                                const lineX = middleX - (lineWidth / 2); // Center the text
+                                doc.text(line, lineX, signatureY + (index * 5));
+                            }
+                        });
+                        
+                        // Add signature line (actual line element)
+                        const lineY = signatureY + (signatureLines.length * 5) + 3; // Below the text
+                        const lineStartX = middleX - 40; // 80mm wide line centered
+                        const lineEndX = middleX + 40;
+                        doc.line(lineStartX, lineY, lineEndX, lineY);
+                    }
+                }
+                
+                // Save the PDF
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+                doc.save(`unterschriftenliste_${timestamp}.pdf`);
+                
+                showStatus('PDF erfolgreich generiert und heruntergeladen.', 'success');
+                
+            } catch (error) {
+                console.error('PDF generation error:', error);
+                showStatus('Fehler beim Generieren der PDF: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
