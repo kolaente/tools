@@ -245,30 +245,44 @@
         // Logo file handling
         let logoImageDimensions = null;
         
+        // Downscale to max dimensions and re-encode as WebP at 0.85 quality.
+        // WebP supports transparency and is ~5-10x smaller than PNG for typical logos.
+        function resizeLogo(dataURL, maxW, maxH) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = function() {
+                    const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+                    const width = Math.round(img.width * scale);
+                    const height = Math.round(img.height * scale);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                    resolve({ dataURL: canvas.toDataURL('image/webp', 0.75), width, height });
+                };
+                img.onerror = reject;
+                img.src = dataURL;
+            });
+        }
+
         document.getElementById('logoFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file && file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    logoImageData = e.target.result;
-                    
-                    // Get image dimensions for aspect ratio calculation
-                    const img = new Image();
-                    img.onload = function() {
-                        logoImageDimensions = {
-                            width: img.width,
-                            height: img.height
-                        };
-                        
-                        // Show preview
+                    resizeLogo(e.target.result, 300, 188).then(resized => {
+                        logoImageData = resized.dataURL;
+                        logoImageDimensions = { width: resized.width, height: resized.height };
+
                         const preview = document.getElementById('logoPreview');
                         const previewImg = document.getElementById('logoImg');
                         previewImg.src = logoImageData;
                         preview.style.display = 'block';
-                        
+
                         showStatus(`Logo "${file.name}" erfolgreich geladen.`, 'success');
-                    };
-                    img.src = logoImageData;
+                    }).catch(() => {
+                        showStatus('Fehler beim Verarbeiten des Logos.', 'error');
+                    });
                 };
                 reader.readAsDataURL(file);
             } else if (file) {
@@ -447,140 +461,139 @@
             return geschlecht;
         }
         
-        // Compression helper functions using pako
-        function compressData(text) {
-            try {
-                // Use pako to compress the text
-                const compressed = pako.gzip(text);
-                // Convert Uint8Array to binary string
-                return String.fromCharCode(...compressed);
-            } catch (error) {
-                console.warn('Compression failed, using uncompressed data:', error);
-                return text;
-            }
-        }
-        
-        function decompressData(compressedBinaryString) {
-            try {
-                // Convert binary string back to Uint8Array
-                const compressed = new Uint8Array(compressedBinaryString.length);
-                for (let i = 0; i < compressedBinaryString.length; i++) {
-                    compressed[i] = compressedBinaryString.charCodeAt(i);
+        // Encodes template into a URL-safe string. Layout (after gzip):
+        // [4-byte BE meta length][meta JSON UTF-8][raw logo bytes].
+        // Logo bytes are stored raw (not base64) so gzip isn't fed b64 noise.
+        function encodeTemplateData(headerText, footerText, logoDataURL, logoW, logoH) {
+            const meta = {};
+            if (headerText && headerText.trim()) meta.h = headerText;
+            if (footerText && footerText.trim()) meta.f = footerText;
+
+            let logoBytes = null;
+            if (logoDataURL) {
+                const match = logoDataURL.match(/^data:([^;]+);base64,(.+)$/);
+                if (match) {
+                    meta.m = match[1];
+                    meta.lw = logoW;
+                    meta.lh = logoH;
+                    const binStr = atob(match[2]);
+                    logoBytes = new Uint8Array(binStr.length);
+                    for (let i = 0; i < binStr.length; i++) {
+                        logoBytes[i] = binStr.charCodeAt(i);
+                    }
                 }
-                
-                // Use pako to decompress
-                const decompressed = pako.ungzip(compressed, { to: 'string' });
-                return decompressed;
-            } catch (error) {
-                console.warn('Decompression failed, treating as uncompressed data:', error);
-                return compressedBinaryString;
             }
+
+            const metaBytes = new TextEncoder().encode(JSON.stringify(meta));
+            const total = 4 + metaBytes.length + (logoBytes ? logoBytes.length : 0);
+            const buffer = new Uint8Array(total);
+            new DataView(buffer.buffer).setUint32(0, metaBytes.length);
+            buffer.set(metaBytes, 4);
+            if (logoBytes) buffer.set(logoBytes, 4 + metaBytes.length);
+
+            const compressed = pako.gzip(buffer);
+            let binStr = '';
+            for (let i = 0; i < compressed.length; i++) {
+                binStr += String.fromCharCode(compressed[i]);
+            }
+            return btoa(binStr).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+        }
+
+        function decodeTemplateData(urlSafeBase64) {
+            const regular = urlSafeBase64.replace(/-/g, '+').replace(/_/g, '/');
+            const padded = regular + '='.repeat((4 - regular.length % 4) % 4);
+            const binStr = atob(padded);
+            const compressed = new Uint8Array(binStr.length);
+            for (let i = 0; i < binStr.length; i++) {
+                compressed[i] = binStr.charCodeAt(i);
+            }
+
+            const buffer = pako.ungzip(compressed);
+            const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+            const metaLen = view.getUint32(0);
+            const meta = JSON.parse(new TextDecoder().decode(buffer.slice(4, 4 + metaLen)));
+
+            const result = {};
+            if (meta.h) result.header = meta.h;
+            if (meta.f) result.footer = meta.f;
+
+            if (meta.m && buffer.length > 4 + metaLen) {
+                const logoBytes = buffer.slice(4 + metaLen);
+                let logoBin = '';
+                for (let i = 0; i < logoBytes.length; i++) {
+                    logoBin += String.fromCharCode(logoBytes[i]);
+                }
+                result.logo = `data:${meta.m};base64,${btoa(logoBin)}`;
+                result.logoW = meta.lw;
+                result.logoH = meta.lh;
+            }
+
+            return result;
         }
         
         function loadTemplateFromURL() {
-            // Check for hash fragment with compressed base64 encoded template data
             const hash = window.location.hash;
-            if (hash.startsWith('#t=')) {
-                const templateData = hash.substring(3); // Remove '#t='
-                try {
-                    // Convert URL-safe base64 back to regular base64
-                    const regularBase64 = templateData.replace(/-/g, '+').replace(/_/g, '/');
-                    // Add padding if needed
-                    const paddedBase64 = regularBase64 + '='.repeat((4 - regularBase64.length % 4) % 4);
-                    
-                    // Decode base64 to get compressed data
-                    const compressedData = atob(paddedBase64);
-                    
-                    // Decompress the data
-                    const decompressedData = decompressData(compressedData);
-                    const templateObj = JSON.parse(decompressedData);
-                    
-                    // Load header text
-                    if (templateObj.header) {
-                        document.getElementById('headerText').value = templateObj.header;
-                    }
-                    
-                    // Load footer text
-                    if (templateObj.footer) {
-                        document.getElementById('footerText').value = templateObj.footer;
-                    }
-                    
-                    // Load logo
-                    if (templateObj.logo && templateObj.logoW && templateObj.logoH) {
-                        logoImageData = templateObj.logo;
-                        logoImageDimensions = {
-                            width: templateObj.logoW,
-                            height: templateObj.logoH
-                        };
-                        
-                        // Show preview
-                        const preview = document.getElementById('logoPreview');
-                        const img = document.getElementById('logoImg');
-                        img.src = logoImageData;
-                        preview.style.display = 'block';
-                    }
-                    
-                    showStatus('Template erfolgreich geladen.', 'success');
-                } catch (e) {
-                    console.error('Could not load template:', e);
-                    showStatus('Fehler beim Laden des Templates.', 'error');
+            if (!hash.startsWith('#t=')) return;
+
+            try {
+                const templateObj = decodeTemplateData(hash.substring(3));
+
+                if (templateObj.header) {
+                    document.getElementById('headerText').value = templateObj.header;
                 }
+                if (templateObj.footer) {
+                    document.getElementById('footerText').value = templateObj.footer;
+                }
+                if (templateObj.logo && templateObj.logoW && templateObj.logoH) {
+                    logoImageData = templateObj.logo;
+                    logoImageDimensions = {
+                        width: templateObj.logoW,
+                        height: templateObj.logoH
+                    };
+                    const preview = document.getElementById('logoPreview');
+                    const img = document.getElementById('logoImg');
+                    img.src = logoImageData;
+                    preview.style.display = 'block';
+                }
+
+                showStatus('Template erfolgreich geladen.', 'success');
+            } catch (e) {
+                console.error('Could not load template:', e);
+                showStatus('Fehler beim Laden des Templates.', 'error');
             }
         }
         
         function generateShareLink() {
             const headerText = document.getElementById('headerText').value;
             const footerText = document.getElementById('footerText').value;
-            
-            // Create template object
-            const templateObj = {};
-            
-            // Add header text if provided
-            if (headerText && headerText.trim()) {
-                templateObj.header = headerText;
-            }
-            
-            // Add footer text if provided
-            if (footerText && footerText.trim()) {
-                templateObj.footer = footerText;
-            }
-            
-            // Add logo if provided
-            if (logoImageData && logoImageDimensions) {
-                templateObj.logo = logoImageData;
-                templateObj.logoW = logoImageDimensions.width;
-                templateObj.logoH = logoImageDimensions.height;
-            }
-            
-            // Generate the complete URL
-            const baseUrl = window.location.href.split('#')[0].split('?')[0]; // Remove existing hash and query params
+
+            const baseUrl = window.location.href.split('#')[0].split('?')[0];
             let shareUrl = baseUrl;
-            
+
             try {
-                // If there's any template data, compress and encode it
-                if (Object.keys(templateObj).length > 0) {
-                    const jsonString = JSON.stringify(templateObj);
-                    
-                    // Compress the data
-                    const compressedData = compressData(jsonString);
-                    
-                    // Encode to base64
-                    const base64Data = btoa(compressedData);
-                    
-                    // Convert to URL-safe base64 (replace + with -, / with _, remove padding =)
-                    const urlSafeBase64 = base64Data.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-                    shareUrl = `${baseUrl}#t=${urlSafeBase64}`;
+                const hasContent = (headerText && headerText.trim())
+                    || (footerText && footerText.trim())
+                    || (logoImageData && logoImageDimensions);
+
+                if (hasContent) {
+                    const encoded = encodeTemplateData(
+                        headerText,
+                        footerText,
+                        logoImageData,
+                        logoImageDimensions ? logoImageDimensions.width : null,
+                        logoImageDimensions ? logoImageDimensions.height : null
+                    );
+                    shareUrl = `${baseUrl}#t=${encoded}`;
                 }
             } catch (error) {
                 console.error('Error in generateShareLink:', error);
                 showStatus('Fehler beim Erstellen des Template-Links.', 'error');
                 return;
             }
-            
-            // Display the share link
+
             const shareInput = document.getElementById('templateShareLink');
             const shareSection = document.getElementById('shareSection');
-            
+
             if (shareInput) shareInput.value = shareUrl;
             if (shareSection) shareSection.style.display = 'block';
 
@@ -722,7 +735,7 @@
                             // Position on the right side
                             const xPos = 297 - imgWidth - 10;  // A4 landscape width (297mm) - image width - margin
                             
-                            doc.addImage(logoImageData, 'PNG', xPos, 15, imgWidth, imgHeight);
+                            doc.addImage(logoImageData, 'WEBP', xPos, 15, imgWidth, imgHeight);
                         } catch (e) {
                             console.warn('Error adding logo to PDF:', e);
                         }
