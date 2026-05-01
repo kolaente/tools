@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Einzelunternehmen oder GmbH? – Steuermodellrechner 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Geist:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F4EEE3;
+      --bg-card: #ffffff;
+      --bg-soft: #FAF6EC;
+      --line: #E7E2D6;
+      --line-soft: #F0EBDF;
+      --ink: #1C1917;
+      --ink-700: #44403C;
+      --ink-600: #57534E;
+      --ink-500: #78716C;
+      --ink-400: #A8A29E;
+      --green: #3E5C42;
+      --blue: #3B5A8C;
+      --gold: #C7984D;
+      --red: #A94340;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+    body {
+      font-family: 'Geist', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    .serif { font-family: 'Newsreader', Georgia, serif; }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums; }
+
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 32px 20px 64px; }
+    @media (min-width: 768px) { .wrap { padding: 48px 40px 64px; } }
+
+    /* ── Header ─────────────────────────────────────── */
+    header { margin-bottom: 40px; }
+    @media (min-width: 768px) { header { margin-bottom: 48px; } }
+
+    .eyebrow {
+      display: flex; align-items: baseline; gap: 16px; margin-bottom: 12px;
+    }
+    .eyebrow .label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: var(--ink-500);
+    }
+    .eyebrow .rule { flex: 1; height: 1px; background: rgba(120, 113, 108, 0.35); }
+
+    h1 {
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: clamp(2.25rem, 6vw, 3.75rem);
+      line-height: 1.02;
+      letter-spacing: -0.02em;
+      font-weight: 500;
+      color: var(--ink);
+    }
+    h1 i { font-style: italic; font-weight: 400; }
+
+    .lede {
+      color: var(--ink-600);
+      margin-top: 16px;
+      max-width: 640px;
+      font-size: clamp(0.875rem, 1.6vw, 1rem);
+      line-height: 1.6;
+    }
+
+    /* ── Cards ──────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    section.inputs { padding: 20px; margin-bottom: 32px; }
+    @media (min-width: 768px) { section.inputs { padding: 32px; margin-bottom: 40px; } }
+
+    .grid-sliders {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 28px 48px;
+    }
+    @media (min-width: 768px) { .grid-sliders { grid-template-columns: 1fr 1fr; } }
+
+    .grid-toggles {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px 32px;
+      margin-top: 28px;
+      padding-top: 28px;
+      border-top: 1px solid var(--line-soft);
+    }
+    @media (min-width: 768px) { .grid-toggles { grid-template-columns: repeat(3, 1fr); } }
+
+    /* ── Slider ─────────────────────────────────────── */
+    .slider-row { display: flex; flex-direction: column; gap: 8px; }
+    .slider-head { display: flex; justify-content: space-between; align-items: baseline; }
+    .slider-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 500;
+      color: var(--ink-500);
+    }
+    .slider-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-feature-settings: 'tnum';
+      font-variant-numeric: tabular-nums;
+      font-size: 1rem;
+      color: var(--ink);
+    }
+
+    input[type='range'] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      height: 24px;
+      width: 100%;
+      cursor: pointer;
+    }
+    input[type='range']::-webkit-slider-runnable-track {
+      background: linear-gradient(to right, var(--ink) 0%, var(--ink) var(--p, 50%), var(--line) var(--p, 50%), var(--line) 100%);
+      height: 2px;
+      border-radius: 1px;
+    }
+    input[type='range']::-moz-range-track {
+      background: var(--line);
+      height: 2px;
+      border-radius: 1px;
+    }
+    input[type='range']::-moz-range-progress {
+      background: var(--ink);
+      height: 2px;
+      border-radius: 1px;
+    }
+    input[type='range']::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      margin-top: -7px;
+      background: var(--ink);
+      border: 2px solid var(--bg);
+      border-radius: 50%;
+      height: 16px;
+      width: 16px;
+      cursor: grab;
+      box-shadow: 0 0 0 1px var(--ink);
+      transition: transform 0.15s;
+    }
+    input[type='range']:active::-webkit-slider-thumb {
+      cursor: grabbing;
+      transform: scale(1.15);
+    }
+    input[type='range']::-moz-range-thumb {
+      background: var(--ink);
+      border: 2px solid var(--bg);
+      border-radius: 50%;
+      height: 16px;
+      width: 16px;
+      cursor: grab;
+      box-shadow: 0 0 0 1px var(--ink);
+    }
+
+    /* ── Toggle ─────────────────────────────────────── */
+    .toggle-group { display: flex; flex-direction: column; gap: 8px; }
+    .toggle-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 500;
+      color: var(--ink-500);
+    }
+    .toggle-track {
+      display: inline-flex;
+      width: fit-content;
+      background: #F5F5F4;
+      border-radius: 999px;
+      padding: 2px;
+    }
+    .toggle-track button {
+      font: inherit;
+      font-size: 12px;
+      padding: 4px 14px;
+      border: none;
+      background: transparent;
+      border-radius: 999px;
+      color: var(--ink-600);
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s;
+    }
+    .toggle-track button:hover { color: var(--ink); }
+    .toggle-track button.active {
+      background: var(--ink);
+      color: var(--bg);
+    }
+
+    /* ── Scenario cards ─────────────────────────────── */
+    section.scenarios {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    @media (min-width: 768px) { section.scenarios { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 1280px) { section.scenarios { grid-template-columns: repeat(4, 1fr); } }
+
+    .scn {
+      background: var(--bg-card);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .scn.winner {
+      border: 2px solid var(--ink);
+      box-shadow: 0 8px 24px -12px rgba(0,0,0,0.25);
+    }
+    .scn .badge {
+      position: absolute;
+      top: 12px; right: 12px;
+      background: var(--ink); color: var(--bg);
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .scn-head { padding: 20px; border-bottom: 1px solid var(--line-soft); }
+    .scn-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--ink-400);
+      margin-bottom: 6px;
+    }
+    .scn-name {
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 1.25rem;
+      line-height: 1.15;
+      color: var(--ink);
+    }
+    .scn-sub { font-size: 12px; color: var(--ink-500); font-style: italic; margin-top: 4px; }
+
+    .scn-detail {
+      padding: 16px 20px;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .det-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+    }
+    .det-row.header {
+      padding-bottom: 8px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .det-row .det-label { font-size: 12px; color: var(--ink-500); }
+    .det-row .det-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-feature-settings: 'tnum';
+      font-variant-numeric: tabular-nums;
+      font-size: 14px;
+      color: var(--ink-700);
+    }
+    .det-row.header .det-label { color: var(--ink-700); font-weight: 500; }
+    .det-row.header .det-value { color: var(--ink); font-weight: 500; }
+    .det-row.sub .det-label { color: var(--ink-500); font-style: italic; }
+    .det-row.sub .det-value { color: var(--ink-500); font-size: 12px; font-style: italic; }
+
+    .scn-foot {
+      padding: 16px 20px;
+      background: #FAF7EF;
+      border-top: 1px solid var(--line-soft);
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .foot-row { display: flex; justify-content: space-between; align-items: baseline; }
+    .foot-row .foot-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--ink-500);
+    }
+    .foot-row.bottom {
+      border-top: 1px solid var(--line);
+      padding-top: 10px;
+    }
+    .foot-row.bottom .foot-label {
+      letter-spacing: 0.14em;
+      font-weight: 500;
+      color: var(--ink-700);
+    }
+    .foot-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-feature-settings: 'tnum';
+      font-variant-numeric: tabular-nums;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+    .foot-value.privat { color: var(--green); }
+    .foot-value.firma { color: var(--blue); }
+    .foot-value.total { color: var(--ink); font-size: 1.125rem; font-weight: 600; }
+    .foot-quote {
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: var(--ink-500);
+    }
+    .foot-quote .v { font-family: 'JetBrains Mono', monospace; }
+
+    /* ── Chart ──────────────────────────────────────── */
+    section.chart-section { padding: 20px; margin-bottom: 32px; }
+    @media (min-width: 768px) { section.chart-section { padding: 32px; } }
+
+    .chart-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 16px; flex-wrap: wrap; margin-bottom: 4px;
+    }
+    .chart-head h2 {
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: clamp(1.5rem, 3vw, 1.875rem);
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+    .chart-head .tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--ink-400);
+    }
+    .chart-sub { color: var(--ink-600); font-size: 14px; margin-bottom: 24px; }
+
+    .chart {
+      position: relative;
+      width: 100%;
+      height: 380px;
+    }
+    .chart svg { display: block; width: 100%; height: 100%; overflow: visible; }
+    .chart .tick { font-size: 11px; fill: var(--ink-600); font-family: 'Geist', sans-serif; }
+    .chart .axis-line { stroke: var(--line); stroke-width: 1; }
+    .chart .bar { transition: opacity 0.15s; cursor: pointer; }
+    .chart .bar:hover { opacity: 0.85; }
+
+    .legend {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      justify-content: center;
+      padding-top: 16px;
+      font-size: 12px;
+      color: var(--ink-700);
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-swatch { width: 12px; height: 12px; border-radius: 2px; }
+
+    .tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px 12px;
+      font-size: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      transform: translate(-50%, -100%);
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.12s;
+      z-index: 10;
+    }
+    .tooltip.visible { opacity: 1; }
+    .tooltip .tt-name { font-weight: 500; margin-bottom: 4px; color: var(--ink); }
+    .tooltip .tt-row { display: flex; justify-content: space-between; gap: 16px; }
+    .tooltip .tt-row .v { font-family: 'JetBrains Mono', monospace; }
+
+    /* ── Footer ─────────────────────────────────────── */
+    footer.notes {
+      font-size: 12px;
+      color: var(--ink-500);
+      line-height: 1.6;
+      max-width: 760px;
+      display: flex; flex-direction: column; gap: 10px;
+      padding-bottom: 24px;
+    }
+    footer.notes strong { color: var(--ink-700); font-weight: 600; }
+    footer.notes .italic { font-style: italic; }
+
+    /* ── Back link ──────────────────────────────────── */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--ink-500);
+      text-decoration: none;
+      margin-bottom: 24px;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--ink); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a href="/" class="back-link">← zurück</a>
+
+    <header>
+      <div class="eyebrow">
+        <span class="label">Modellrechnung · Stand 2026</span>
+        <span class="rule"></span>
+      </div>
+      <h1>Einzelunternehmen<br>oder <i>GmbH?</i></h1>
+      <p class="lede">
+        Vier Szenarien im direkten Vergleich. Stell Umsatz, Kosten und gewünschte
+        Brutto-Entnahme ein – die Karten zeigen, was unter dem Strich bei dir landet
+        und was im Unternehmen verbleibt.
+      </p>
+    </header>
+
+    <section class="card inputs">
+      <div class="grid-sliders" id="sliders"></div>
+      <div class="grid-toggles" id="toggles"></div>
+    </section>
+
+    <section class="scenarios" id="scenarios"></section>
+
+    <section class="card chart-section">
+      <div class="chart-head">
+        <h2>Wo geht jeder Euro Gewinn hin?</h2>
+        <span class="tag">Aufteilung in Euro</span>
+      </div>
+      <p class="chart-sub" id="chartSub"></p>
+      <div class="chart" id="chart">
+        <svg id="chartSvg" viewBox="0 0 800 380" preserveAspectRatio="none"></svg>
+        <div class="tooltip" id="tooltip"></div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--green)"></span>Privat verfügbar</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--blue)"></span>In Firma</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--gold)"></span>KV/PV</div>
+        <div class="legend-item"><span class="legend-swatch" style="background:var(--red)"></span>Steuern</div>
+      </div>
+    </section>
+
+    <footer class="notes">
+      <p>
+        <strong>Annahmen.</strong> Steuersätze 2026 (BMF):
+        Grundfreibetrag 12.348 €, Spitzensteuersatz ab 69.879 €, Soli-Freigrenze 20.350 € (Single).
+        Freiwillige GKV mit ermäßigtem Beitragssatz 14,0 % + 2,9 % Zusatz, Pflegeversicherung 4,2 %
+        kinderlos / 3,6 % mit Kindern, BBG 5.812,50 €/Monat. KV/PV-Bemessung umfasst Erwerbseinkommen
+        und Ausschüttungen (freiwillig Versicherte). KSt 15 % + Soli, Gewerbesteuer-Messzahl 3,5 %,
+        Anrechnungsfaktor 4,0 (§ 35 EStG). Beherrschender Gesellschafter-Geschäftsführer (keine
+        RV/AV-Pflicht). Sparer-Pauschbetrag 1.000 € (Single) berücksichtigt.
+      </p>
+      <p>
+        <strong>Ausgeklammert.</strong> Umsatzsteuer (durchlaufender Posten),
+        Kirchensteuer, private Altersvorsorge, Verlustverrechnung, weitere Einkünfte, Werbungskosten
+        über Pauschbetrag, GmbH-Gründungs- und Beratungskosten.
+      </p>
+      <p class="italic">
+        Keine Steuerberatung – nur ein Modell zur Größenordnung. Für die echte Entscheidung
+        gehört eine individuelle Beratung dazu.
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    // ════════════════════════════════════════════════
+    //  Steuerkonstanten 2026
+    // ════════════════════════════════════════════════
+    const C = {
+      GRUNDFREIBETRAG: 12348,
+      SOLI_FG_SINGLE: 20350,
+      SOLI_FG_VERH: 40700,
+      BBG_KV_M: 5812.5,
+      MINDEST_KV_M: 1318.33,
+      KV_SATZ: 0.169,
+      PV_KINDERLOS: 0.042,
+      PV_KIND: 0.036,
+      KST: 0.15,
+      SOLI: 0.055,
+      ABGELT: 0.26375,
+      GEWST_MZ: 0.035,
+      ANRECHN: 4.0,
+      GEWST_FB_EINZEL: 24500,
+      WK_PAUSCH: 1230,
+      SPARER_PAUSCH_SINGLE: 1000,
+      SPARER_PAUSCH_VERH: 2000,
+    };
+
+    const estSingle = (zvE) => {
+      if (zvE <= C.GRUNDFREIBETRAG) return 0;
+      if (zvE <= 17799) {
+        const y = (zvE - C.GRUNDFREIBETRAG) / 10000;
+        return (847.3 * y + 1400) * y;
+      }
+      if (zvE <= 69878) {
+        const z = (zvE - 17799) / 10000;
+        return (172.3 * z + 2404.6) * z + 1015;
+      }
+      if (zvE <= 277825) return 0.42 * zvE - 11136;
+      return 0.45 * zvE - 19470;
+    };
+
+    const est = (zvE, verheiratet) =>
+      verheiratet ? 2 * estSingle(zvE / 2) : estSingle(zvE);
+
+    const soli = (estBetrag, verheiratet) => {
+      const fg = verheiratet ? C.SOLI_FG_VERH : C.SOLI_FG_SINGLE;
+      if (estBetrag <= fg) return 0;
+      return Math.min(estBetrag * C.SOLI, (estBetrag - fg) * 0.119);
+    };
+
+    const kvPv = (jahresEinkommen, kinderlos) => {
+      const m = Math.max(0, jahresEinkommen) / 12;
+      const bem = Math.max(C.MINDEST_KV_M, Math.min(m, C.BBG_KV_M));
+      const satz = C.KV_SATZ + (kinderlos ? C.PV_KINDERLOS : C.PV_KIND);
+      return bem * satz * 12;
+    };
+
+    // ── Szenarien ─────────────────────────────────────
+    const sEinzel = ({ umsatz, betriebsAus, hebesatz, gewerbe, kinderlos, verheiratet }) => {
+      const gewinn = Math.max(0, umsatz - betriebsAus);
+      const kvPvBetrag = kvPv(gewinn, kinderlos);
+
+      let messbetrag = 0, gewSt = 0;
+      if (gewerbe) {
+        const ge = Math.max(0, gewinn - C.GEWST_FB_EINZEL);
+        messbetrag = ge * C.GEWST_MZ;
+        gewSt = messbetrag * (hebesatz / 100);
+      }
+
+      const zvE = Math.max(0, gewinn - kvPvBetrag);
+      const estBrutto = est(zvE, verheiratet);
+      const anrechnung = Math.min(messbetrag * C.ANRECHN, gewSt, estBrutto);
+      const estNach = Math.max(0, estBrutto - anrechnung);
+      const soliB = soli(estNach, verheiratet);
+
+      return {
+        name: 'Einzelunternehmen',
+        subtitle: gewerbe ? 'Gewerbe' : 'Freiberufler',
+        gewinn,
+        steuernUnternehmen: gewSt,
+        steuernPrivat: estNach + soliB,
+        sv: kvPvBetrag,
+        privatVerfuegbar: gewinn - gewSt - estNach - soliB - kvPvBetrag,
+        inFirma: 0,
+        details: [
+          ['Bruttogewinn', gewinn, 'header'],
+          ['Gewerbesteuer', gewSt],
+          ['Einkommensteuer (n. Anrechnung)', estNach],
+          ['Solidaritätszuschlag', soliB],
+          ['Kranken- + Pflegevers.', kvPvBetrag],
+        ],
+      };
+    };
+
+    const sGmbHGehalt = ({ umsatz, betriebsAus, hebesatz, entnahme, kinderlos, verheiratet }) => {
+      const verfuegbar = Math.max(0, umsatz - betriebsAus);
+      const gehalt = Math.min(entnahme, verfuegbar);
+      const gmbhGewinn = Math.max(0, verfuegbar - gehalt);
+
+      const kSt = C.KST * gmbhGewinn;
+      const soliKst = C.SOLI * kSt;
+      const gewSt = gmbhGewinn * C.GEWST_MZ * (hebesatz / 100);
+      const stUnt = kSt + soliKst + gewSt;
+      const inFirma = gmbhGewinn - stUnt;
+
+      const kvPvBetrag = kvPv(gehalt, kinderlos);
+      const zvE = Math.max(0, gehalt - C.WK_PAUSCH - kvPvBetrag);
+      const estB = est(zvE, verheiratet);
+      const soliB = soli(estB, verheiratet);
+
+      return {
+        name: 'GmbH + GF-Gehalt',
+        subtitle: 'Rest thesauriert',
+        gewinn: verfuegbar,
+        steuernUnternehmen: stUnt,
+        steuernPrivat: estB + soliB,
+        sv: kvPvBetrag,
+        privatVerfuegbar: gehalt - estB - soliB - kvPvBetrag,
+        inFirma,
+        details: [
+          ['Bruttogewinn', verfuegbar, 'header'],
+          ['GF-Gehalt brutto', gehalt, 'sub'],
+          ['Körperschaft- + Soli + GewSt', stUnt],
+          ['Lohnsteuer + Soli', estB + soliB],
+          ['Kranken- + Pflegevers.', kvPvBetrag],
+        ],
+      };
+    };
+
+    const sGmbHTeilAussch = ({ umsatz, betriebsAus, hebesatz, entnahme, kinderlos, verheiratet }) => {
+      const verfuegbar = Math.max(0, umsatz - betriebsAus);
+      const gehalt = Math.min(entnahme, verfuegbar);
+      const gmbhGewinn = Math.max(0, verfuegbar - gehalt);
+
+      const kSt = C.KST * gmbhGewinn;
+      const soliKst = C.SOLI * kSt;
+      const gewSt = gmbhGewinn * C.GEWST_MZ * (hebesatz / 100);
+      const stUnt = kSt + soliKst + gewSt;
+      const ausschBrutto = Math.max(0, gmbhGewinn - stUnt);
+
+      const sparerPB = verheiratet ? C.SPARER_PAUSCH_VERH : C.SPARER_PAUSCH_SINGLE;
+      const kapErtSt = Math.max(0, ausschBrutto - sparerPB) * C.ABGELT;
+
+      const kvPvBetrag = kvPv(gehalt + ausschBrutto, kinderlos);
+      const zvE = Math.max(0, gehalt - C.WK_PAUSCH - kvPvBetrag);
+      const estB = est(zvE, verheiratet);
+      const soliB = soli(estB, verheiratet);
+
+      return {
+        name: 'GmbH + Voll-Ausschüttung',
+        subtitle: 'Gehalt + Rest ausgeschüttet',
+        gewinn: verfuegbar,
+        steuernUnternehmen: stUnt,
+        steuernPrivat: estB + soliB + kapErtSt,
+        sv: kvPvBetrag,
+        privatVerfuegbar: gehalt + ausschBrutto - estB - soliB - kapErtSt - kvPvBetrag,
+        inFirma: 0,
+        details: [
+          ['Bruttogewinn', verfuegbar, 'header'],
+          ['GF-Gehalt brutto', gehalt, 'sub'],
+          ['Ausschüttung brutto', ausschBrutto, 'sub'],
+          ['Körperschaft- + Soli + GewSt', stUnt],
+          ['Lohnsteuer + Soli', estB + soliB],
+          ['Kapitalertragsteuer', kapErtSt],
+          ['Kranken- + Pflegevers.', kvPvBetrag],
+        ],
+      };
+    };
+
+    const sGmbHNurAussch = ({ umsatz, betriebsAus, hebesatz, entnahme, kinderlos, verheiratet }) => {
+      const gmbhGewinn = Math.max(0, umsatz - betriebsAus);
+      const kSt = C.KST * gmbhGewinn;
+      const soliKst = C.SOLI * kSt;
+      const gewSt = gmbhGewinn * C.GEWST_MZ * (hebesatz / 100);
+      const stUnt = kSt + soliKst + gewSt;
+      const gewinnNach = Math.max(0, gmbhGewinn - stUnt);
+
+      const ausschBrutto = Math.min(Math.max(0, entnahme), gewinnNach);
+      const sparerPB = verheiratet ? C.SPARER_PAUSCH_VERH : C.SPARER_PAUSCH_SINGLE;
+      const kapErtSt = Math.max(0, ausschBrutto - sparerPB) * C.ABGELT;
+      const inFirma = gewinnNach - ausschBrutto;
+
+      const kvPvBetrag = kvPv(ausschBrutto, kinderlos);
+
+      return {
+        name: 'GmbH ohne GF-Gehalt',
+        subtitle: 'Ausschüttung deckt Entnahme',
+        gewinn: gmbhGewinn,
+        steuernUnternehmen: stUnt,
+        steuernPrivat: kapErtSt,
+        sv: kvPvBetrag,
+        privatVerfuegbar: ausschBrutto - kapErtSt - kvPvBetrag,
+        inFirma,
+        details: [
+          ['Bruttogewinn', gmbhGewinn, 'header'],
+          ['Ausschüttung brutto', ausschBrutto, 'sub'],
+          ['Körperschaft- + Soli + GewSt', stUnt],
+          ['Kapitalertragsteuer', kapErtSt],
+          ['Kranken- + Pflegevers.', kvPvBetrag],
+        ],
+      };
+    };
+
+    // ── Helpers ───────────────────────────────────────
+    const fmt = (n) => Math.round(n).toLocaleString('de-DE');
+    const fmtEur = (n) => `${fmt(n)} €`;
+    const fmtPct = (n) => `${n.toFixed(1).replace('.', ',')} %`;
+
+    // ── State ─────────────────────────────────────────
+    const state = {
+      umsatz: 100000,
+      betriebsAus: 20000,
+      entnahme: 20000,
+      hebesatz: 400,
+      familienstand: 'single',
+      kinder: 'kinderlos',
+      unternehmertyp: 'gewerbe',
+    };
+
+    const sliderDefs = [
+      { key: 'umsatz',      label: 'Jahresumsatz (netto)',          min: 30000, max: 500000, step: 5000, fmt: fmtEur },
+      { key: 'betriebsAus', label: 'Betriebsausgaben',              min: 0,     max: 100000, step: 1000, fmt: fmtEur },
+      { key: 'entnahme',    label: 'Brutto-Entnahme aus Unternehmen', min: 0,   max: 100000, step: 1000, fmt: fmtEur },
+      { key: 'hebesatz',    label: 'Gewerbesteuer-Hebesatz',        min: 200,   max: 600,    step: 10,   fmt: (v) => `${v} %` },
+    ];
+
+    const toggleDefs = [
+      { key: 'familienstand',  label: 'Familienstand',          options: [
+        { value: 'single', label: 'Single' },
+        { value: 'verheiratet', label: 'Verheiratet' },
+      ]},
+      { key: 'kinder',         label: 'Kinder',                 options: [
+        { value: 'kinderlos', label: 'Kinderlos' },
+        { value: 'mitKindern', label: 'Mit Kindern' },
+      ]},
+      { key: 'unternehmertyp', label: 'Einzelunternehmen-Typ',  options: [
+        { value: 'gewerbe', label: 'Gewerbe' },
+        { value: 'frei',    label: 'Freiberufler' },
+      ]},
+    ];
+
+    // ── Build inputs ──────────────────────────────────
+    const slidersEl = document.getElementById('sliders');
+    const togglesEl = document.getElementById('toggles');
+
+    sliderDefs.forEach((def) => {
+      const row = document.createElement('div');
+      row.className = 'slider-row';
+      row.innerHTML = `
+        <div class="slider-head">
+          <label class="slider-label" for="sl-${def.key}">${def.label}</label>
+          <span class="slider-value" id="val-${def.key}"></span>
+        </div>
+        <input type="range" id="sl-${def.key}" min="${def.min}" max="${def.max}" step="${def.step}" value="${state[def.key]}">
+      `;
+      slidersEl.appendChild(row);
+      const input = row.querySelector('input');
+      input.addEventListener('input', (e) => {
+        state[def.key] = Number(e.target.value);
+        clampDependent();
+        render();
+      });
+    });
+
+    toggleDefs.forEach((def) => {
+      const group = document.createElement('div');
+      group.className = 'toggle-group';
+      group.innerHTML = `
+        <span class="toggle-label">${def.label}</span>
+        <div class="toggle-track" id="tg-${def.key}">
+          ${def.options.map(o => `<button type="button" data-value="${o.value}">${o.label}</button>`).join('')}
+        </div>
+      `;
+      togglesEl.appendChild(group);
+      group.querySelectorAll('button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state[def.key] = btn.dataset.value;
+          render();
+        });
+      });
+    });
+
+    // ── Dependent value clamping (ports the React useEffects) ──
+    function clampDependent() {
+      if (state.betriebsAus > state.umsatz) state.betriebsAus = state.umsatz;
+      const maxEnt = Math.max(0, state.umsatz - state.betriebsAus);
+      if (state.entnahme > maxEnt) state.entnahme = maxEnt;
+
+      // Update slider max bounds reactively
+      const baInput = document.getElementById('sl-betriebsAus');
+      baInput.max = Math.max(20000, state.umsatz);
+      const enInput = document.getElementById('sl-entnahme');
+      enInput.max = Math.max(1000, maxEnt);
+      // Reflect possibly-clamped values on the inputs themselves
+      baInput.value = state.betriebsAus;
+      enInput.value = state.entnahme;
+    }
+
+    // ── Render ────────────────────────────────────────
+    const scenariosEl = document.getElementById('scenarios');
+    const chartSubEl = document.getElementById('chartSub');
+    const chartSvg = document.getElementById('chartSvg');
+    const tooltipEl = document.getElementById('tooltip');
+    const chartEl = document.getElementById('chart');
+
+    function render() {
+      // sliders: update value labels and progress fill
+      sliderDefs.forEach((def) => {
+        const v = state[def.key];
+        document.getElementById('val-' + def.key).textContent = def.fmt(v);
+        const input = document.getElementById('sl-' + def.key);
+        const pct = ((v - input.min) / (input.max - input.min)) * 100;
+        input.style.setProperty('--p', `${pct}%`);
+      });
+
+      // toggles: active state
+      toggleDefs.forEach((def) => {
+        const track = document.getElementById('tg-' + def.key);
+        track.querySelectorAll('button').forEach((btn) => {
+          btn.classList.toggle('active', btn.dataset.value === state[def.key]);
+        });
+      });
+
+      const inputs = {
+        umsatz: state.umsatz,
+        betriebsAus: state.betriebsAus,
+        hebesatz: state.hebesatz,
+        entnahme: state.entnahme,
+        kinderlos: state.kinder === 'kinderlos',
+        verheiratet: state.familienstand === 'verheiratet',
+        gewerbe: state.unternehmertyp === 'gewerbe',
+      };
+
+      const scenarios = [
+        sEinzel(inputs),
+        sGmbHGehalt(inputs),
+        sGmbHTeilAussch(inputs),
+        sGmbHNurAussch(inputs),
+      ];
+
+      let winnerIdx = 0, max = -Infinity;
+      scenarios.forEach((s, i) => {
+        const tot = s.privatVerfuegbar + s.inFirma;
+        if (tot > max) { max = tot; winnerIdx = i; }
+      });
+
+      renderScenarios(scenarios, winnerIdx);
+      renderChart(scenarios);
+      chartSubEl.innerHTML = `Die Gesamthöhe jeder Säule entspricht deinem Bruttogewinn (${fmtEur(scenarios[0].gewinn)}).`;
+    }
+
+    function renderScenarios(scenarios, winnerIdx) {
+      scenariosEl.innerHTML = scenarios.map((s, i) => {
+        const total = s.privatVerfuegbar + s.inFirma;
+        const totalAbgaben = s.steuernUnternehmen + s.steuernPrivat + s.sv;
+        const quote = s.gewinn > 0 ? (totalAbgaben / s.gewinn) * 100 : 0;
+        return `
+          <div class="scn ${i === winnerIdx ? 'winner' : ''}">
+            ${i === winnerIdx ? '<div class="badge">★ Optimum</div>' : ''}
+            <div class="scn-head">
+              <div class="scn-tag">Szenario ${i + 1}</div>
+              <div class="scn-name">${s.name}</div>
+              <div class="scn-sub">${s.subtitle}</div>
+            </div>
+            <div class="scn-detail">
+              ${s.details.map(([label, value, kind]) => `
+                <div class="det-row ${kind === 'header' ? 'header' : kind === 'sub' ? 'sub' : ''}">
+                  <span class="det-label">${label}</span>
+                  <span class="det-value">${fmtEur(value)}</span>
+                </div>
+              `).join('')}
+            </div>
+            <div class="scn-foot">
+              <div class="foot-row">
+                <span class="foot-label">Privat verfügbar</span>
+                <span class="foot-value privat">${fmtEur(s.privatVerfuegbar)}</span>
+              </div>
+              <div class="foot-row">
+                <span class="foot-label">In Firma verbleibend</span>
+                <span class="foot-value firma">${fmtEur(s.inFirma)}</span>
+              </div>
+              <div class="foot-row bottom">
+                <span class="foot-label">Unter dem Strich</span>
+                <span class="foot-value total">${fmtEur(total)}</span>
+              </div>
+              <div class="foot-quote">
+                <span>Abgabenquote</span>
+                <span class="v">${fmtPct(quote)}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ── Chart (vanilla SVG stacked bars) ──────────────
+    const NAMES = ['Einzelunt.', 'GF-Gehalt', 'Voll-Aussch.', 'Nur Aussch.'];
+    const SERIES = [
+      { key: 'privatVerfuegbar',         label: 'Privat verfügbar', color: 'var(--green)' },
+      { key: 'inFirma',                  label: 'In Firma',         color: 'var(--blue)' },
+      { key: 'sv',                       label: 'KV/PV',            color: 'var(--gold)' },
+      { key: 'steuern',                  label: 'Steuern',          color: 'var(--red)' },
+    ];
+
+    function renderChart(scenarios) {
+      const W = 800, H = 380;
+      const pad = { l: 50, r: 12, t: 16, b: 36 };
+      const innerW = W - pad.l - pad.r;
+      const innerH = H - pad.t - pad.b;
+
+      const data = scenarios.map((s) => ({
+        name: '',
+        values: {
+          privatVerfuegbar: Math.max(0, Math.round(s.privatVerfuegbar)),
+          inFirma: Math.round(s.inFirma),
+          sv: Math.round(s.sv),
+          steuern: Math.round(s.steuernUnternehmen + s.steuernPrivat),
+        },
+      }));
+
+      const maxVal = Math.max(
+        ...data.map((d) => d.values.privatVerfuegbar + d.values.inFirma + d.values.sv + d.values.steuern),
+        1
+      );
+      const niceMax = niceCeil(maxVal);
+
+      const ticks = 5;
+      const tickVals = Array.from({ length: ticks + 1 }, (_, i) => (niceMax * i) / ticks);
+
+      const barW = innerW / data.length * 0.55;
+      const slot = innerW / data.length;
+
+      let svg = '';
+
+      // Y axis ticks + grid
+      tickVals.forEach((tv) => {
+        const y = pad.t + innerH - (tv / niceMax) * innerH;
+        svg += `<line class="axis-line" x1="${pad.l}" x2="${W - pad.r}" y1="${y}" y2="${y}" stroke-dasharray="${tv === 0 ? '0' : '2 3'}"/>`;
+        svg += `<text class="tick" x="${pad.l - 8}" y="${y + 4}" text-anchor="end">${(tv / 1000).toFixed(0)}k</text>`;
+      });
+
+      // Bars
+      data.forEach((d, i) => {
+        const cx = pad.l + slot * (i + 0.5);
+        const x = cx - barW / 2;
+        let yCursor = pad.t + innerH;
+        SERIES.forEach((s) => {
+          const v = d.values[s.key];
+          const h = (v / niceMax) * innerH;
+          if (h <= 0) return;
+          yCursor -= h;
+          svg += `<rect class="bar" x="${x}" y="${yCursor}" width="${barW}" height="${h}" fill="${s.color}"
+                    data-bar-i="${i}" data-bar-key="${s.key}"></rect>`;
+        });
+        svg += `<text class="tick" x="${cx}" y="${pad.t + innerH + 22}" text-anchor="middle">${NAMES[i]}</text>`;
+      });
+
+      // X axis line
+      svg += `<line class="axis-line" x1="${pad.l}" x2="${W - pad.r}" y1="${pad.t + innerH}" y2="${pad.t + innerH}"/>`;
+
+      chartSvg.innerHTML = svg;
+
+      // Tooltip (delegate)
+      chartSvg.querySelectorAll('rect.bar').forEach((rect) => {
+        rect.addEventListener('mousemove', (e) => {
+          const i = Number(rect.dataset.barI);
+          const d = data[i];
+          tooltipEl.innerHTML = `
+            <div class="tt-name">${NAMES[i]}</div>
+            ${SERIES.map((s) => `
+              <div class="tt-row">
+                <span style="color:${s.color === 'var(--green)' ? 'var(--green)' : s.color === 'var(--blue)' ? 'var(--blue)' : s.color === 'var(--gold)' ? 'var(--gold)' : 'var(--red)'}">${s.label}</span>
+                <span class="v">${fmtEur(d.values[s.key])}</span>
+              </div>
+            `).join('')}
+          `;
+          const cRect = chartEl.getBoundingClientRect();
+          tooltipEl.style.left = (e.clientX - cRect.left) + 'px';
+          tooltipEl.style.top  = (e.clientY - cRect.top - 10) + 'px';
+          tooltipEl.classList.add('visible');
+        });
+        rect.addEventListener('mouseleave', () => {
+          tooltipEl.classList.remove('visible');
+        });
+      });
+    }
+
+    function niceCeil(v) {
+      if (v <= 0) return 1;
+      const exp = Math.pow(10, Math.floor(Math.log10(v)));
+      const f = v / exp;
+      let nice;
+      if (f <= 1) nice = 1;
+      else if (f <= 2) nice = 2;
+      else if (f <= 2.5) nice = 2.5;
+      else if (f <= 5) nice = 5;
+      else nice = 10;
+      return nice * exp;
+    }
+
+    // Initial render
+    clampDependent();
+    render();
+  </script>
+</body>
+</html>
