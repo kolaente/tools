@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ballast-Rechner — Sturmsicherung für Flachdach-PV</title>
+  <meta name="description" content="Wieviel Auflast braucht ein PV-Modul auf dem Flachdach, damit der Sturm es nicht abhebt? Interaktive Berechnung mit Beaufort-Skala.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300;0,6..72,400;0,6..72,500;1,6..72,300;1,6..72,400&family=Inter+Tight:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper: #f1ecdd;
+      --paper-2: #ebe5d2;
+      --paper-3: #ddd4b6;
+      --ink: #161821;
+      --ink-2: #4a4d44;
+      --ink-3: #807c69;
+      --rule: #b8b095;
+      --rule-soft: #d6cfb3;
+      --warn: #a8412a;
+      --warn-soft: #d27d63;
+      --safe: #2c5e44;
+      --aim: #ad7a26;
+      --aim-soft: #d6a247;
+      --serif: 'Newsreader', Georgia, serif;
+      --sans: 'Inter Tight', system-ui, sans-serif;
+      --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+    }
+
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.55;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* paper warmth */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 100% 70% at 50% 0%, rgba(255, 252, 240, .55), transparent 60%),
+        radial-gradient(ellipse 50% 35% at 95% 95%, rgba(173, 122, 38, .07), transparent 70%),
+        radial-gradient(ellipse 40% 30% at 5% 80%, rgba(168, 65, 42, .04), transparent 70%);
+      z-index: 0;
+    }
+
+    /* paper grain */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.6' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 0 0.1 0 0 0 .12 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+      opacity: .45;
+      mix-blend-mode: multiply;
+      z-index: 1;
+    }
+
+    main {
+      position: relative;
+      z-index: 2;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 36px 32px 96px;
+    }
+
+    /* ─── Top bar ─── */
+    .top {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--ink);
+      margin-bottom: 56px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+    }
+
+    .top a {
+      color: inherit;
+      text-decoration: none;
+      transition: color .15s;
+    }
+
+    .top a:hover { color: var(--warn); }
+
+    .top .crumbs {
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap;
+    }
+
+    .top .crumbs span:not(:last-child)::after {
+      content: ' /';
+      color: var(--ink-3);
+      margin-left: 22px;
+    }
+
+    /* ─── Masthead ─── */
+    .mast {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(220px, 320px);
+      align-items: end;
+      gap: 56px;
+      margin-bottom: 64px;
+      padding-bottom: 36px;
+      border-bottom: 2px solid var(--ink);
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-weight: 400;
+      font-size: clamp(56px, 11vw, 132px);
+      line-height: .88;
+      letter-spacing: -0.028em;
+    }
+
+    h1 em {
+      font-style: italic;
+      font-weight: 300;
+      color: var(--ink-2);
+    }
+
+    h1 .dot {
+      color: var(--warn);
+      font-style: normal;
+    }
+
+    .mast .lede {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: 18px;
+      line-height: 1.5;
+      color: var(--ink-2);
+      text-align: right;
+    }
+
+    /* ─── Hero answer ─── */
+    .hero {
+      margin-bottom: 56px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 64px;
+      align-items: end;
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .25em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .eyebrow::before {
+      content: '';
+      width: 28px;
+      height: 1px;
+      background: var(--ink-2);
+    }
+
+    .answer-num {
+      font-family: var(--serif);
+      font-weight: 300;
+      font-size: clamp(110px, 18vw, 220px);
+      line-height: .82;
+      letter-spacing: -0.045em;
+      color: var(--ink);
+      display: flex;
+      align-items: baseline;
+      gap: .12em;
+    }
+
+    .answer-num .digit {
+      display: inline-block;
+      transition: color .25s ease;
+    }
+
+    .answer-num .unit {
+      font-family: var(--mono);
+      font-size: 0.16em;
+      font-weight: 500;
+      letter-spacing: 0;
+      color: var(--ink-2);
+      align-self: flex-end;
+      transform: translateY(-0.3em);
+    }
+
+    .answer-tag {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 300;
+      font-size: clamp(20px, 2.6vw, 28px);
+      line-height: 1.3;
+      color: var(--ink-2);
+      margin-top: 12px;
+      max-width: 540px;
+    }
+
+    .answer-tag strong {
+      font-style: normal;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .answer-side {
+      padding-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .answer-side .stat {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: baseline;
+      gap: 14px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--rule-soft);
+    }
+
+    .answer-side .stat:last-child { border-bottom: none; }
+
+    .answer-side .stat-label {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+    }
+
+    .answer-side .stat-val {
+      font-family: var(--serif);
+      font-size: 28px;
+      font-weight: 400;
+      letter-spacing: -0.015em;
+      color: var(--ink);
+    }
+
+    .answer-side .stat-val .sub {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-3);
+      margin-left: 6px;
+      letter-spacing: 0;
+      font-weight: 500;
+    }
+
+    /* ─── Beaufort strip (target selector) ─── */
+    .strip-wrap {
+      margin-bottom: 64px;
+    }
+
+    .strip-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .strip-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .25em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .strip-title .num {
+      color: var(--ink-3);
+      font-weight: 500;
+    }
+
+    .strip-hint {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 14px;
+      color: var(--ink-3);
+    }
+
+    .bft-strip {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0;
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--ink);
+    }
+
+    .bft-cell {
+      appearance: none;
+      background: transparent;
+      border: none;
+      border-right: 1px solid var(--rule-soft);
+      padding: 18px 14px 16px;
+      cursor: pointer;
+      text-align: left;
+      font-family: var(--sans);
+      color: var(--ink);
+      transition: background .18s ease, color .18s ease;
+      position: relative;
+      min-height: 110px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .bft-cell:last-child { border-right: none; }
+
+    .bft-cell:hover {
+      background: var(--paper-2);
+    }
+
+    .bft-cell:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: -2px;
+    }
+
+    .bft-cell .b-num {
+      font-family: var(--serif);
+      font-size: 36px;
+      font-weight: 400;
+      line-height: .9;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+
+    .bft-cell .b-kmh {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: .04em;
+      color: var(--ink-2);
+      margin-top: 2px;
+    }
+
+    .bft-cell .b-name {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 13px;
+      line-height: 1.25;
+      color: var(--ink-3);
+      margin-top: auto;
+    }
+
+    .bft-cell.is-active {
+      background: var(--ink);
+      color: var(--paper);
+    }
+
+    .bft-cell.is-active .b-num,
+    .bft-cell.is-active .b-kmh,
+    .bft-cell.is-active .b-name {
+      color: var(--paper);
+    }
+
+    .bft-cell.is-active::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 3px;
+      background: var(--aim);
+    }
+
+    .bft-cell.is-active .b-num::after {
+      content: '·';
+      color: var(--aim);
+      margin-left: 8px;
+    }
+
+    /* ─── Working grid ─── */
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: 48px;
+      margin-bottom: 80px;
+    }
+
+    /* Inputs panel */
+    .inputs {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+
+    .block-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--ink);
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+    }
+
+    .block-title .num {
+      color: var(--ink-3);
+      font-size: 12px;
+    }
+
+    .block-title .name {
+      flex: 1;
+    }
+
+    .num-row,
+    .slider-row,
+    .check-row,
+    .computed-row {
+      padding: 12px 0;
+      border-bottom: 1px dotted var(--rule);
+    }
+
+    .num-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .num-row > label {
+      font-size: 14px;
+      color: var(--ink-2);
+    }
+
+    .num-row input {
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: var(--mono);
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--ink);
+      text-align: right;
+      width: 90px;
+      padding: 0;
+    }
+
+    .num-row input:focus {
+      color: var(--warn);
+    }
+
+    .num-row input::-webkit-inner-spin-button,
+    .num-row input::-webkit-outer-spin-button {
+      opacity: .25;
+    }
+
+    .num-row .unit {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--ink-3);
+      min-width: 30px;
+      text-align: right;
+    }
+
+    .computed-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: baseline;
+      gap: 12px;
+      font-style: italic;
+    }
+
+    .computed-row .label {
+      font-family: var(--serif);
+      font-size: 14px;
+      color: var(--ink-3);
+    }
+
+    .computed-row .val {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--aim);
+      font-style: normal;
+    }
+
+    .slider-row .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+    }
+
+    .slider-row .head .lbl {
+      font-size: 14px;
+      color: var(--ink-2);
+    }
+
+    .slider-row .head .val {
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    /* Custom range slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      background: transparent;
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 1px;
+      background: var(--ink);
+      border: none;
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 1px;
+      background: var(--ink);
+      border: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: var(--paper);
+      border: 1.5px solid var(--ink);
+      border-radius: 50%;
+      margin-top: -7px;
+      cursor: grab;
+      transition: transform .12s, background .12s;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      background: var(--paper);
+      border: 1.5px solid var(--ink);
+      border-radius: 50%;
+      cursor: grab;
+      transition: transform .12s, background .12s;
+    }
+
+    input[type="range"]:hover::-webkit-slider-thumb,
+    input[type="range"]:active::-webkit-slider-thumb {
+      background: var(--aim);
+      transform: scale(1.15);
+    }
+
+    input[type="range"]:hover::-moz-range-thumb,
+    input[type="range"]:active::-moz-range-thumb {
+      background: var(--aim);
+      transform: scale(1.15);
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .check-row label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--ink-2);
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .check-row input[type="checkbox"] {
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid var(--ink);
+      background: var(--paper);
+      cursor: pointer;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .check-row input[type="checkbox"]:checked {
+      background: var(--ink);
+    }
+
+    .check-row input[type="checkbox"]:checked::after {
+      content: '';
+      position: absolute;
+      left: 3px;
+      top: -1px;
+      width: 5px;
+      height: 9px;
+      border: solid var(--paper);
+      border-width: 0 1.5px 1.5px 0;
+      transform: rotate(45deg);
+    }
+
+    .check-row .c-display {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--aim);
+    }
+
+    .check-row .c-display .lbl {
+      color: var(--ink-3);
+      margin-right: 4px;
+    }
+
+    /* ─── Output side ─── */
+    .output {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+      min-width: 0;
+    }
+
+    .figure {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .figure-svg-wrap {
+      background: var(--paper-2);
+      border: 1px solid var(--rule);
+      padding: 24px 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .figure-svg-wrap::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--rule-soft) 1px, transparent 1px),
+        linear-gradient(90deg, var(--rule-soft) 1px, transparent 1px);
+      background-size: 20px 20px;
+      opacity: .35;
+      pointer-events: none;
+    }
+
+    .figure svg {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .figure-cap {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: var(--ink-3);
+      margin-top: 14px;
+      padding-left: 14px;
+      border-left: 2px solid var(--rule);
+    }
+
+    .figure-cap strong {
+      font-style: normal;
+      color: var(--ink-2);
+    }
+
+    /* ─── Table ─── */
+    .table-section {
+      margin-bottom: 80px;
+    }
+
+    .section-head {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--ink);
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+    }
+
+    .section-head .num {
+      color: var(--ink-3);
+    }
+
+    .section-head .accent {
+      font-family: var(--serif);
+      font-style: italic;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 16px;
+      color: var(--ink-3);
+      margin-left: auto;
+    }
+
+    .bft-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--sans);
+    }
+
+    .bft-table thead th {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      text-align: left;
+      padding: 12px 16px 12px 0;
+      font-weight: 500;
+      border-bottom: 1px solid var(--ink);
+    }
+
+    .bft-table th.right,
+    .bft-table td.right {
+      text-align: right;
+      padding-right: 0;
+    }
+
+    .bft-table th.right { padding-right: 0; padding-left: 16px; }
+    .bft-table td.right { padding-left: 16px; }
+
+    .bft-table tbody tr {
+      border-bottom: 1px solid var(--rule-soft);
+      transition: background .15s;
+    }
+
+    .bft-table tbody tr:hover {
+      background: var(--paper-2);
+    }
+
+    .bft-table tbody tr.is-target {
+      background: var(--paper-3);
+    }
+
+    .bft-table tbody tr.is-target:hover {
+      background: var(--paper-3);
+    }
+
+    .bft-table td {
+      padding: 16px 16px 16px 0;
+      vertical-align: baseline;
+      font-size: 15px;
+    }
+
+    .bft-table .bft-name-col {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 16px;
+      font-weight: 400;
+    }
+
+    .bft-table .bft-num-col {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 400;
+      letter-spacing: -0.01em;
+      width: 90px;
+    }
+
+    .bft-table .bft-num-col .marker {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: var(--aim);
+      border-radius: 50%;
+      margin-right: 10px;
+      vertical-align: middle;
+      transform: translateY(-2px);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    .bft-table tr.is-target .bft-num-col .marker { opacity: 1; }
+
+    .bft-table .kmh-col {
+      font-family: var(--mono);
+      font-size: 14px;
+      color: var(--ink-2);
+      width: 90px;
+    }
+
+    .bft-table .ballast-col,
+    .bft-table .plates-col {
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 500;
+      width: 130px;
+    }
+
+    .bft-table .plates-col {
+      color: var(--ink-3);
+      width: 100px;
+    }
+
+    .bft-table tr.is-target .ballast-col {
+      color: var(--warn);
+      font-weight: 600;
+    }
+
+    /* ─── Notes ─── */
+    .notes {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      padding-top: 48px;
+      border-top: 1px solid var(--ink);
+    }
+
+    .note-label {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--rule-soft);
+    }
+
+    .note-label.warn { color: var(--warn); }
+
+    .note p {
+      font-family: var(--serif);
+      font-size: 15px;
+      line-height: 1.55;
+      color: var(--ink-2);
+    }
+
+    .note p em {
+      color: var(--ink);
+      font-style: italic;
+    }
+
+    /* ─── Foot ─── */
+    .foot {
+      margin-top: 64px;
+      padding-top: 24px;
+      border-top: 1px dotted var(--rule);
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: .08em;
+      color: var(--ink-3);
+    }
+
+    /* ─── Animations ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .top { animation: fadeUp .5s ease-out both; }
+    .mast { animation: fadeUp .55s ease-out .05s both; }
+    .hero { animation: fadeUp .6s ease-out .15s both; }
+    .strip-wrap { animation: fadeUp .6s ease-out .25s both; }
+    .grid { animation: fadeUp .6s ease-out .35s both; }
+    .table-section { animation: fadeUp .6s ease-out .45s both; }
+    .notes { animation: fadeUp .6s ease-out .55s both; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 980px) {
+      .mast {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+      .mast .lede { text-align: left; }
+
+      .hero {
+        grid-template-columns: 1fr;
+        gap: 32px;
+        align-items: start;
+      }
+
+      .answer-side {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0;
+      }
+      .answer-side .stat {
+        flex: 1 1 200px;
+        border-bottom: 1px solid var(--rule-soft);
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+      }
+
+      .notes { grid-template-columns: 1fr; gap: 24px; }
+    }
+
+    @media (max-width: 720px) {
+      main { padding: 24px 18px 64px; }
+
+      .top {
+        font-size: 10px;
+        margin-bottom: 36px;
+      }
+
+      .top .crumbs span { display: none; }
+      .top .crumbs span:first-child { display: inline; }
+
+      .mast { margin-bottom: 40px; padding-bottom: 24px; }
+      .hero { margin-bottom: 40px; }
+
+      .bft-strip {
+        grid-template-columns: repeat(7, minmax(78px, 1fr));
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+      }
+      .bft-cell {
+        scroll-snap-align: start;
+        min-height: 96px;
+        padding: 14px 10px;
+      }
+      .bft-cell .b-num { font-size: 28px; }
+
+      .bft-table {
+        font-size: 13px;
+      }
+      .bft-table thead th {
+        font-size: 9.5px;
+        padding-right: 8px;
+      }
+      .bft-table .bft-name-col { display: none; }
+      .bft-table th.bft-name-col-h { display: none; }
+      .bft-table td { padding: 12px 8px 12px 0; }
+      .bft-table .bft-num-col { font-size: 18px; width: auto; }
+    }
+
+    @media print {
+      body::before, body::after { display: none; }
+      .top, .foot { display: none; }
+      .figure-svg-wrap { background: var(--paper); }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <nav class="top" aria-label="Brotkrumen">
+      <a href="/">← Tools</a>
+      <div class="crumbs">
+        <span>Statik</span>
+        <span>Wind</span>
+        <span>Flachdach-PV</span>
+      </div>
+      <div>ρ 1,25 · g 9,81</div>
+    </nav>
+
+    <header class="mast">
+      <h1>Ballast<em>—</em>Rechner<span class="dot">.</span></h1>
+      <p class="lede">
+        Sturmsicherung für PV-Module auf dem Flachdach. Wieviel Auflast braucht es,
+        damit der Wind das Modul nicht abhebt?
+      </p>
+    </header>
+
+    <section class="hero" aria-label="Ergebnis">
+      <div>
+        <div class="eyebrow">Benötigte Auflast für <span id="eyebrow-bft">Beaufort 10</span></div>
+        <div class="answer-num" id="answer-num">
+          <span class="digit" id="ballast-kg">124</span><span class="unit">kg</span>
+        </div>
+        <p class="answer-tag" id="answer-tag">
+          Bei <strong id="ans-kmh">102 km/h</strong> Böenspitze (<em id="ans-name">schwerer Sturm</em>)
+          muss das Modul mit <strong id="ans-plates">18 Platten</strong> beschwert werden.
+        </p>
+      </div>
+
+      <aside class="answer-side">
+        <div class="stat">
+          <span class="stat-label">Flächenlast</span>
+          <span class="stat-val"><span id="surface-load">62</span><span class="sub">kg/m²</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Windkraft (Auftrieb)</span>
+          <span class="stat-val"><span id="wind-force">682</span><span class="sub">N</span></span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Gesamtmasse Modul + Ballast</span>
+          <span class="stat-val"><span id="total-mass">144</span><span class="sub">kg</span></span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="strip-wrap" aria-label="Ziel-Sturmstärke">
+      <div class="strip-head">
+        <div class="strip-title"><span class="num">01</span> <span>Ziel-Sturmstärke wählen</span></div>
+        <div class="strip-hint">— Beaufort-Skala, Böenspitzen in km/h</div>
+      </div>
+      <div class="bft-strip" id="bft-strip" role="radiogroup" aria-label="Beaufort-Stärke">
+        <button type="button" class="bft-cell" role="radio" data-bft="6">
+          <span class="b-num">6</span>
+          <span class="b-kmh">49 km/h</span>
+          <span class="b-name">starker Wind</span>
+        </button>
+        <button type="button" class="bft-cell" role="radio" data-bft="7">
+          <span class="b-num">7</span>
+          <span class="b-kmh">61 km/h</span>
+          <span class="b-name">steifer Wind</span>
+        </button>
+        <button type="button" class="bft-cell" role="radio" data-bft="8">
+          <span class="b-num">8</span>
+          <span class="b-kmh">74 km/h</span>
+          <span class="b-name">stürmischer Wind</span>
+        </button>
+        <button type="button" class="bft-cell" role="radio" data-bft="9">
+          <span class="b-num">9</span>
+          <span class="b-kmh">88 km/h</span>
+          <span class="b-name">Sturm</span>
+        </button>
+        <button type="button" class="bft-cell is-active" role="radio" data-bft="10" aria-checked="true">
+          <span class="b-num">10</span>
+          <span class="b-kmh">102 km/h</span>
+          <span class="b-name">schwerer Sturm</span>
+        </button>
+        <button type="button" class="bft-cell" role="radio" data-bft="11">
+          <span class="b-num">11</span>
+          <span class="b-kmh">117 km/h</span>
+          <span class="b-name">orkanartiger Sturm</span>
+        </button>
+        <button type="button" class="bft-cell" role="radio" data-bft="12">
+          <span class="b-num">12</span>
+          <span class="b-kmh">130 km/h</span>
+          <span class="b-name">Orkan</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="grid">
+      <aside class="inputs">
+        <div class="block">
+          <h2 class="block-title"><span class="num">02 ·</span><span class="name">Modul</span></h2>
+          <div class="num-row">
+            <label for="length">Länge</label>
+            <input type="number" id="length" min="500" max="3000" step="1" value="1762">
+            <span class="unit">mm</span>
+          </div>
+          <div class="num-row">
+            <label for="width">Breite</label>
+            <input type="number" id="width" min="500" max="2000" step="1" value="1134">
+            <span class="unit">mm</span>
+          </div>
+          <div class="num-row">
+            <label for="moduleWeight">Eigengewicht</label>
+            <input type="number" id="moduleWeight" min="5" max="50" step="0.5" value="20">
+            <span class="unit">kg</span>
+          </div>
+          <div class="computed-row">
+            <span class="label">Modulfläche</span>
+            <span class="val" id="area">2,000 m²</span>
+          </div>
+        </div>
+
+        <div class="block">
+          <h2 class="block-title"><span class="num">03 ·</span><span class="name">Aufstellung</span></h2>
+          <div class="slider-row">
+            <div class="head">
+              <label class="lbl" for="tilt">Neigungswinkel</label>
+              <span class="val" id="tilt-val">45°</span>
+            </div>
+            <input type="range" id="tilt" min="5" max="60" step="1" value="45">
+          </div>
+          <div class="num-row">
+            <label for="plate">Gewicht je Platte</label>
+            <input type="number" id="plate" min="1" max="30" step="0.5" value="7">
+            <span class="unit">kg</span>
+          </div>
+        </div>
+
+        <div class="block">
+          <h2 class="block-title"><span class="num">04 ·</span><span class="name">Auslegung</span></h2>
+          <div class="slider-row">
+            <div class="head">
+              <label class="lbl" for="safety">Sicherheitsfaktor</label>
+              <span class="val" id="safety-val">1,0×</span>
+            </div>
+            <input type="range" id="safety" min="1.0" max="2.0" step="0.1" value="1.0">
+          </div>
+          <div class="check-row">
+            <label for="autoC">
+              <input type="checkbox" id="autoC" checked>
+              <span>c-Wert aus Neigung ableiten</span>
+            </label>
+            <span class="c-display"><span class="lbl">c =</span><span id="c-display">1,40</span></span>
+          </div>
+          <div class="slider-row" id="manualC-row" style="display: none">
+            <div class="head">
+              <label class="lbl" for="manualC">c-Wert manuell</label>
+              <span class="val" id="manualC-val">1,5</span>
+            </div>
+            <input type="range" id="manualC" min="0.5" max="2.5" step="0.1" value="1.5">
+          </div>
+        </div>
+      </aside>
+
+      <div class="output">
+        <figure class="figure">
+          <h2 class="block-title"><span class="num">05 ·</span><span class="name">Aufbau, Seitenansicht</span></h2>
+          <div class="figure-svg-wrap">
+            <svg id="diagram" viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="6" stroke="#161821" stroke-width=".7" opacity=".55"/>
+                </pattern>
+                <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                  <polygon points="0 0, 6 3, 0 6" fill="#161821"/>
+                </marker>
+                <marker id="arr-warn" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                  <polygon points="0 0, 6 3, 0 6" fill="#a8412a"/>
+                </marker>
+                <marker id="arr-aim" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                  <polygon points="0 0, 6 3, 0 6" fill="#ad7a26"/>
+                </marker>
+              </defs>
+
+              <!-- Compass -->
+              <text x="20" y="22" font-family="IBM Plex Mono" font-size="10" fill="#807c69" letter-spacing="1.5">N ←</text>
+              <text x="700" y="22" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#807c69" letter-spacing="1.5">→ S</text>
+
+              <!-- Wind hatched lines (dashed flow) -->
+              <g id="svg-wind" stroke="#a8412a" stroke-width=".8" opacity=".7">
+                <line x1="20" y1="60" x2="280" y2="60" stroke-dasharray="3 6" marker-end="url(#arr-warn)"/>
+                <line x1="20" y1="92" x2="240" y2="92" stroke-dasharray="3 6" marker-end="url(#arr-warn)"/>
+                <line x1="20" y1="124" x2="200" y2="124" stroke-dasharray="3 6" marker-end="url(#arr-warn)"/>
+                <line x1="20" y1="156" x2="160" y2="156" stroke-dasharray="3 6" marker-end="url(#arr-warn)"/>
+              </g>
+              <text x="30" y="46" font-family="Newsreader" font-style="italic" font-size="14" fill="#a8412a">Wind</text>
+
+              <!-- Roof -->
+              <line x1="0" y1="230" x2="720" y2="230" stroke="#161821" stroke-width="1.5"/>
+              <rect x="0" y="230" width="720" height="50" fill="url(#hatch)" opacity=".5"/>
+              <text x="360" y="270" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#807c69" letter-spacing="2">FLACHDACH</text>
+
+              <!-- Module (dynamic) -->
+              <polygon id="svg-module" fill="#161821" fill-opacity=".88" stroke="#161821" stroke-width="1"/>
+              <g id="svg-cells"></g>
+
+              <!-- Ballast (dynamic) -->
+              <rect id="svg-ballast" fill="#ad7a26" stroke="#161821" stroke-width=".8"/>
+              <text id="svg-ballast-label" font-family="IBM Plex Mono" font-size="11" fill="#161821" font-weight="500" text-anchor="middle"></text>
+
+              <!-- Tilt arc + label (dynamic) -->
+              <path id="svg-arc" fill="none" stroke="#ad7a26" stroke-width="1.2"/>
+              <text id="svg-tilt-label" font-family="Newsreader" font-style="italic" font-size="15" fill="#ad7a26" text-anchor="end" font-weight="400"></text>
+
+              <!-- Force arrow (perpendicular to module surface, dynamic) -->
+              <line id="svg-force" stroke="#a8412a" stroke-width="1.5" marker-end="url(#arr-warn)"/>
+              <text id="svg-force-label" font-family="Newsreader" font-style="italic" font-size="13" fill="#a8412a" text-anchor="middle">F<tspan font-size="9" baseline-shift="sub">w</tspan></text>
+
+              <!-- Pivot point -->
+              <circle id="svg-pivot" cx="540" cy="230" r="4" fill="#a8412a"/>
+              <text x="548" y="222" font-family="IBM Plex Mono" font-size="9.5" fill="#a8412a" letter-spacing="1">KIPPKANTE</text>
+
+              <!-- Weight arrow (gravity, downward through ballast) -->
+              <line id="svg-weight" stroke="#161821" stroke-width="1" marker-end="url(#arr)"/>
+              <text id="svg-weight-label" font-family="Newsreader" font-style="italic" font-size="13" fill="#161821" text-anchor="middle">m·g</text>
+            </svg>
+          </div>
+          <figcaption class="figure-cap">
+            <strong>Modell:</strong> Kippmoment um die untere Modulkante. Die Windkraft <em>F<sub>w</sub></em> wirkt
+            senkrecht auf die Modulfläche, das Gewicht wirkt nach unten — die Auflast muss das Hebelverhältnis ausgleichen.
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="table-section">
+      <h2 class="section-head">
+        <span class="num">06 ·</span>
+        <span>Bedarf nach Sturmstärke</span>
+        <span class="accent">— alle Beaufort-Stufen im Vergleich</span>
+      </h2>
+      <table class="bft-table">
+        <thead>
+          <tr>
+            <th>Beaufort</th>
+            <th>Böenspitze</th>
+            <th class="bft-name-col-h">Charakter</th>
+            <th class="right">Ballast</th>
+            <th class="right">Platten</th>
+            <th class="right">Flächenlast</th>
+          </tr>
+        </thead>
+        <tbody id="bft-tbody"></tbody>
+      </table>
+    </section>
+
+    <section class="notes" aria-label="Hinweise">
+      <div class="note">
+        <div class="note-label">Modell &amp; Annahmen</div>
+        <p>
+          Vereinfachtes Kippmoment um die untere Kante. Der c-Wert wird aus der
+          Neigung geschätzt (orientiert an <em>Eurocode 1 / EN 1991-1-4</em>).
+          Auftrieb und Druckkomponente werden zusammen als senkrechte Kraft auf
+          die Modulfläche modelliert.
+        </p>
+      </div>
+      <div class="note">
+        <div class="note-label warn">Nicht berücksichtigt</div>
+        <p>
+          Wirbelablösung an Dachrändern (kann den c-Wert lokal verdoppeln —
+          <em>Mindestabstand 1 bis 2 m zur Attika</em> halten), Resonanzeffekte,
+          Schneelast, Befestigung der Platten am Ständer, regionale Windzone
+          nach DIN-Karte.
+        </p>
+      </div>
+      <div class="note">
+        <div class="note-label warn">Keine Bescheinigung</div>
+        <p>
+          Dies ist <em>kein statischer Nachweis</em>. Bei dauerhafter Installation
+          den Ballastplan des Herstellers verwenden oder eine prüffähige statische
+          Berechnung in Auftrag geben.
+        </p>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <div>Berechnung lokal im Browser · keine Datenübertragung</div>
+      <div>F = c · ½ρv²A · m = (F · L/2) / (g · L cos θ / 2) · S</div>
+    </footer>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const RHO = 1.25;
+    const G = 9.81;
+
+    const BFT = {
+      6:  { kmh: 49,  name: 'starker Wind' },
+      7:  { kmh: 61,  name: 'steifer Wind' },
+      8:  { kmh: 74,  name: 'stürmischer Wind' },
+      9:  { kmh: 88,  name: 'Sturm' },
+      10: { kmh: 102, name: 'schwerer Sturm' },
+      11: { kmh: 117, name: 'orkanartiger Sturm' },
+      12: { kmh: 130, name: 'Orkan' },
+    };
+
+    const state = {
+      length: 1762,
+      width: 1134,
+      moduleWeight: 20,
+      tilt: 45,
+      plate: 7,
+      targetBft: 10,
+      safety: 1.0,
+      autoC: true,
+      manualC: 1.5,
+    };
+
+    function autoCFromTilt(deg) {
+      if (deg <= 15) return 0.7;
+      if (deg <= 20) return 0.9;
+      if (deg <= 25) return 1.0;
+      if (deg <= 30) return 1.2;
+      if (deg <= 35) return 1.3;
+      if (deg <= 40) return 1.4;
+      return 1.5;
+    }
+
+    function fmt(n, dec = 0) {
+      return n.toFixed(dec).replace('.', ',');
+    }
+
+    function ballastForBft(bft, c, A, L, theta, leverWeight, leverWind) {
+      const v = BFT[bft].kmh / 3.6;
+      const F = c * 0.5 * RHO * v * v * A;
+      const m_total = (F * leverWind) / (G * leverWeight) * state.safety;
+      return Math.max(0, m_total - state.moduleWeight);
+    }
+
+    function compute() {
+      const c = state.autoC ? autoCFromTilt(state.tilt) : state.manualC;
+      const L = state.length / 1000;
+      const W = state.width / 1000;
+      const A = L * W;
+      const theta = state.tilt * Math.PI / 180;
+      const leverWind = L / 2;
+      const leverWeight = (L * Math.cos(theta)) / 2;
+      const target = BFT[state.targetBft];
+      const v = target.kmh / 3.6;
+      const F_wind = c * 0.5 * RHO * v * v * A;
+      const ballast = ballastForBft(state.targetBft, c, A, L, theta, leverWeight, leverWind);
+      const totalMass = ballast + state.moduleWeight;
+      const n_plates = Math.ceil(ballast / state.plate);
+      const surfaceLoad = ballast / A;
+
+      const table = Object.keys(BFT).map(k => parseInt(k)).map(bft => {
+        const b = ballastForBft(bft, c, A, L, theta, leverWeight, leverWind);
+        return {
+          bft,
+          kmh: BFT[bft].kmh,
+          name: BFT[bft].name,
+          ballast: b,
+          plates: Math.ceil(b / state.plate),
+          surfaceLoad: b / A,
+        };
+      });
+
+      return { c, A, L, W, theta, F_wind, ballast, totalMass, n_plates, surfaceLoad, target, table };
+    }
+
+    function render() {
+      const r = compute();
+
+      // Hero answer
+      $('eyebrow-bft').textContent = `Beaufort ${state.targetBft}`;
+      $('ballast-kg').textContent = Math.round(r.ballast);
+      $('ans-kmh').textContent = `${r.target.kmh} km/h`;
+      $('ans-name').textContent = r.target.name;
+      $('ans-plates').textContent = r.n_plates === 1
+        ? '1 Platte'
+        : `${r.n_plates} Platten zu je ${fmt(state.plate, 1).replace(/,0$/, '')} kg`;
+
+      // Side stats
+      $('surface-load').textContent = Math.round(r.surfaceLoad);
+      $('wind-force').textContent = Math.round(r.F_wind);
+      $('total-mass').textContent = Math.round(r.totalMass);
+
+      // Inputs
+      $('area').textContent = `${fmt(r.A, 3)} m²`;
+      $('c-display').textContent = fmt(r.c, 2);
+      $('tilt-val').textContent = `${state.tilt}°`;
+      $('safety-val').textContent = `${fmt(state.safety, 1)}×`;
+      $('manualC-val').textContent = fmt(state.manualC, 1);
+      $('manualC-row').style.display = state.autoC ? 'none' : 'block';
+
+      // Bft strip active state
+      document.querySelectorAll('.bft-cell').forEach(el => {
+        const isActive = parseInt(el.dataset.bft) === state.targetBft;
+        el.classList.toggle('is-active', isActive);
+        el.setAttribute('aria-checked', isActive ? 'true' : 'false');
+      });
+
+      // Diagram
+      drawDiagram(r);
+
+      // Table
+      renderTable(r);
+    }
+
+    function drawDiagram(r) {
+      const roofY = 230;
+      const pivotX = 540;
+      const scale = 110;
+      const Lpx = r.L * scale;
+      const tipX = pivotX - Lpx * Math.cos(r.theta);
+      const tipY = roofY - Lpx * Math.sin(r.theta);
+      const t = 5;
+      const dx = t * Math.sin(r.theta);
+      const dy = t * Math.cos(r.theta);
+
+      // Module polygon
+      $('svg-module').setAttribute('points',
+        `${pivotX},${roofY} ${tipX},${tipY} ${tipX + dx},${tipY + dy} ${pivotX + dx},${roofY + dy}`
+      );
+
+      // Cell lines
+      const cells = $('svg-cells');
+      cells.innerHTML = '';
+      [0.2, 0.4, 0.6, 0.8].forEach(f => {
+        const x = pivotX - Lpx * f * Math.cos(r.theta);
+        const y = roofY - Lpx * f * Math.sin(r.theta);
+        const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        ln.setAttribute('x1', x);
+        ln.setAttribute('y1', y);
+        ln.setAttribute('x2', x + dx);
+        ln.setAttribute('y2', y + dy);
+        ln.setAttribute('stroke', '#f1ecdd');
+        ln.setAttribute('stroke-width', '0.6');
+        ln.setAttribute('opacity', '.4');
+        cells.appendChild(ln);
+      });
+
+      // Ballast block (sized to required ballast, capped)
+      const ballastWidth = Math.max(46, Math.min(140, 36 + r.ballast * 0.5));
+      const ballastH = 9;
+      const ballastCx = pivotX - Lpx * 0.5 * Math.cos(r.theta);
+      const bEl = $('svg-ballast');
+      bEl.setAttribute('x', ballastCx - ballastWidth / 2);
+      bEl.setAttribute('y', roofY - ballastH);
+      bEl.setAttribute('width', ballastWidth);
+      bEl.setAttribute('height', ballastH);
+
+      const bLabel = $('svg-ballast-label');
+      bLabel.setAttribute('x', ballastCx);
+      bLabel.setAttribute('y', roofY + 18);
+      bLabel.textContent = `${Math.round(r.ballast)} kg Ballast`;
+
+      // Tilt arc
+      const arcR = 38;
+      const arcEndX = pivotX - arcR * Math.cos(r.theta);
+      const arcEndY = roofY - arcR * Math.sin(r.theta);
+      $('svg-arc').setAttribute('d',
+        `M ${pivotX - arcR} ${roofY} A ${arcR} ${arcR} 0 0 1 ${arcEndX} ${arcEndY}`
+      );
+
+      // Tilt label
+      const labelAng = r.theta / 2;
+      const labelR = arcR + 14;
+      const tl = $('svg-tilt-label');
+      tl.setAttribute('x', pivotX - labelR * Math.cos(labelAng));
+      tl.setAttribute('y', roofY - labelR * Math.sin(labelAng) + 4);
+      tl.textContent = `${state.tilt}°`;
+
+      // Force arrow (perpendicular to module surface, pointing away from roof)
+      const forceMidX = pivotX - Lpx * 0.5 * Math.cos(r.theta);
+      const forceMidY = roofY - Lpx * 0.5 * Math.sin(r.theta);
+      const forceLen = 38;
+      const fStartX = forceMidX - forceLen * Math.sin(r.theta);
+      const fStartY = forceMidY - forceLen * Math.cos(r.theta);
+      const f = $('svg-force');
+      f.setAttribute('x1', fStartX);
+      f.setAttribute('y1', fStartY);
+      f.setAttribute('x2', forceMidX - 6 * Math.sin(r.theta));
+      f.setAttribute('y2', forceMidY - 6 * Math.cos(r.theta));
+
+      const fL = $('svg-force-label');
+      fL.setAttribute('x', fStartX - 12 * Math.sin(r.theta));
+      fL.setAttribute('y', fStartY - 12 * Math.cos(r.theta));
+
+      // Weight arrow (vertical, going down through ballast center)
+      const w = $('svg-weight');
+      w.setAttribute('x1', ballastCx);
+      w.setAttribute('y1', roofY - ballastH - 28);
+      w.setAttribute('x2', ballastCx);
+      w.setAttribute('y2', roofY - ballastH - 4);
+
+      const wL = $('svg-weight-label');
+      wL.setAttribute('x', ballastCx);
+      wL.setAttribute('y', roofY - ballastH - 34);
+    }
+
+    function renderTable(r) {
+      const tbody = $('bft-tbody');
+      tbody.innerHTML = '';
+      r.table.forEach(row => {
+        const tr = document.createElement('tr');
+        if (row.bft === state.targetBft) tr.className = 'is-target';
+        tr.innerHTML = `
+          <td class="bft-num-col"><span class="marker"></span>${row.bft}</td>
+          <td class="kmh-col">${row.kmh} km/h</td>
+          <td class="bft-name-col">${row.name}</td>
+          <td class="right ballast-col">${Math.round(row.ballast)} kg</td>
+          <td class="right plates-col">${row.plates}×</td>
+          <td class="right plates-col">${Math.round(row.surfaceLoad)} kg/m²</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function clamp(n, min, max) {
+      return Math.min(max, Math.max(min, n));
+    }
+
+    function bindNumber(id, key, min, max) {
+      const el = $(id);
+      el.addEventListener('input', () => {
+        const v = parseFloat(el.value);
+        if (!isNaN(v)) state[key] = clamp(v, min, max);
+        render();
+      });
+      el.addEventListener('blur', () => {
+        const v = parseFloat(el.value);
+        if (isNaN(v)) {
+          el.value = state[key];
+        } else if (v !== clamp(v, min, max)) {
+          el.value = clamp(v, min, max);
+          state[key] = clamp(v, min, max);
+          render();
+        }
+      });
+    }
+
+    function bindRange(id, key, parser = parseFloat) {
+      const el = $(id);
+      el.addEventListener('input', () => {
+        state[key] = parser(el.value);
+        render();
+      });
+    }
+
+    // Bind all inputs
+    bindNumber('length', 'length', 500, 3000);
+    bindNumber('width', 'width', 500, 2000);
+    bindNumber('moduleWeight', 'moduleWeight', 5, 50);
+    bindNumber('plate', 'plate', 1, 30);
+
+    bindRange('tilt', 'tilt', parseInt);
+    bindRange('safety', 'safety');
+    bindRange('manualC', 'manualC');
+
+    $('autoC').addEventListener('change', e => {
+      state.autoC = e.target.checked;
+      render();
+    });
+
+    // Bft strip click + keyboard
+    const bftCells = document.querySelectorAll('.bft-cell');
+    bftCells.forEach(cell => {
+      cell.addEventListener('click', () => {
+        state.targetBft = parseInt(cell.dataset.bft);
+        render();
+      });
+      cell.addEventListener('keydown', e => {
+        const cur = parseInt(cell.dataset.bft);
+        if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          const next = Math.min(12, cur + 1);
+          state.targetBft = next;
+          render();
+          document.querySelector(`.bft-cell[data-bft="${next}"]`).focus();
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          const next = Math.max(6, cur - 1);
+          state.targetBft = next;
+          render();
+          document.querySelector(`.bft-cell[data-bft="${next}"]`).focus();
+        }
+      });
+    });
+
+    render();
+  </script>
+</body>
+</html>
