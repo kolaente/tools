@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balkonkraftwerk Ertragsrechner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAFAF8;
+    --bg-card: #FFFFFF;
+    --bg-metric: #F3F2EE;
+    --text: #1A1A18;
+    --text-muted: #6B6A65;
+    --text-hint: #9E9D98;
+    --border: #E2E1DC;
+    --accent: #1D9E75;
+    --accent-bg: #E1F5EE;
+    --accent-text: #085041;
+    --red: #E24B4A;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --font: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1A1A18;
+      --bg-card: #242422;
+      --bg-metric: #2C2C2A;
+      --text: #F1EFE8;
+      --text-muted: #B4B2A9;
+      --text-hint: #888780;
+      --border: #444441;
+      --accent: #5DCAA5;
+      --accent-bg: #0F3D30;
+      --accent-text: #9FE1CB;
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 600px;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 1.75rem;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 2rem;
+  }
+
+  .metric {
+    background: var(--bg-metric);
+    border-radius: var(--radius);
+    padding: 0.875rem 1rem;
+  }
+
+  .metric-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    margin-bottom: 2px;
+  }
+
+  .metric-value {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  .metric-value.accent { color: var(--accent); }
+
+  .slider-group {
+    margin-bottom: 1.25rem;
+  }
+
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+
+  .slider-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .slider-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--bg-card);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--bg-card);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    cursor: pointer;
+  }
+
+  .slider-range {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-hint);
+    margin-top: 4px;
+  }
+
+  .orient-section {
+    margin-bottom: 1.75rem;
+  }
+
+  .orient-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .orient-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .orient-btn {
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .orient-btn:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .orient-btn.active {
+    background: var(--accent-bg);
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
+
+  .chart-wrap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .chart-container {
+    position: relative;
+    height: 220px;
+  }
+
+  .footnote {
+    font-size: 11px;
+    color: var(--text-hint);
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Balkonkraftwerk Ertragsrechner</h1>
+  <p class="subtitle">Berechne Ertrag, Ersparnis und Amortisation deiner Mini-PV-Anlage</p>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Jährliche Ersparnis</div>
+      <div class="metric-value accent" id="savings">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Amortisation nach</div>
+      <div class="metric-value" id="payback">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Jährlicher Ertrag</div>
+      <div class="metric-value" id="yield-val">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Ersparnis über 25 Jahre</div>
+      <div class="metric-value accent" id="lifetime">—</div>
+    </div>
+  </div>
+
+  <div class="slider-group">
+    <div class="slider-header">
+      <span class="slider-label">Modulleistung</span>
+      <span class="slider-value" id="wp-out">800 Wp</span>
+    </div>
+    <input type="range" min="400" max="2000" step="100" value="800" id="wp" />
+    <div class="slider-range"><span>400 Wp</span><span>2.000 Wp</span></div>
+  </div>
+
+  <div class="slider-group">
+    <div class="slider-header">
+      <span class="slider-label">Anschaffungskosten</span>
+      <span class="slider-value" id="cost-out">400 €</span>
+    </div>
+    <input type="range" min="200" max="1200" step="25" value="400" id="cost" />
+    <div class="slider-range"><span>200 €</span><span>1.200 €</span></div>
+  </div>
+
+  <div class="slider-group">
+    <div class="slider-header">
+      <span class="slider-label">Strompreis</span>
+      <span class="slider-value" id="price-out">24,64 ct/kWh</span>
+    </div>
+    <input type="range" min="20" max="50" step="0.5" value="24.64" id="price" />
+    <div class="slider-range"><span>20 ct</span><span>50 ct</span></div>
+  </div>
+
+  <div class="slider-group">
+    <div class="slider-header">
+      <span class="slider-label">Eigenverbrauchsanteil</span>
+      <span class="slider-value" id="self-out">65 %</span>
+    </div>
+    <input type="range" min="30" max="90" step="5" value="65" id="selfuse" />
+    <div class="slider-range"><span>30 % (wenig daheim)</span><span>90 % (Homeoffice)</span></div>
+  </div>
+
+  <div class="orient-section">
+    <div class="orient-label">Ausrichtung & Neigung</div>
+    <div class="orient-btns" id="orient-btns">
+      <button class="orient-btn" data-factor="1.0">Süd optimal (30–40°)</button>
+      <button class="orient-btn" data-factor="0.9">Süd-Ost / Süd-West</button>
+      <button class="orient-btn active" data-factor="0.7">Balkon vertikal</button>
+      <button class="orient-btn" data-factor="0.55">Ost oder West</button>
+      <button class="orient-btn" data-factor="0.35">Nord (ungünstig)</button>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-container">
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
+
+  <p class="footnote">
+    Berechnung basiert auf ca. 950 kWh/kWp Jahresertrag (Durchschnitt Deutschland), 0,5 % jährlicher Modulalterung und konstantem Strompreis. Tatsächliche Werte können abweichen.
+  </p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const wpEl = document.getElementById('wp');
+const costEl = document.getElementById('cost');
+const priceEl = document.getElementById('price');
+const selfEl = document.getElementById('selfuse');
+let orientFactor = 0.7;
+
+const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+const textColor = isDark ? '#B4B2A9' : '#6B6A65';
+
+const btns = document.querySelectorAll('.orient-btn');
+btns.forEach(b => {
+  b.addEventListener('click', () => {
+    btns.forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    orientFactor = parseFloat(b.dataset.factor);
+    update();
+  });
+});
+
+const ctx = document.getElementById('chart').getContext('2d');
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [{
+      label: 'Kumulative Ersparnis (€)',
+      data: [],
+      borderColor: isDark ? '#5DCAA5' : '#1D9E75',
+      backgroundColor: isDark ? 'rgba(93,202,165,0.08)' : 'rgba(29,158,117,0.08)',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 0,
+      borderWidth: 2
+    }, {
+      label: 'Anschaffungskosten (€)',
+      data: [],
+      borderColor: '#E24B4A',
+      borderDash: [6, 4],
+      borderWidth: 1.5,
+      pointRadius: 0,
+      fill: false
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'bottom',
+        labels: {
+          boxWidth: 12,
+          font: { size: 12, family: "'DM Sans', sans-serif" },
+          color: textColor,
+          padding: 16
+        }
+      },
+      tooltip: {
+        backgroundColor: isDark ? '#2C2C2A' : '#fff',
+        titleColor: isDark ? '#F1EFE8' : '#1A1A18',
+        bodyColor: isDark ? '#B4B2A9' : '#6B6A65',
+        borderColor: isDark ? '#444441' : '#E2E1DC',
+        borderWidth: 1,
+        cornerRadius: 8,
+        padding: 10,
+        bodyFont: { family: "'DM Sans', sans-serif" },
+        titleFont: { family: "'DM Sans', sans-serif", weight: 600 },
+        callbacks: {
+          label: ctx => ctx.dataset.label + ': ' + Math.round(ctx.parsed.y).toLocaleString('de-DE') + ' €'
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Jahre', font: { size: 12, family: "'DM Sans', sans-serif" }, color: textColor },
+        grid: { display: false },
+        ticks: { color: textColor, font: { size: 11 } }
+      },
+      y: {
+        title: { display: true, text: '€', font: { size: 12, family: "'DM Sans', sans-serif" }, color: textColor },
+        grid: { color: gridColor },
+        ticks: { color: textColor, font: { size: 11 } },
+        beginAtZero: true
+      }
+    }
+  }
+});
+
+function update() {
+  const wp = parseInt(wpEl.value);
+  const cost = parseInt(costEl.value);
+  const priceCt = parseFloat(priceEl.value);
+  const selfPct = parseInt(selfEl.value) / 100;
+
+  const wechselrichter = Math.min(wp, 800);
+  const baseYield = (wechselrichter / 1000) * 950 * orientFactor;
+  const oversize = wp / wechselrichter;
+  const oversizeBonus = Math.min(oversize, 1.25) > 1 ? (Math.min(oversize, 1.25) - 1) * 0.6 : 0;
+  const effectiveYield = baseYield * (1 + oversizeBonus);
+
+  const usableKwh = effectiveYield * selfPct;
+  const yearlySavings = usableKwh * (priceCt / 100);
+  const paybackYears = yearlySavings > 0 ? cost / yearlySavings : 99;
+
+  document.getElementById('wp-out').textContent = wp + ' Wp';
+  document.getElementById('cost-out').textContent = cost + ' €';
+  document.getElementById('price-out').textContent = priceCt.toFixed(2).replace('.', ',') + ' ct/kWh';
+  document.getElementById('self-out').textContent = parseInt(selfEl.value) + ' %';
+  document.getElementById('yield-val').textContent = Math.round(effectiveYield) + ' kWh';
+  document.getElementById('savings').textContent = Math.round(yearlySavings) + ' €/Jahr';
+  document.getElementById('payback').textContent = paybackYears < 25 ? paybackYears.toFixed(1).replace('.', ',') + ' Jahren' : '> 25 Jahre';
+
+  let lifetimeSavings = 0;
+  for (let y = 1; y <= 25; y++) {
+    lifetimeSavings += usableKwh * Math.pow(0.995, y) * (priceCt / 100);
+  }
+  document.getElementById('lifetime').textContent = Math.round(lifetimeSavings).toLocaleString('de-DE') + ' €';
+
+  const labels = [];
+  const cumData = [];
+  const costLine = [];
+  let cum = 0;
+  for (let y = 0; y <= 25; y++) {
+    labels.push(y);
+    if (y > 0) cum += usableKwh * Math.pow(0.995, y) * (priceCt / 100);
+    cumData.push(Math.round(cum));
+    costLine.push(cost);
+  }
+  chart.data.labels = labels;
+  chart.data.datasets[0].data = cumData;
+  chart.data.datasets[1].data = costLine;
+  chart.update('none');
+}
+
+[wpEl, costEl, priceEl, selfEl].forEach(el => el.addEventListener('input', update));
+update();
+</script>
+</body>
+</html>
