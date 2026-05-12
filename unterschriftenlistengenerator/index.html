@@ -361,9 +361,17 @@
                 return;
             }
             
-            // Parse header
-            const header = parseCSVLine(lines[0]);
-            
+            // Parse header. The export contains some columns (Vorname, Nachname,
+            // Straße, …) twice — first for the participant, then again for the
+            // Versicherungsnehmer/Ansprechperson. Rename subsequent occurrences so
+            // the participant's values aren't silently overwritten.
+            const rawHeader = parseCSVLine(lines[0]);
+            const seen = {};
+            const header = rawHeader.map(h => {
+                seen[h] = (seen[h] || 0) + 1;
+                return seen[h] === 1 ? h : `${h} (${seen[h]})`;
+            });
+
             // Parse data rows
             parsedData = [];
             for (let i = 1; i < lines.length; i++) {
