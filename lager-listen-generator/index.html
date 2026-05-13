@@ -213,6 +213,85 @@
       border-color: #a7f3d0;
     }
 
+    .letterhead-fields {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+    }
+
+    .letterhead-fields summary {
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      padding: 4px 0;
+      user-select: none;
+    }
+
+    .letterhead-fields[open] summary {
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .lh-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .lh-col-full { grid-column: 1 / -1; }
+
+    .lh-grid label {
+      display: block;
+      font-size: 13px;
+      color: #374151;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .lh-grid textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      resize: vertical;
+      outline: none;
+    }
+
+    .lh-grid textarea:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .lh-grid input[type="file"] {
+      font-size: 13px;
+    }
+
+    .lh-logo-preview {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .lh-logo-preview img {
+      max-height: 50px;
+      max-width: 150px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      background: white;
+      padding: 2px;
+    }
+
+    @media (max-width: 600px) {
+      .lh-grid { grid-template-columns: 1fr; }
+    }
+
     .tips {
       background: #eff6ff;
       border-radius: 8px;
@@ -483,6 +562,43 @@
       color: #6b7280;
     }
 
+    .table-page .letterhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12pt;
+      margin-bottom: 5pt;
+    }
+
+    .table-page .letterhead .lh-text {
+      flex: 1;
+      font-size: 9pt;
+      line-height: 1.3;
+      color: #374151;
+      white-space: pre-wrap;
+    }
+
+    .table-page .letterhead .lh-text strong { color: #111827; }
+
+    .table-page .letterhead .lh-logo {
+      max-height: 15mm;
+      max-width: 50mm;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .table-page .letterhead-footer {
+      margin-top: 6pt;
+      padding-top: 4pt;
+      border-top: 1px solid #e5e7eb;
+      font-size: 8pt;
+      line-height: 1.3;
+      color: #4b5563;
+      white-space: pre-wrap;
+    }
+
+    .table-page .letterhead-footer strong { color: #111827; }
+
     /* Screen preview of tables (when not printing) */
     .preview-tables {
       display: none;
@@ -560,6 +676,28 @@
         <input type="text" id="campName" placeholder="z. B. Sola 2026">
       </div>
 
+      <details class="letterhead-fields">
+        <summary>Briefkopf für Tabellen-Listen (Logo, Header, Footer) — optional</summary>
+        <div class="lh-grid">
+          <div class="lh-col">
+            <label for="headerText">Header (oben links)</label>
+            <textarea id="headerText" rows="3" placeholder="z. B. **DPSG Stamm XY**&#10;Sommerlager 2026&#10;Markdown: **fett** *kursiv* _unterstrichen_"></textarea>
+          </div>
+          <div class="lh-col">
+            <label for="logoFile">Logo (oben rechts)</label>
+            <input type="file" id="logoFile" accept="image/*">
+            <div id="logoPreviewBox" class="lh-logo-preview hidden">
+              <img id="logoPreview" alt="Logo-Vorschau">
+              <button type="button" class="btn btn-secondary" id="clearLogoBtn">Entfernen</button>
+            </div>
+          </div>
+          <div class="lh-col lh-col-full">
+            <label for="footerText">Footer (unten links)</label>
+            <textarea id="footerText" rows="2" placeholder="z. B. Datum, Ort, Hinweise — Markdown unterstützt"></textarea>
+          </div>
+        </div>
+      </details>
+
       <div class="lists-grid">
         <div class="list-row all-row">
           <div>
@@ -611,6 +749,7 @@
       <ul>
         <li>Die Verarbeitung passiert komplett im Browser. Die CSV wird nicht hochgeladen.</li>
         <li>Notfallbögen werden im Hochformat gedruckt, alle Übersichtstabellen im Querformat — auch im „Alles drucken"-Modus.</li>
+        <li>Briefkopf mit Logo, Header und Footer (Markdown: <code>**fett**</code>, <code>*kursiv*</code>, <code>_unterstrichen_</code>) wird auf alle Tabellen-Listen angewendet.</li>
         <li>Im Druckdialog Hintergrundgrafiken aktivieren, damit Markierungen sichtbar bleiben.</li>
         <li>Leere Felder werden mit „—" dargestellt, damit handschriftliche Ergänzungen möglich sind.</li>
       </ul>
@@ -632,10 +771,77 @@
     const warningsBox = document.getElementById('warningsBox');
     const participantsList = document.getElementById('participantsList');
     const campNameInput = document.getElementById('campName');
+    const headerTextInput = document.getElementById('headerText');
+    const footerTextInput = document.getElementById('footerText');
+    const logoFileInput = document.getElementById('logoFile');
+    const logoPreview = document.getElementById('logoPreview');
+    const logoPreviewBox = document.getElementById('logoPreviewBox');
+    const clearLogoBtn = document.getElementById('clearLogoBtn');
     const printArea = document.getElementById('printArea');
 
     let participants = [];
     let headers = [];
+    let logoDataURL = null;
+
+    // ---- Logo upload ----
+    // Re-encode as WebP at 0.75 to keep the resulting HTML small even with
+    // a high-res source — same trick the standalone Unterschriftenlisten-Tool used.
+    function resizeLogo(dataURL, maxW, maxH) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/webp', 0.75));
+        };
+        img.onerror = reject;
+        img.src = dataURL;
+      });
+    }
+
+    logoFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        alert('Bitte eine Bilddatei wählen.');
+        logoFileInput.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        resizeLogo(ev.target.result, 300, 200).then(dataURL => {
+          logoDataURL = dataURL;
+          logoPreview.src = dataURL;
+          logoPreviewBox.classList.remove('hidden');
+        }).catch(() => alert('Logo konnte nicht verarbeitet werden.'));
+      };
+      reader.readAsDataURL(file);
+    });
+
+    clearLogoBtn.addEventListener('click', () => {
+      logoDataURL = null;
+      logoFileInput.value = '';
+      logoPreview.src = '';
+      logoPreviewBox.classList.add('hidden');
+    });
+
+    // ---- Minimal markdown: **bold**, *italic*, _underline_, line breaks. ----
+    // Escapes first, then reintroduces the inline tags. Plain enough that we
+    // don't need a real parser — the tool's audience writes simple letterheads.
+    function md(text) {
+      if (!text) return '';
+      let html = escapeHtml(text);
+      html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+      html = html.replace(/_([^_\n]+)_/g, '<u>$1</u>');
+      html = html.replace(/\n/g, '<br>');
+      return html;
+    }
 
     // ---- File handlers ----
     dropZone.addEventListener('click', () => fileInput.click());
@@ -1010,7 +1216,21 @@
       const body = bodyRows.length
         ? `<tbody>${bodyRows.join('')}</tbody>`
         : `<tbody><tr><td colspan="${headerRow.length}" class="empty-row">Keine Einträge.</td></tr></tbody>`;
+
+      const headerText = (headerTextInput.value || '').trim();
+      const footerText = (footerTextInput.value || '').trim();
+      const letterhead = (headerText || logoDataURL)
+        ? `<div class="letterhead">
+            <div class="lh-text">${md(headerText)}</div>
+            ${logoDataURL ? `<img class="lh-logo" src="${logoDataURL}" alt="">` : ''}
+          </div>`
+        : '';
+      const letterheadFooter = footerText
+        ? `<div class="letterhead-footer">${md(footerText)}</div>`
+        : '';
+
       return `<section class="table-page page-landscape${extraClass ? ' ' + extraClass : ''}">
+        ${letterhead}
         <div class="page-header">
           <h2>${escapeHtml(title)}</h2>
           <span class="camp">${escapeHtml(campName)}</span>
@@ -1021,6 +1241,7 @@
           ${body}
         </table>
         ${footnote ? `<div class="footnote">${escapeHtml(footnote)}</div>` : ''}
+        ${letterheadFooter}
       </section>`;
     }
 
