@@ -462,6 +462,14 @@
       background: #fafafa;
     }
 
+    .table-page.signatures tbody tr {
+      height: 28pt;
+    }
+
+    .table-page.signatures tbody td {
+      vertical-align: middle;
+    }
+
     .table-page .empty-row {
       padding: 12pt;
       text-align: center;
@@ -587,6 +595,13 @@
             <div class="list-desc">Krankheiten, Medikamente, Nichtschwimmer und Notizen als Leitungs-Übersicht (Querformat).</div>
           </div>
           <button class="btn btn-secondary" data-list="gesundheit">Drucken</button>
+        </div>
+        <div class="list-row">
+          <div>
+            <div class="list-name">Unterschriftenliste</div>
+            <div class="list-desc">Teilnehmerliste mit Adresse, Alter und leerer Unterschriftenspalte (Querformat).</div>
+          </div>
+          <button class="btn btn-secondary" data-list="unterschriften">Drucken</button>
         </div>
       </div>
     </div>
@@ -991,11 +1006,11 @@
     }
 
     // ---- Table renderers (landscape) ----
-    function tablePage(title, campName, headerRow, bodyRows, footnote) {
+    function tablePage(title, campName, headerRow, bodyRows, footnote, extraClass) {
       const body = bodyRows.length
         ? `<tbody>${bodyRows.join('')}</tbody>`
         : `<tbody><tr><td colspan="${headerRow.length}" class="empty-row">Keine Einträge.</td></tr></tbody>`;
-      return `<section class="table-page page-landscape">
+      return `<section class="table-page page-landscape${extraClass ? ' ' + extraClass : ''}">
         <div class="page-header">
           <h2>${escapeHtml(title)}</h2>
           <span class="camp">${escapeHtml(campName)}</span>
@@ -1102,13 +1117,45 @@
         `Gelb = Gesundheitsinfo · Rot = Medikamente / Nichtschwimmer. ${filtered.length} von ${participants.length} Teilnehmenden mit Einträgen.`);
     }
 
+    function renderUnterschriftenHTML(campName) {
+      const cols = [
+        { label: 'Nr.', center: true, width: '4%' },
+        { label: 'Nachname', width: '14%' },
+        { label: 'Vorname', width: '12%' },
+        { label: 'Stufe', width: '12%' },
+        { label: 'Adresse', width: '22%' },
+        { label: 'Geb.-Datum', center: true, width: '10%' },
+        { label: 'Alter', center: true, width: '6%' },
+        { label: 'Unterschrift', width: '20%' },
+      ];
+      const rows = participants.map((p, i) => {
+        const street = val(p, 'Straße');
+        const plz = val(p, 'PLZ');
+        const ort = val(p, 'Ort');
+        const addr = [street, [plz, ort].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+        const age = val(p, 'Alter während Event') || val(p, 'Alter');
+        return `<tr>
+          <td class="center">${i + 1}</td>
+          ${cell(val(p, 'Nachname'))}
+          ${cell(val(p, 'Vorname'))}
+          ${cell(val(p, 'Stufe'))}
+          ${cell(addr)}
+          <td class="center">${escapeHtml(val(p, 'Geburtsdatum')) || '<span class="empty">—</span>'}</td>
+          <td class="center">${escapeHtml(age) || '<span class="empty">—</span>'}</td>
+          <td></td>
+        </tr>`;
+      });
+      return tablePage('Unterschriftenliste', campName, cols, rows, null, 'signatures');
+    }
+
     // ---- Print orchestration ----
     function buildPrintHTML(which, campName) {
       const parts = [];
-      if (which === 'all' || which === 'notfall')     parts.push(renderNotfallHTML(campName));
-      if (which === 'all' || which === 'kueche')      parts.push(renderKuecheHTML(campName));
-      if (which === 'all' || which === 'foto')        parts.push(renderFotoHTML(campName));
-      if (which === 'all' || which === 'gesundheit')  parts.push(renderGesundheitHTML(campName));
+      if (which === 'all' || which === 'notfall')         parts.push(renderNotfallHTML(campName));
+      if (which === 'all' || which === 'kueche')          parts.push(renderKuecheHTML(campName));
+      if (which === 'all' || which === 'foto')            parts.push(renderFotoHTML(campName));
+      if (which === 'all' || which === 'gesundheit')      parts.push(renderGesundheitHTML(campName));
+      if (which === 'all' || which === 'unterschriften')  parts.push(renderUnterschriftenHTML(campName));
       return parts.join('');
     }
 
@@ -1119,6 +1166,7 @@
         kueche: 'Küche · Unverträglichkeiten',
         foto: 'Fotorechte',
         gesundheit: 'Gesundheit · Medikamente · Schwimmer',
+        unterschriften: 'Unterschriftenliste',
       }[which] || 'Lager-Listen';
       return campName ? `${base} ${campName}` : base;
     }
