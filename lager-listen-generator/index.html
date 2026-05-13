@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lager-Listen-Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5/papaparse.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f3f4f6;
+      min-height: 100vh;
+      padding: 24px;
+      color: #1f2937;
+    }
+
+    .container { max-width: 960px; margin: 0 auto; }
+
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    .subtitle { color: #6b7280; margin-bottom: 24px; }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card h2 {
+      font-size: 18px;
+      color: #374151;
+      margin-bottom: 16px;
+    }
+
+    .field-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .field-row label {
+      font-size: 14px;
+      color: #374151;
+      font-weight: 500;
+      min-width: 140px;
+    }
+
+    .field-row input[type="text"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .field-row input[type="text"]:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-success { background: #16a34a; color: white; }
+    .btn-success:hover { background: #15803d; }
+    .btn-success:disabled { background: #9ca3af; cursor: not-allowed; }
+    .btn-secondary { background: #e5e7eb; color: #374151; }
+    .btn-secondary:hover { background: #d1d5db; }
+
+    .drop-zone {
+      border: 2px dashed #d1d5db;
+      border-radius: 12px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .drop-zone:hover {
+      border-color: #9ca3af;
+      background-color: #f9fafb;
+    }
+
+    .drop-zone.drag-over {
+      border-color: #3b82f6;
+      background-color: #eff6ff;
+    }
+
+    .drop-zone-icon { color: #9ca3af; margin-bottom: 12px; }
+    .drop-zone-text { color: #6b7280; font-size: 14px; }
+    .drop-zone-text strong { color: #3b82f6; }
+    .drop-zone-hint { color: #9ca3af; font-size: 12px; margin-top: 8px; }
+    .drop-zone input[type="file"] { display: none; }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 12px 16px;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .participants-list {
+      max-height: 240px;
+      overflow-y: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 8px 0;
+    }
+
+    .participant-item {
+      padding: 6px 16px;
+      font-size: 14px;
+      color: #374151;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .participant-item:last-child { border-bottom: none; }
+    .participant-item .age {
+      color: #9ca3af;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+
+    .warnings {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 12px 16px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #78350f;
+    }
+    .warnings ul { margin-left: 20px; margin-top: 4px; }
+
+    .error {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      padding: 12px 16px;
+      border-radius: 4px;
+      color: #7f1d1d;
+      font-size: 14px;
+    }
+
+    .hidden { display: none; }
+
+    .lists-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .list-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 14px 16px;
+      background: #f9fafb;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+
+    .list-row .list-name {
+      font-weight: 600;
+      font-size: 15px;
+      color: #111827;
+      margin-bottom: 2px;
+    }
+
+    .list-row .list-desc {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .all-row {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+    }
+
+    .tips {
+      background: #eff6ff;
+      border-radius: 8px;
+      padding: 16px;
+      font-size: 14px;
+      color: #1e40af;
+    }
+    .tips strong { display: block; margin-bottom: 8px; }
+    .tips ul { margin-left: 20px; }
+    .tips li { margin-bottom: 4px; }
+
+    /* ---- Print area ---- */
+    .print-area { display: none; }
+
+    @media print {
+      body { background: white; padding: 0; }
+      body > *:not(.print-area) { display: none !important; }
+      .print-area { display: block !important; }
+
+      @page portrait { size: A4 portrait; margin: 15mm; }
+      @page landscape { size: A4 landscape; margin: 12mm; }
+
+      .page-portrait { page: portrait; }
+      .page-landscape { page: landscape; }
+
+      .participant {
+        page-break-after: always;
+        break-after: page;
+      }
+      .participant:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      .table-page {
+        page-break-after: always;
+        break-after: page;
+      }
+      .table-page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+      }
+
+      thead { display: table-header-group; }
+      tr, td, th { page-break-inside: avoid; break-inside: avoid; }
+    }
+
+    /* ---- Notfallbogen page ---- */
+    .participant {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 9pt;
+      color: #111827;
+      line-height: 1.3;
+    }
+
+    .participant .name-block {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8mm;
+      margin-bottom: 6pt;
+      padding-bottom: 4pt;
+      border-bottom: 1.5px solid #111827;
+    }
+
+    .participant .name-block h2 {
+      font-size: 18pt;
+      font-weight: 700;
+      margin: 0 0 1pt;
+      line-height: 1.1;
+    }
+
+    .participant .name-block .meta {
+      color: #4b5563;
+      font-size: 9pt;
+      margin: 0;
+    }
+
+    .participant .name-block .camp {
+      color: #6b7280;
+      font-size: 9pt;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .participant .emergency {
+      background: #fef2f2;
+      border: 1.5px solid #dc2626;
+      border-radius: 3pt;
+      padding: 4pt 6pt;
+      margin-bottom: 6pt;
+    }
+
+    .participant .emergency .label {
+      font-size: 8pt;
+      font-weight: 700;
+      color: #991b1b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 2pt;
+    }
+
+    .participant .emergency .name {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .participant .emergency .phones {
+      margin-top: 1pt;
+      font-size: 10pt;
+      color: #111827;
+    }
+
+    .participant .emergency .phones .phone {
+      display: inline-block;
+      margin-right: 10pt;
+    }
+
+    .participant .emergency .phones .relation {
+      color: #6b7280;
+      font-weight: 400;
+    }
+
+    .participant .sections {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 8mm;
+      align-items: start;
+    }
+
+    .participant section {
+      margin-bottom: 6pt;
+    }
+
+    .participant section h3 {
+      font-size: 10pt;
+      font-weight: 700;
+      border-bottom: 1px solid #d1d5db;
+      padding-bottom: 1pt;
+      margin: 0 0 3pt;
+    }
+
+    .participant section.highlight h3 {
+      border-bottom-color: #dc2626;
+      color: #991b1b;
+    }
+
+    .participant dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: 30mm 1fr;
+      gap: 1pt 6pt;
+      align-items: baseline;
+      text-wrap: balance;
+    }
+
+    .participant dt {
+      color: #4b5563;
+      font-weight: 500;
+      hyphens: auto;
+    }
+
+    .participant dd {
+      margin: 0;
+      border-bottom: 1px dotted #d1d5db;
+      min-height: 1.15em;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .participant dd .empty { color: #9ca3af; }
+
+    .participant dd.highlight {
+      background: #fef3c7;
+      font-weight: 600;
+      padding: 0 2pt;
+      border-bottom-color: #f59e0b;
+    }
+
+    /* ---- Table pages (landscape) ---- */
+    .table-page {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #111827;
+      font-size: 9pt;
+    }
+
+    .table-page .page-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12pt;
+      margin-bottom: 6pt;
+      padding-bottom: 3pt;
+      border-bottom: 1.5px solid #111827;
+    }
+
+    .table-page .page-header h2 {
+      font-size: 16pt;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .table-page .page-header .camp {
+      font-size: 10pt;
+      color: #4b5563;
+    }
+
+    .table-page table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .table-page th, .table-page td {
+      border: 1px solid #d1d5db;
+      padding: 3pt 5pt;
+      vertical-align: top;
+      text-align: left;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+    }
+
+    .table-page th {
+      background: #f3f4f6;
+      font-weight: 700;
+      font-size: 8.5pt;
+    }
+
+    .table-page td.center, .table-page th.center { text-align: center; }
+    .table-page td .empty { color: #9ca3af; }
+
+    .table-page td.warn {
+      background: #fef3c7;
+      font-weight: 600;
+    }
+
+    .table-page td.danger {
+      background: #fee2e2;
+      font-weight: 600;
+    }
+
+    .table-page td.yes { color: #047857; font-weight: 600; }
+    .table-page td.no  { color: #b91c1c; font-weight: 600; }
+
+    .table-page tbody tr:nth-child(even) td:not(.warn):not(.danger) {
+      background: #fafafa;
+    }
+
+    .table-page .empty-row {
+      padding: 12pt;
+      text-align: center;
+      color: #6b7280;
+      font-style: italic;
+    }
+
+    .table-page .footnote {
+      margin-top: 8pt;
+      font-size: 7.5pt;
+      color: #6b7280;
+    }
+
+    /* Screen preview of tables (when not printing) */
+    .preview-tables {
+      display: none;
+    }
+    .preview-tables.show {
+      display: block;
+      margin-top: 16px;
+    }
+    .preview-tables .table-page {
+      background: white;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 16px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Lager-Listen-Generator</h1>
+    <p class="subtitle">Aus einem CSV-Export alle Lager-Listen auf einmal erzeugen — Notfallbögen, Küche, Fotorechte, Gesundheit.</p>
+
+    <div class="card">
+      <h2>CSV hochladen</h2>
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".csv,text/csv">
+        <div class="drop-zone-icon">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+        </div>
+        <div class="drop-zone-text">
+          <strong>CSV hier ablegen</strong> oder klicken zum Auswählen
+        </div>
+        <div class="drop-zone-hint">Erwartet werden die Spaltennamen aus dem Anmeldungs-Export.</div>
+      </div>
+      <div id="errorBox" class="error hidden" style="margin-top: 16px;"></div>
+    </div>
+
+    <div id="previewCard" class="card hidden">
+      <h2>Vorschau</h2>
+
+      <div class="summary">
+        <div class="stat">
+          <div class="stat-label">Teilnehmende</div>
+          <div class="stat-value" id="statCount">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Mit Unverträglichkeiten</div>
+          <div class="stat-value" id="statAllergies">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Mit Medikamenten</div>
+          <div class="stat-value" id="statMeds">0</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Nichtschwimmer</div>
+          <div class="stat-value" id="statNonSwim">0</div>
+        </div>
+      </div>
+
+      <div id="warningsBox" class="warnings hidden"></div>
+
+      <div class="participants-list" id="participantsList"></div>
+    </div>
+
+    <div id="generateCard" class="card hidden">
+      <h2>Listen drucken</h2>
+
+      <div class="field-row">
+        <label for="campName">Lagername</label>
+        <input type="text" id="campName" placeholder="z. B. Sola 2026">
+      </div>
+
+      <div class="lists-grid">
+        <div class="list-row all-row">
+          <div>
+            <div class="list-name">📋 Alle Listen auf einmal</div>
+            <div class="list-desc">Notfallbögen + alle Übersichtstabellen in einem Druckauftrag.</div>
+          </div>
+          <button class="btn btn-success" data-list="all">Drucken</button>
+        </div>
+        <div class="list-row">
+          <div>
+            <div class="list-name">Notfallbögen</div>
+            <div class="list-desc">Pro Person eine A4-Seite. Notfallkontakt prominent, Unverträglichkeiten/Krankheiten/Medikamente hervorgehoben.</div>
+          </div>
+          <button class="btn btn-secondary" data-list="notfall">Drucken</button>
+        </div>
+        <div class="list-row">
+          <div>
+            <div class="list-name">Küche / Unverträglichkeiten</div>
+            <div class="list-desc">Übersicht Ernährung &amp; Unverträglichkeiten für die Küchencrew (Querformat).</div>
+          </div>
+          <button class="btn btn-secondary" data-list="kueche">Drucken</button>
+        </div>
+        <div class="list-row">
+          <div>
+            <div class="list-name">Fotorechte</div>
+            <div class="list-desc">Wer darf wo veröffentlicht werden — Homepage, Social Media, Newsletter, Presse, Erinnerungsfotos (Querformat).</div>
+          </div>
+          <button class="btn btn-secondary" data-list="foto">Drucken</button>
+        </div>
+        <div class="list-row">
+          <div>
+            <div class="list-name">Gesundheit, Medis &amp; Schwimmer</div>
+            <div class="list-desc">Krankheiten, Medikamente, Nichtschwimmer und Notizen als Leitungs-Übersicht (Querformat).</div>
+          </div>
+          <button class="btn btn-secondary" data-list="gesundheit">Drucken</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="tips">
+      <strong>Hinweise:</strong>
+      <ul>
+        <li>Die Verarbeitung passiert komplett im Browser. Die CSV wird nicht hochgeladen.</li>
+        <li>Notfallbögen werden im Hochformat gedruckt, alle Übersichtstabellen im Querformat — auch im „Alles drucken"-Modus.</li>
+        <li>Im Druckdialog Hintergrundgrafiken aktivieren, damit Markierungen sichtbar bleiben.</li>
+        <li>Leere Felder werden mit „—" dargestellt, damit handschriftliche Ergänzungen möglich sind.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div id="printArea" class="print-area"></div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const errorBox = document.getElementById('errorBox');
+    const previewCard = document.getElementById('previewCard');
+    const generateCard = document.getElementById('generateCard');
+    const statCount = document.getElementById('statCount');
+    const statAllergies = document.getElementById('statAllergies');
+    const statMeds = document.getElementById('statMeds');
+    const statNonSwim = document.getElementById('statNonSwim');
+    const warningsBox = document.getElementById('warningsBox');
+    const participantsList = document.getElementById('participantsList');
+    const campNameInput = document.getElementById('campName');
+    const printArea = document.getElementById('printArea');
+
+    let participants = [];
+    let headers = [];
+
+    // ---- File handlers ----
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) handleFile(file);
+    });
+
+    function handleFile(file) {
+      errorBox.classList.add('hidden');
+      // header:false because the export contains duplicate column names (e.g.
+      // 'Vorname' for participant + Versicherungsnehmer); header:true would
+      // silently merge them.
+      Papa.parse(file, {
+        header: false,
+        skipEmptyLines: 'greedy',
+        complete: (results) => {
+          if (results.errors.length) {
+            const fatal = results.errors.find(e => e.type !== 'FieldMismatch');
+            if (fatal) {
+              showError(`CSV-Fehler: ${fatal.message}`);
+              return;
+            }
+          }
+          if (!results.data.length || results.data.length < 2) {
+            showError('CSV enthält keine Datenzeilen.');
+            return;
+          }
+          const rawHeaders = results.data[0].map(h => (h || '').trim());
+          const seen = {};
+          headers = rawHeaders.map(h => {
+            seen[h] = (seen[h] || 0) + 1;
+            return seen[h] === 1 ? h : `${h} (${seen[h]})`;
+          });
+          const rows = results.data.slice(1).map(arr => {
+            const row = {};
+            headers.forEach((h, i) => { row[h] = arr[i] || ''; });
+            return row;
+          }).filter(r => (r.Vorname || '').trim() || (r.Nachname || '').trim());
+
+          if (!rows.length) {
+            showError('Keine Teilnehmenden in der CSV gefunden.');
+            return;
+          }
+          loadParticipants(rows);
+          if (!campNameInput.value) {
+            campNameInput.value = file.name.replace(/\.csv$/i, '').replace(/_/g, ' ');
+          }
+        },
+        error: (err) => showError(`CSV konnte nicht gelesen werden: ${err.message}`)
+      });
+    }
+
+    function showError(msg) {
+      errorBox.textContent = msg;
+      errorBox.classList.remove('hidden');
+      previewCard.classList.add('hidden');
+      generateCard.classList.add('hidden');
+    }
+
+    function loadParticipants(rows) {
+      const collator = new Intl.Collator('de', { sensitivity: 'base' });
+      rows.sort((a, b) => collator.compare(a.Vorname || '', b.Vorname || ''));
+      participants = rows;
+
+      statCount.textContent = rows.length;
+      statAllergies.textContent = rows.filter(r => hasAllergies(r)).length;
+      statMeds.textContent = rows.filter(r => hasMedication(r)).length;
+      statNonSwim.textContent = rows.filter(r => isNonSwimmer(r)).length;
+
+      const warnings = [];
+      const missingBirth = rows.filter(r => !(r.Geburtsdatum || '').trim()).length;
+      if (missingBirth) warnings.push(`${missingBirth} Teilnehmende ohne Geburtsdatum`);
+      const missingEmergency = rows.filter(r => !emergencyContact(r).phones.length && !emergencyContact(r).name).length;
+      if (missingEmergency) warnings.push(`${missingEmergency} Teilnehmende ohne Notfallkontakt`);
+
+      if (warnings.length) {
+        warningsBox.innerHTML = '<strong>Hinweise:</strong><ul>' +
+          warnings.map(w => `<li>${escapeHtml(w)}</li>`).join('') + '</ul>';
+        warningsBox.classList.remove('hidden');
+      } else {
+        warningsBox.classList.add('hidden');
+      }
+
+      participantsList.innerHTML = rows.map(r => {
+        const name = `${(r.Vorname || '').trim()} ${(r.Nachname || '').trim()}`.trim() || '(ohne Name)';
+        const age = (r['Alter während Event'] || r.Alter || '').trim();
+        return `<div class="participant-item">${escapeHtml(name)}${age ? `<span class="age">${escapeHtml(age)} J.</span>` : ''}</div>`;
+      }).join('');
+
+      previewCard.classList.remove('hidden');
+      generateCard.classList.remove('hidden');
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    // ---- Field helpers (canonical accessors) ----
+    function val(r, col) {
+      return (r[col] || '').toString().trim();
+    }
+
+    function isTrue(s) {
+      const v = (s || '').toString().trim();
+      if (/^true$/i.test(v)) return true;
+      if (/^ja\b/i.test(v)) return true;
+      if (/^✅/.test(v)) return true;
+      return false;
+    }
+
+    function isFalse(s) {
+      const v = (s || '').toString().trim();
+      if (/^false$/i.test(v)) return true;
+      if (/^nein\b/i.test(v)) return true;
+      if (/^❌/.test(v)) return true;
+      return false;
+    }
+
+    function boolLabel(s) {
+      if (isTrue(s)) return 'Ja';
+      if (isFalse(s)) return 'Nein';
+      return (s || '').toString().trim();
+    }
+
+    function fullName(r) {
+      return `${val(r, 'Vorname')} ${val(r, 'Nachname')}`.trim() || '(ohne Name)';
+    }
+
+    function hasAllergies(r) {
+      return val(r, 'Unverträglichkeiten').length > 0;
+    }
+
+    function hasMedication(r) {
+      const m = val(r, 'Einzunehmende Medikamente');
+      if (!m) return false;
+      // The form often pre-fills "Keine" — don't count that.
+      return !/^keine\.?$/i.test(m);
+    }
+
+    function hasHealthInfo(r) {
+      if (isTrue(val(r, 'Gesundheitsinfos'))) return true;
+      return val(r, 'Erläuterung Gesundheitsinfos').length > 0;
+    }
+
+    function isNonSwimmer(r) {
+      // Two columns can express this: 'Schwimmen' (TRUE/FALSE, "darf schwimmen")
+      // and 'Schwimmen 2' (text like "den Schwimmer-Bereich" / "Nichtschwimmer").
+      const allowed = val(r, 'Schwimmen');
+      if (isFalse(allowed)) return true;
+      const area = val(r, 'Schwimmen 2').toLowerCase();
+      if (area.includes('nichtschwimmer')) return true;
+      return false;
+    }
+
+    function swimmerLabel(r) {
+      const allowed = val(r, 'Schwimmen');
+      const area = val(r, 'Schwimmen 2');
+      if (isFalse(allowed)) return 'darf nicht';
+      if (!isTrue(allowed) && !area) return '';
+      if (area) return area;
+      return 'darf schwimmen';
+    }
+
+    // Parse "Telefonnummern" field like
+    // "+49 179 12344 (Mutter), +49 1523 1333333 (Sonstige)"
+    // into [{number, relation}, ...]
+    function parsePhones(s) {
+      if (!s) return [];
+      return s.split(/\s*,\s*/).filter(Boolean).map(part => {
+        const m = part.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+        if (m) return { number: m[1].trim(), relation: m[2].trim() };
+        return { number: part.trim(), relation: '' };
+      });
+    }
+
+    function emergencyContact(r) {
+      return {
+        name: val(r, 'Name des Erziehungsberechtigten des/r Teilnehmenden'),
+        phones: parsePhones(val(r, 'Telefonnummern')),
+        email: val(r, 'E-Mail'),
+        emailCc: val(r, 'Zweite E-Mail (CC)'),
+      };
+    }
+
+    // Photo-rights columns have very long names with special characters — match
+    // by substring so small variations in the export don't break us.
+    function findHeader(...needles) {
+      for (const needle of needles) {
+        const h = headers.find(h => h.toLowerCase().includes(needle.toLowerCase()));
+        if (h) return h;
+      }
+      return null;
+    }
+
+    function photoRights(r) {
+      const get = (...needles) => {
+        const h = findHeader(...needles);
+        return h ? val(r, h) : '';
+      };
+      return {
+        homepage:    get('veröffentlichung im internet (z. b. auf der homepage', 'homepage des stammes'),
+        socialMedia: get('sozialen medien'),
+        newsletter:  get('newsletter', 'in den medien des stammes'),
+        presse:      get('in der presse'),
+        memories:    get('weitergabe einer auswahl', 'erinnerungsfotos'),
+      };
+    }
+
+    // ---- Notfallbogen renderer ----
+    // Sections rendered in two columns, with health-relevant blocks marked
+    // .highlight so they catch the eye on the printed page.
+    const HEADER_COLUMNS = ['Vorname', 'Nachname', 'Geburtsdatum', 'Alter', 'Alter während Event', 'Geschlecht', 'Stufe'];
+
+    const SECTIONS = [
+      { title: 'Adresse', fields: [
+        ['Straße', 'Straße'],
+        ['Adresszusatz', 'Adresszusatz'],
+        ['PLZ', 'PLZ'],
+        ['Ort', 'Ort'],
+        ['Land', 'Land'],
+      ]},
+      { title: 'Kontakt (Teilnehmer/in)', fields: [
+        ['E-Mail', 'E-Mail'],
+        ['E-Mail (CC)', 'Zweite E-Mail (CC)'],
+        ['Telefon 1', 'Telefon 1'],
+        ['Telefon 2', 'Telefon 2'],
+      ]},
+      { title: 'Krankenversicherung', fields: [
+        ['Versicherung', 'Krankenversicherung'],
+        ['Versicherungsnehmer', 'Versicherungsnehmer'],
+        ['Vorname Versicherungsnehmer', 'Vorname (2)'],
+      ]},
+      { title: 'Hausarzt', fields: [
+        ['Name', 'Name des Hausarztes'],
+        ['Telefon', 'Telefonnummer des Hausarztes'],
+      ]},
+      { title: 'Impfungen', fields: [
+        ['Tetanus (zuletzt)', 'Tetanus Impfung'],
+        ['FSME / Zecken (zuletzt)', 'FSME Impfung (Zecken)'],
+      ]},
+      { title: 'Ernährung & Unverträglichkeiten', highlightOn: ['Unverträglichkeiten'], fields: [
+        ['Ernährung', 'Ernährung'],
+        ['Unverträglichkeiten', 'Unverträglichkeiten', { highlight: true }],
+      ]},
+      { title: 'Gesundheit', highlightOn: ['Erläuterung Gesundheitsinfos'], fields: [
+        ['Gesundheitsinfos vorhanden', 'Gesundheitsinfos', { bool: true }],
+        ['Erfassung erlaubt', 'Erfassung gesundheitsbezogener Daten', { bool: true }],
+        ['Erläuterung', 'Erläuterung Gesundheitsinfos', { highlight: true }],
+      ]},
+      { title: 'Medikamente', highlightOn: ['Einzunehmende Medikamente'], fields: [
+        ['Einzunehmende Medikamente', 'Einzunehmende Medikamente', { highlight: true, highlightIf: v => v && !/^keine\.?$/i.test(v) }],
+        ['Selbstständige Einnahme', 'Mein/Unser Kind darf diese Medikamente selbstständig einnehmen', { bool: true }],
+        ['BTM', 'Medikamente BTM', { bool: true }],
+        ['Frei verkäuflich / homöopath. erlaubt', 'Verabreichung von frei verkäuflichen und homöopathischen Medikamenten', { bool: true }],
+      ]},
+      { title: 'Schwimmen', fields: [
+        ['Darf schwimmen', 'Schwimmen', { bool: true }],
+        ['Schwimm-Bereich', 'Schwimmen 2'],
+      ]},
+      { title: 'Einwilligungen', fields: [
+        ['Aufsichtspflicht', 'Einwilligung Aufsichtspflicht', { bool: true }],
+        ['Notfallmaßnahmen', 'Einwilligung Notfallmaßnahmen', { bool: true }],
+        ['Zeckenziehen', 'Einwilligung Zeckenziehen', { bool: true }],
+      ]},
+      { title: 'Zahlung & Lager-Infos', fields: [
+        ['Zahlungsart', 'Zahlungsart'],
+        ['Zuschuss', 'Zuschuss'],
+        ['Begründung Sozialermäßigung', 'Bei Sozialermäßigung einmal eine kurze Begründung'],
+        ['Interesse Infoabend', 'Interesse Infoabend', { bool: true }],
+        ['Deutschlandticket', 'Deutschlandticket', { bool: true }],
+        ['Notizen', 'Notizen'],
+      ]},
+    ];
+
+    function renderValue(value, opts) {
+      const s = (value == null ? '' : String(value)).trim();
+      if (!s) return '<span class="empty">—</span>';
+      if (opts && opts.bool) {
+        if (isTrue(s)) return 'Ja';
+        if (isFalse(s)) return 'Nein';
+      }
+      return escapeHtml(s);
+    }
+
+    function renderEmergencyBlock(p) {
+      const ec = emergencyContact(p);
+      const phonesHTML = ec.phones.length
+        ? ec.phones.map(ph =>
+            `<span class="phone">${escapeHtml(ph.number)}${ph.relation ? ` <span class="relation">(${escapeHtml(ph.relation)})</span>` : ''}</span>`
+          ).join('')
+        : '<span class="phone" style="color:#9ca3af">— keine Nummer hinterlegt —</span>';
+      return `<div class="emergency">
+        <div class="label">Notfallkontakt</div>
+        <div class="name">${escapeHtml(ec.name || '—')}</div>
+        <div class="phones">${phonesHTML}</div>
+      </div>`;
+    }
+
+    function renderParticipantHTML(p, campName) {
+      const subParts = [];
+      if (val(p, 'Geburtsdatum')) subParts.push(`geb. ${val(p, 'Geburtsdatum')}`);
+      const eventAge = val(p, 'Alter während Event') || val(p, 'Alter');
+      if (eventAge) subParts.push(`${eventAge} Jahre`);
+      if (val(p, 'Geschlecht')) subParts.push(val(p, 'Geschlecht'));
+      if (val(p, 'Stufe')) subParts.push(val(p, 'Stufe'));
+
+      // Split sections across two columns. Left ends after "Impfungen", so the
+      // health-critical "Ernährung/Gesundheit/Medikamente" block starts at the
+      // top of the right column where it's easy to spot.
+      const SPLIT_AFTER = 'Impfungen';
+
+      const sectionHTML = (section, rows) => {
+        if (!rows.length) return '';
+        const highlight = section.highlightOn && section.highlightOn.some(c => val(p, c));
+        return `<section class="${highlight ? 'highlight' : ''}"><h3>${escapeHtml(section.title)}</h3><dl>` +
+          rows.map(r => `<dt>${escapeHtml(r.label)}</dt><dd${r.highlight ? ' class="highlight"' : ''}>${r.value}</dd>`).join('') +
+          `</dl></section>`;
+      };
+
+      let leftHTML = '';
+      let rightHTML = '';
+      let inLeft = true;
+      for (const section of SECTIONS) {
+        const rows = section.fields
+          .filter(([, col]) => val(p, col))
+          .map(([label, col, opts]) => {
+            const raw = val(p, col);
+            const shouldHighlight = opts && opts.highlight && (
+              !opts.highlightIf || opts.highlightIf(raw)
+            );
+            return { label, value: renderValue(raw, opts), highlight: shouldHighlight };
+          });
+        const block = sectionHTML(section, rows);
+        if (inLeft) leftHTML += block; else rightHTML += block;
+        if (section.title === SPLIT_AFTER) inLeft = false;
+      }
+
+      return `<article class="participant page-portrait">
+        <div class="name-block">
+          <div>
+            <h2>${escapeHtml(fullName(p))}</h2>
+            ${subParts.length ? `<p class="meta">${escapeHtml(subParts.join(' · '))}</p>` : ''}
+          </div>
+          <span class="camp">${escapeHtml(campName)}</span>
+        </div>
+        ${renderEmergencyBlock(p)}
+        <div class="sections">
+          <div class="col">${leftHTML}</div>
+          <div class="col">${rightHTML}</div>
+        </div>
+      </article>`;
+    }
+
+    function renderNotfallHTML(campName) {
+      return participants.map(p => renderParticipantHTML(p, campName)).join('');
+    }
+
+    // ---- Table renderers (landscape) ----
+    function tablePage(title, campName, headerRow, bodyRows, footnote) {
+      const body = bodyRows.length
+        ? `<tbody>${bodyRows.join('')}</tbody>`
+        : `<tbody><tr><td colspan="${headerRow.length}" class="empty-row">Keine Einträge.</td></tr></tbody>`;
+      return `<section class="table-page page-landscape">
+        <div class="page-header">
+          <h2>${escapeHtml(title)}</h2>
+          <span class="camp">${escapeHtml(campName)}</span>
+        </div>
+        <table>
+          <colgroup>${headerRow.map(h => `<col${h.width ? ` style="width:${h.width}"` : ''}>`).join('')}</colgroup>
+          <thead><tr>${headerRow.map(h => `<th${h.center ? ' class="center"' : ''}>${escapeHtml(h.label)}</th>`).join('')}</tr></thead>
+          ${body}
+        </table>
+        ${footnote ? `<div class="footnote">${escapeHtml(footnote)}</div>` : ''}
+      </section>`;
+    }
+
+    function cell(text, className) {
+      const s = (text || '').toString().trim();
+      if (!s) return `<td${className ? ` class="${className}"` : ''}><span class="empty">—</span></td>`;
+      return `<td${className ? ` class="${className}"` : ''}>${escapeHtml(s)}</td>`;
+    }
+
+    function consentCell(value) {
+      if (isTrue(value)) return `<td class="center yes">Ja</td>`;
+      if (isFalse(value)) return `<td class="center no">Nein</td>`;
+      if (!value) return `<td class="center"><span class="empty">—</span></td>`;
+      return `<td class="center">${escapeHtml(value)}</td>`;
+    }
+
+    function renderKuecheHTML(campName) {
+      const cols = [
+        { label: 'Name', width: '28%' },
+        { label: 'Stufe', width: '18%' },
+        { label: 'Ernährung', width: '20%' },
+        { label: 'Unverträglichkeiten', width: '34%' },
+      ];
+      const rows = participants.map(p => {
+        const allergy = val(p, 'Unverträglichkeiten');
+        const diet = val(p, 'Ernährung');
+        const dietSpecial = diet && !/^mit fleisch$/i.test(diet);
+        return `<tr>
+          ${cell(fullName(p))}
+          ${cell(val(p, 'Stufe'))}
+          ${cell(diet, dietSpecial ? 'warn' : '')}
+          ${cell(allergy, allergy ? 'danger' : '')}
+        </tr>`;
+      });
+      return tablePage('Küche · Ernährung & Unverträglichkeiten', campName, cols, rows,
+        'Gelb = abweichende Ernährung · Rot = Unverträglichkeit eingetragen.');
+    }
+
+    function renderFotoHTML(campName) {
+      const cols = [
+        { label: 'Name', width: '28%' },
+        { label: 'Stufe', width: '14%' },
+        { label: 'Homepage', center: true, width: '10%' },
+        { label: 'Social Media', center: true, width: '11%' },
+        { label: 'Newsletter', center: true, width: '11%' },
+        { label: 'Presse', center: true, width: '10%' },
+        { label: 'Erinnerungsfotos', center: true, width: '16%' },
+      ];
+      const rows = participants.map(p => {
+        const fr = photoRights(p);
+        return `<tr>
+          ${cell(fullName(p))}
+          ${cell(val(p, 'Stufe'))}
+          ${consentCell(fr.homepage)}
+          ${consentCell(fr.socialMedia)}
+          ${consentCell(fr.newsletter)}
+          ${consentCell(fr.presse)}
+          ${consentCell(fr.memories)}
+        </tr>`;
+      });
+      return tablePage('Fotorechte', campName, cols, rows,
+        'Vor Veröffentlichung gegenchecken — „Nein" oder „—" bedeutet: nicht veröffentlichen.');
+    }
+
+    function renderGesundheitHTML(campName) {
+      const cols = [
+        { label: 'Name', width: '20%' },
+        { label: 'Stufe', width: '12%' },
+        { label: 'Krankheiten / Gesundheit', width: '22%' },
+        { label: 'Medikamente', width: '22%' },
+        { label: 'Schwimmen', width: '10%' },
+        { label: 'Notizen', width: '14%' },
+      ];
+      // Show only participants with at least one entry that matters here.
+      const filtered = participants.filter(p =>
+        hasHealthInfo(p) || hasMedication(p) || isNonSwimmer(p) || val(p, 'Notizen')
+      );
+      const rows = filtered.map(p => {
+        const health = val(p, 'Erläuterung Gesundheitsinfos');
+        const meds = val(p, 'Einzunehmende Medikamente');
+        const medsRelevant = hasMedication(p);
+        const swim = swimmerLabel(p);
+        const nonSwim = isNonSwimmer(p);
+        return `<tr>
+          ${cell(fullName(p))}
+          ${cell(val(p, 'Stufe'))}
+          ${cell(health, health ? 'warn' : '')}
+          ${cell(meds, medsRelevant ? 'danger' : '')}
+          ${cell(swim, nonSwim ? 'danger' : '')}
+          ${cell(val(p, 'Notizen'))}
+        </tr>`;
+      });
+      return tablePage('Gesundheit · Medikamente · Schwimmer', campName, cols, rows,
+        `Gelb = Gesundheitsinfo · Rot = Medikamente / Nichtschwimmer. ${filtered.length} von ${participants.length} Teilnehmenden mit Einträgen.`);
+    }
+
+    // ---- Print orchestration ----
+    function buildPrintHTML(which, campName) {
+      const parts = [];
+      if (which === 'all' || which === 'notfall')     parts.push(renderNotfallHTML(campName));
+      if (which === 'all' || which === 'kueche')      parts.push(renderKuecheHTML(campName));
+      if (which === 'all' || which === 'foto')        parts.push(renderFotoHTML(campName));
+      if (which === 'all' || which === 'gesundheit')  parts.push(renderGesundheitHTML(campName));
+      return parts.join('');
+    }
+
+    function titleFor(which, campName) {
+      const base = {
+        all: 'Lager-Listen',
+        notfall: 'Notfallbögen',
+        kueche: 'Küche · Unverträglichkeiten',
+        foto: 'Fotorechte',
+        gesundheit: 'Gesundheit · Medikamente · Schwimmer',
+      }[which] || 'Lager-Listen';
+      return campName ? `${base} ${campName}` : base;
+    }
+
+    document.querySelectorAll('button[data-list]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const which = btn.dataset.list;
+        const campName = (campNameInput.value || '').trim();
+        printArea.innerHTML = buildPrintHTML(which, campName);
+        const previousTitle = document.title;
+        document.title = titleFor(which, campName);
+        window.print();
+        setTimeout(() => { document.title = previousTitle; }, 100);
+      });
+    });
+  </script>
+</body>
+</html>
