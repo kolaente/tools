@@ -182,33 +182,6 @@
     .fr-item .frcount { font-family: 'JetBrains Mono', monospace; font-size: .82rem; color: var(--ink-500); }
     .fr-item .fra { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: .92rem; }
 
-    /* Table */
-    .table-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .btn {
-      font-family: inherit; font-size: .84rem; font-weight: 600; padding: 9px 16px; border-radius: 10px;
-      border: 1.5px solid var(--line); background: var(--card); color: var(--ink-700); cursor: pointer;
-      transition: all .15s; display: inline-flex; align-items: center; gap: 7px;
-    }
-    .btn:hover { border-color: var(--stripe); color: var(--stripe); }
-    .btn.primary { background: var(--stripe); border-color: var(--stripe); color: #fff; }
-    .btn.primary:hover { background: #524bdb; color: #fff; }
-    .table-scroll { margin-top: 16px; border: 1px solid var(--line); border-radius: 12px; overflow: auto; max-height: 460px; }
-    table { width: 100%; border-collapse: collapse; font-size: .83rem; }
-    thead th {
-      position: sticky; top: 0; background: var(--bg-soft); text-align: left; padding: 11px 14px;
-      font-weight: 600; color: var(--ink-600); font-size: .74rem; letter-spacing: .04em; text-transform: uppercase;
-      border-bottom: 1px solid var(--line); white-space: nowrap;
-    }
-    tbody td { padding: 10px 14px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
-    tbody tr:last-child td { border-bottom: none; }
-    tbody tr:hover { background: var(--bg-soft); }
-    td.num { font-family: 'JetBrains Mono', monospace; text-align: right; font-variant-numeric: tabular-nums; }
-    td.id { color: var(--ink-400); font-family: 'JetBrains Mono', monospace; font-size: .78rem; }
-    .pill { font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
-    .pill.micro { background: var(--paddle-soft); color: var(--paddle); }
-    .pill.standard { background: var(--stripe-soft); color: var(--stripe); }
-    .delta-pos { color: var(--green); }
-    .delta-neg { color: var(--red); }
 
     .empty-msg { text-align: center; color: var(--ink-400); padding: 30px; font-size: .9rem; }
     .err { color: var(--red); font-size: .85rem; margin-top: 10px; }
@@ -319,28 +292,6 @@
           <span id="frNote"></span>
         </div>
       </section>
-
-      <section class="card" id="tableCard">
-        <div class="table-head">
-          <div class="section-label" style="margin-bottom:0">Per-transaction comparison</div>
-          <button class="btn primary" id="exportBtn">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download comparison CSV
-          </button>
-        </div>
-        <div class="table-scroll">
-          <table id="txTable">
-            <thead>
-              <tr>
-                <th>Date</th><th>Transaction</th><th style="text-align:right">Amount</th>
-                <th style="text-align:right">Stripe fee</th><th style="text-align:right">Paddle fee</th>
-                <th>Tier</th><th style="text-align:right">Difference</th>
-              </tr>
-            </thead>
-            <tbody id="txBody"></tbody>
-          </table>
-        </div>
-      </section>
     </div>
 
     <div id="emptyResults" class="card">
@@ -356,7 +307,6 @@
   <script>
     // ---------- State ----------
     const filesData = []; // { name, type, payments?, feeLines? }
-    let lastComparison = null;
 
     // ---------- Number / CSV parsing ----------
     function parseNumber(raw) {
@@ -607,7 +557,6 @@
       let volume = 0, stripeProcessing = 0, paddleTotal = 0, refundTotal = 0;
       const micro = { count: 0, volume: 0, fee: 0 };
       const standard = { count: 0, volume: 0, fee: 0 };
-      const tableRows = [];
 
       success.forEach(t => {
         const pf = paddleFee(t.amount, cfg);
@@ -617,7 +566,6 @@
         refundTotal += t.refunded || 0;
         const bucket = pf.tier === 'micro' ? micro : standard;
         bucket.count++; bucket.volume += t.amount; bucket.fee += pf.fee;
-        tableRows.push({ ...t, paddle: pf.fee, tier: pf.tier });
       });
 
       const feeReportTotal = feeLines.reduce((s, l) => s + l.amount, 0);
@@ -629,8 +577,7 @@
       // Fall back to the per-transaction column + manual extra only when no report.
       const stripeActualFees = hasFeeReport ? feeReportTotal : stripeProcessing;
       const stripeTotal = hasFeeReport ? feeReportTotal : stripeProcessing + extra;
-      const comparison = { cfg, success, excluded, volume, stripeProcessing, extra, feeReportTotal, hasFeeReport, stripeActualFees, stripeTotal, paddleTotal, refundTotal, micro, standard, tableRows, feeLines };
-      lastComparison = comparison;
+      const comparison = { cfg, success, excluded, volume, stripeProcessing, extra, feeReportTotal, hasFeeReport, stripeActualFees, stripeTotal, paddleTotal, refundTotal, micro, standard, feeLines };
 
       // The manual "extra fees" box is redundant once a fee report is loaded — the
       // report already includes Tax/Billing — so hide it to avoid double counting.
@@ -639,7 +586,6 @@
       const hasPayments = success.length > 0;
       document.getElementById('compareCard').classList.toggle('hidden', !hasPayments);
       document.getElementById('tierCard').classList.toggle('hidden', !hasPayments);
-      document.getElementById('tableCard').classList.toggle('hidden', !hasPayments);
       document.getElementById('headline').classList.toggle('hidden', !hasPayments);
 
       if (hasPayments) {
@@ -647,7 +593,6 @@
         renderBars(comparison);
         renderMini(comparison);
         renderTiers(comparison);
-        renderTable(comparison);
       }
       renderFeeReport(feeLines, hasPayments ? comparison : null);
     }
@@ -730,26 +675,6 @@
         mk(c.standard, `Standard · ${fmtMoney(cfg.microThreshold)} and up`, `${cfg.stdPct}% + ${fmtMoney(cfg.fixed)}`);
     }
 
-    function renderTable(c) {
-      const body = document.getElementById('txBody');
-      const rows = c.tableRows.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-      body.innerHTML = rows.map(t => {
-        const d = t.stripeFee - t.paddle; // positive => paddle cheaper for this tx
-        const dCls = d >= 0 ? 'delta-pos' : 'delta-neg';
-        const idShort = (t.id || '').length > 20 ? t.id.slice(0, 18) + '…' : (t.id || '—');
-        const dateShort = (t.date || '').slice(0, 10);
-        return `<tr>
-          <td>${esc(dateShort)}</td>
-          <td class="id">${esc(idShort)}</td>
-          <td class="num">${fmtMoney(t.amount)}</td>
-          <td class="num">${fmtMoney(t.stripeFee)}</td>
-          <td class="num">${fmtMoney(t.paddle)}</td>
-          <td><span class="pill ${t.tier}">${t.tier}</span></td>
-          <td class="num ${dCls}">${d >= 0 ? '−' : '+'}${fmtMoney(Math.abs(d))}</td>
-        </tr>`;
-      }).join('');
-    }
-
     function renderFeeReport(lines, comparison) {
       const card = document.getElementById('feeReportCard');
       if (!lines.length) { card.classList.add('hidden'); return; }
@@ -790,25 +715,6 @@
         `<span>Below <b>${fmtMoney(cfg.microThreshold)}</b>: <b>${cfg.microPct}%</b> of the amount.</span>` +
         `<span><b>${fmtMoney(cfg.microThreshold)}</b> and up: <b>${cfg.stdPct}%</b> + <b>${fmtMoney(cfg.fixed)}</b>.</span>`;
     }
-
-    // ---------- Export ----------
-    document.getElementById('exportBtn').addEventListener('click', () => {
-      if (!lastComparison) return;
-      const rows = [['date', 'transaction_id', 'currency', 'amount', 'stripe_fee', 'paddle_fee', 'paddle_tier', 'difference_stripe_minus_paddle']];
-      lastComparison.tableRows.slice().sort((a, b) => (b.date || '').localeCompare(a.date || '')).forEach(t => {
-        rows.push([t.date, t.id, t.currency || CUR, t.amount.toFixed(2), t.stripeFee.toFixed(2), t.paddle.toFixed(2), t.tier, (t.stripeFee - t.paddle).toFixed(2)]);
-      });
-      const csv = rows.map(r => r.map(v => {
-        const s = String(v ?? '');
-        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-      }).join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'stripe-vs-paddle-comparison.csv';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    });
 
     // ---------- Config listeners ----------
     ['stdPct', 'fixed', 'microThreshold', 'microPct', 'extraFees'].forEach(id =>
