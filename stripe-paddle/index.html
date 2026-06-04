@@ -282,7 +282,7 @@
       <div class="files" id="fileList"></div>
       <div class="err hidden" id="err"></div>
 
-      <div class="extra-fees">
+      <div class="extra-fees" id="extraFeesBlock">
         <div class="field">
           <label for="extraFees">Additional monthly Stripe fees <span style="font-weight:400;color:var(--ink-400)">— Stripe Tax, Billing, etc.</span></label>
           <div class="input-wrap" style="max-width:220px">
@@ -620,9 +620,21 @@
         tableRows.push({ ...t, paddle: pf.fee, tier: pf.tier });
       });
 
-      const stripeTotal = stripeProcessing + extra;
-      const comparison = { cfg, success, excluded, volume, stripeProcessing, extra, stripeTotal, paddleTotal, refundTotal, micro, standard, tableRows, feeLines };
+      const feeReportTotal = feeLines.reduce((s, l) => s + l.amount, 0);
+      const hasFeeReport = feeLines.length > 0;
+      // When a fee report (Gebührenaufstellung) is present it lists every actual
+      // Stripe charge — card processing plus Tax/Billing and other fees — so it is
+      // the authoritative total. The unified payments export usually has no per-
+      // transaction "Fee" column, which is why Stripe's side would otherwise read 0.
+      // Fall back to the per-transaction column + manual extra only when no report.
+      const stripeActualFees = hasFeeReport ? feeReportTotal : stripeProcessing;
+      const stripeTotal = hasFeeReport ? feeReportTotal : stripeProcessing + extra;
+      const comparison = { cfg, success, excluded, volume, stripeProcessing, extra, feeReportTotal, hasFeeReport, stripeActualFees, stripeTotal, paddleTotal, refundTotal, micro, standard, tableRows, feeLines };
       lastComparison = comparison;
+
+      // The manual "extra fees" box is redundant once a fee report is loaded — the
+      // report already includes Tax/Billing — so hide it to avoid double counting.
+      document.getElementById('extraFeesBlock').classList.toggle('hidden', hasFeeReport);
 
       const hasPayments = success.length > 0;
       document.getElementById('compareCard').classList.toggle('hidden', !hasPayments);
@@ -654,11 +666,16 @@
       const save = diff >= 0;
       const stripeRate = c.volume ? c.stripeTotal / c.volume * 100 : 0;
       const paddleRate = c.volume ? c.paddleTotal / c.volume * 100 : 0;
+      const stripeSource = c.hasFeeReport
+        ? `from your fee report · ${c.feeLines.length} line items`
+        : c.extra > 0
+          ? `processing ${fmtMoney(c.stripeProcessing)} + ${fmtMoney(c.extra)} Tax/Billing`
+          : 'from the “Fee” column';
       document.getElementById('headline').innerHTML = `
         <div class="stat">
           <div class="top"><span class="dot stripe"></span>Stripe — actual</div>
           <div class="big mono">${fmtMoney(c.stripeTotal)}</div>
-          <div class="sub">${fmtPct(stripeRate)} effective · ${c.extra > 0 ? `processing ${fmtMoney(c.stripeProcessing)} + ${fmtMoney(c.extra)} Tax/Billing` : 'from the “Fee” column'}</div>
+          <div class="sub">${fmtPct(stripeRate)} effective · ${stripeSource}</div>
         </div>
         <div class="stat">
           <div class="top"><span class="dot paddle"></span>Paddle — estimated</div>
@@ -760,11 +777,9 @@
           <div class="fra">${fmtMoney(g.amount, cur)}</div>
         </div>`).join('');
 
-      let note = 'This is everything Stripe billed across all categories — card processing plus any Connect/application fees, Climate contributions, and other charges that don’t appear in the per-transaction “Fee” column above.';
+      let note = 'This is everything Stripe billed across all categories — card processing plus Tax/Billing, Climate contributions, and other charges.';
       if (comparison) {
-        const diff = total - comparison.paddleTotal;
-        note += ` If this report and your payments export cover the same period, the fuller Stripe vs. Paddle gap is ${fmtMoney(total, cur)} vs. ${fmtMoney(comparison.paddleTotal, cur)} — ` +
-          (diff >= 0 ? `Paddle ${fmtMoney(Math.abs(diff), cur)} cheaper.` : `Paddle ${fmtMoney(Math.abs(diff), cur)} more expensive.`);
+        note += ` This total is what drives the “Stripe — actual” figure in the comparison above: the unified payments export has no per-transaction “Fee” column, so the real cost is taken from this fee report.`;
       }
       document.getElementById('frNote').textContent = note;
     }
