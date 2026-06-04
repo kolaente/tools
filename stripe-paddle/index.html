@@ -94,6 +94,8 @@
     }
     .note svg { flex-shrink: 0; margin-top: 2px; }
 
+    .extra-fees { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line-soft); }
+
     /* Dropzone */
     .drop {
       border: 2px dashed var(--line); border-radius: var(--radius); background: var(--bg-soft);
@@ -279,6 +281,17 @@
       </div>
       <div class="files" id="fileList"></div>
       <div class="err hidden" id="err"></div>
+
+      <div class="extra-fees">
+        <div class="field">
+          <label for="extraFees">Additional monthly Stripe fees <span style="font-weight:400;color:var(--ink-400)">— Stripe Tax, Billing, etc.</span></label>
+          <div class="input-wrap" style="max-width:220px">
+            <span class="adorn left" id="extraSym">€</span>
+            <input type="number" id="extraFees" class="pad-left" value="0" step="0.01" min="0">
+          </div>
+          <span class="hint">Read these off your monthly Stripe invoice (the PDF) and enter the total here — it gets added to Stripe’s side. They’re billed separately and don’t appear in the per-transaction “Fee” column. Use the same month as your payments export.</span>
+        </div>
+      </div>
     </section>
 
     <!-- Results -->
@@ -484,6 +497,12 @@
       }
     }
     function fmtPct(n) { return (n).toFixed(2) + '%'; }
+    function curSymbol(cur) {
+      try {
+        const part = new Intl.NumberFormat(undefined, { style: 'currency', currency: cur || 'EUR' }).formatToParts(0).find(p => p.type === 'currency');
+        return part ? part.value : (cur || '€');
+      } catch (e) { return cur || '€'; }
+    }
     function esc(s) { return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
 
     // ---------- File handling ----------
@@ -576,12 +595,16 @@
 
       // detect currency (most common among payments, else fee lines)
       CUR = detectCurrency(allTx, feeLines);
+      document.getElementById('extraSym').textContent = curSymbol(CUR);
+
+      // additional monthly Stripe fees (Tax, Billing, …) entered manually
+      const extra = Math.max(0, parseFloat(document.getElementById('extraFees').value) || 0);
 
       // successful transactions only
       const success = allTx.filter(t => SUCCESS_STATUSES.includes((t.status || '').toLowerCase()));
       const excluded = allTx.length - success.length;
 
-      let volume = 0, stripeTotal = 0, paddleTotal = 0, refundTotal = 0;
+      let volume = 0, stripeProcessing = 0, paddleTotal = 0, refundTotal = 0;
       const micro = { count: 0, volume: 0, fee: 0 };
       const standard = { count: 0, volume: 0, fee: 0 };
       const tableRows = [];
@@ -589,7 +612,7 @@
       success.forEach(t => {
         const pf = paddleFee(t.amount, cfg);
         volume += t.amount;
-        stripeTotal += t.stripeFee;
+        stripeProcessing += t.stripeFee;
         paddleTotal += pf.fee;
         refundTotal += t.refunded || 0;
         const bucket = pf.tier === 'micro' ? micro : standard;
@@ -597,7 +620,8 @@
         tableRows.push({ ...t, paddle: pf.fee, tier: pf.tier });
       });
 
-      const comparison = { cfg, success, excluded, volume, stripeTotal, paddleTotal, refundTotal, micro, standard, tableRows, feeLines };
+      const stripeTotal = stripeProcessing + extra;
+      const comparison = { cfg, success, excluded, volume, stripeProcessing, extra, stripeTotal, paddleTotal, refundTotal, micro, standard, tableRows, feeLines };
       lastComparison = comparison;
 
       const hasPayments = success.length > 0;
@@ -634,7 +658,7 @@
         <div class="stat">
           <div class="top"><span class="dot stripe"></span>Stripe — actual</div>
           <div class="big mono">${fmtMoney(c.stripeTotal)}</div>
-          <div class="sub">${fmtPct(stripeRate)} effective · from the “Fee” column</div>
+          <div class="sub">${fmtPct(stripeRate)} effective · ${c.extra > 0 ? `processing ${fmtMoney(c.stripeProcessing)} + ${fmtMoney(c.extra)} Tax/Billing` : 'from the “Fee” column'}</div>
         </div>
         <div class="stat">
           <div class="top"><span class="dot paddle"></span>Paddle — estimated</div>
@@ -772,7 +796,7 @@
     });
 
     // ---------- Config listeners ----------
-    ['stdPct', 'fixed', 'microThreshold', 'microPct'].forEach(id =>
+    ['stdPct', 'fixed', 'microThreshold', 'microPct', 'extraFees'].forEach(id =>
       document.getElementById(id).addEventListener('input', recompute));
 
     updateFormula();
