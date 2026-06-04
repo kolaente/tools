@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stripe vs. Paddle Fee Comparison</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --bg-soft: #fbfbfe;
+      --card: #ffffff;
+      --line: #e7e8f0;
+      --line-soft: #f0f1f7;
+      --ink: #15161c;
+      --ink-700: #3a3c48;
+      --ink-600: #565867;
+      --ink-500: #80828f;
+      --ink-400: #a7a9b6;
+      --stripe: #635bff;
+      --stripe-soft: #efeefe;
+      --paddle: #f0950f;
+      --paddle-soft: #fdf1df;
+      --green: #1f9d57;
+      --green-soft: #e6f6ed;
+      --red: #d4453d;
+      --red-soft: #fbe9e8;
+      --radius: 16px;
+      --shadow: 0 1px 2px rgba(20,22,40,.04), 0 8px 24px -16px rgba(20,22,40,.18);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.5;
+    }
+    .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    .wrap { max-width: 1040px; margin: 0 auto; padding: 40px 20px 80px; }
+    @media (min-width: 768px) { .wrap { padding: 56px 32px 96px; } }
+
+    /* Header */
+    header { margin-bottom: 32px; }
+    .eyebrow {
+      font-size: .72rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+      color: var(--ink-500); margin-bottom: 14px; display: flex; align-items: center; gap: 10px;
+    }
+    .eyebrow::before { content: ''; width: 26px; height: 2px; background: var(--stripe); border-radius: 2px; }
+    h1 { font-size: clamp(1.9rem, 5vw, 2.7rem); font-weight: 800; letter-spacing: -.025em; line-height: 1.05; }
+    h1 .accent { color: var(--stripe); }
+    h1 .accent2 { color: var(--paddle); }
+    .lede { margin-top: 14px; max-width: 620px; color: var(--ink-600); font-size: 1.02rem; }
+
+    .card {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 24px;
+    }
+    @media (min-width: 768px) { .card { padding: 28px; } }
+    section { margin-top: 24px; }
+
+    .section-label {
+      font-size: .72rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--ink-500); margin-bottom: 14px;
+    }
+
+    /* Pricing config */
+    .config-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    @media (min-width: 640px) { .config-grid { grid-template-columns: repeat(4, 1fr); } }
+    .field label { display: block; font-size: .8rem; font-weight: 600; color: var(--ink-700); margin-bottom: 7px; }
+    .field .hint { display: block; font-size: .72rem; color: var(--ink-400); margin-top: 5px; font-weight: 400; }
+    .input-wrap { position: relative; display: flex; align-items: center; }
+    .input-wrap .adorn { position: absolute; color: var(--ink-400); font-size: .9rem; font-weight: 500; pointer-events: none; }
+    .input-wrap .adorn.left { left: 12px; }
+    .input-wrap .adorn.right { right: 12px; }
+    input[type="number"] {
+      width: 100%; padding: 11px 12px; font-family: 'JetBrains Mono', monospace; font-size: .95rem;
+      border: 1.5px solid var(--line); border-radius: 10px; background: var(--bg-soft); color: var(--ink);
+      outline: none; transition: border-color .15s, box-shadow .15s; font-variant-numeric: tabular-nums;
+    }
+    input.pad-left { padding-left: 26px; }
+    input.pad-right { padding-right: 30px; }
+    input[type="number"]:focus { border-color: var(--stripe); box-shadow: 0 0 0 3px var(--stripe-soft); background: #fff; }
+    .config-formula {
+      margin-top: 16px; padding: 12px 14px; background: var(--paddle-soft); border-radius: 10px;
+      font-size: .85rem; color: var(--ink-700); display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center;
+    }
+    .config-formula b { color: var(--paddle); font-weight: 700; }
+
+    .note {
+      margin-top: 14px; font-size: .82rem; color: var(--ink-500); display: flex; gap: 8px; align-items: flex-start;
+    }
+    .note svg { flex-shrink: 0; margin-top: 2px; }
+
+    /* Dropzone */
+    .drop {
+      border: 2px dashed var(--line); border-radius: var(--radius); background: var(--bg-soft);
+      padding: 38px 24px; text-align: center; cursor: pointer; transition: all .18s;
+    }
+    .drop:hover, .drop.drag { border-color: var(--stripe); background: var(--stripe-soft); }
+    .drop .di { color: var(--stripe); margin-bottom: 12px; }
+    .drop .dt { font-weight: 600; font-size: 1.02rem; }
+    .drop .ds { color: var(--ink-500); font-size: .86rem; margin-top: 6px; }
+    .files { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+    .file-chip {
+      display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--bg-soft);
+      border: 1px solid var(--line); border-radius: 10px; font-size: .85rem;
+    }
+    .file-chip .badge {
+      font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; letter-spacing: .03em;
+    }
+    .badge.payments { background: var(--stripe-soft); color: var(--stripe); }
+    .badge.feereport { background: var(--paddle-soft); color: var(--paddle); }
+    .badge.unknown { background: var(--red-soft); color: var(--red); }
+    .file-chip .fname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-700); }
+    .file-chip .fmeta { color: var(--ink-400); font-size: .78rem; }
+    .file-chip .rm { cursor: pointer; color: var(--ink-400); background: none; border: none; padding: 4px; line-height: 0; border-radius: 6px; }
+    .file-chip .rm:hover { color: var(--red); background: var(--red-soft); }
+
+    .hidden { display: none !important; }
+
+    /* Headline */
+    .headline { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    @media (min-width: 720px) { .headline { grid-template-columns: 1fr 1fr 1.2fr; } }
+    .stat {
+      background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 20px 22px; box-shadow: var(--shadow); position: relative; overflow: hidden;
+    }
+    .stat .top { font-size: .76rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-500); display: flex; align-items: center; gap: 7px; }
+    .stat .dot { width: 9px; height: 9px; border-radius: 50%; }
+    .dot.stripe { background: var(--stripe); }
+    .dot.paddle { background: var(--paddle); }
+    .stat .big { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 600; letter-spacing: -.02em; margin-top: 12px; }
+    .stat .sub { font-size: .82rem; color: var(--ink-500); margin-top: 6px; }
+    .stat.verdict.save { background: linear-gradient(135deg, #fff, var(--green-soft)); border-color: #bfe6cd; }
+    .stat.verdict.cost { background: linear-gradient(135deg, #fff, var(--red-soft)); border-color: #f1c5c2; }
+    .stat.verdict .big.save { color: var(--green); }
+    .stat.verdict .big.cost { color: var(--red); }
+    .stat.verdict .badge-v { display: inline-block; font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-top: 10px; }
+    .badge-v.save { background: var(--green); color: #fff; }
+    .badge-v.cost { background: var(--red); color: #fff; }
+
+    /* Bar compare */
+    .bars { margin-top: 22px; }
+    .bar-row { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .bar-row .lbl { font-size: .85rem; font-weight: 600; color: var(--ink-700); }
+    .bar-track { background: var(--line-soft); border-radius: 8px; height: 30px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 8px; transition: width .5s cubic-bezier(.4,0,.2,1); min-width: 2px; }
+    .bar-fill.stripe { background: var(--stripe); }
+    .bar-fill.paddle { background: var(--paddle); }
+    .bar-row .val { font-family: 'JetBrains Mono', monospace; font-size: .9rem; font-weight: 600; }
+
+    /* Mini stats */
+    .mini-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--line); border-radius: 12px; overflow: hidden; margin-top: 22px; }
+    @media (min-width: 640px) { .mini-grid { grid-template-columns: repeat(4, 1fr); } }
+    .mini { background: var(--card); padding: 16px 18px; }
+    .mini .k { font-size: .74rem; color: var(--ink-500); font-weight: 500; }
+    .mini .v { font-family: 'JetBrains Mono', monospace; font-size: 1.18rem; font-weight: 600; margin-top: 5px; }
+
+    /* Tier breakdown */
+    .tiers { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 22px; }
+    @media (min-width: 640px) { .tiers { grid-template-columns: 1fr 1fr; } }
+    .tier { border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+    .tier .th { display: flex; align-items: center; justify-content: space-between; }
+    .tier .tname { font-weight: 600; font-size: .92rem; }
+    .tier .tcount { font-size: .78rem; color: var(--ink-500); font-family: 'JetBrains Mono', monospace; }
+    .tier .trow { display: flex; justify-content: space-between; font-size: .84rem; margin-top: 9px; color: var(--ink-600); }
+    .tier .trow .mono { color: var(--ink-700); font-weight: 500; }
+    .tier .formula-tag { font-size: .72rem; color: var(--paddle); background: var(--paddle-soft); padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+
+    /* Fee report */
+    .fr-total { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+    .fr-total .amt { font-family: 'JetBrains Mono', monospace; font-size: 1.7rem; font-weight: 600; }
+    .fr-list { margin-top: 18px; display: flex; flex-direction: column; gap: 1px; background: var(--line); border-radius: 12px; overflow: hidden; }
+    .fr-item { background: var(--card); display: grid; grid-template-columns: 1fr auto auto; gap: 14px; align-items: center; padding: 13px 16px; }
+    .fr-item .frn { font-weight: 500; font-size: .9rem; }
+    .fr-item .frc { font-size: .74rem; color: var(--ink-400); }
+    .fr-item .frcount { font-family: 'JetBrains Mono', monospace; font-size: .82rem; color: var(--ink-500); }
+    .fr-item .fra { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: .92rem; }
+
+    /* Table */
+    .table-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .btn {
+      font-family: inherit; font-size: .84rem; font-weight: 600; padding: 9px 16px; border-radius: 10px;
+      border: 1.5px solid var(--line); background: var(--card); color: var(--ink-700); cursor: pointer;
+      transition: all .15s; display: inline-flex; align-items: center; gap: 7px;
+    }
+    .btn:hover { border-color: var(--stripe); color: var(--stripe); }
+    .btn.primary { background: var(--stripe); border-color: var(--stripe); color: #fff; }
+    .btn.primary:hover { background: #524bdb; color: #fff; }
+    .table-scroll { margin-top: 16px; border: 1px solid var(--line); border-radius: 12px; overflow: auto; max-height: 460px; }
+    table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+    thead th {
+      position: sticky; top: 0; background: var(--bg-soft); text-align: left; padding: 11px 14px;
+      font-weight: 600; color: var(--ink-600); font-size: .74rem; letter-spacing: .04em; text-transform: uppercase;
+      border-bottom: 1px solid var(--line); white-space: nowrap;
+    }
+    tbody td { padding: 10px 14px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--bg-soft); }
+    td.num { font-family: 'JetBrains Mono', monospace; text-align: right; font-variant-numeric: tabular-nums; }
+    td.id { color: var(--ink-400); font-family: 'JetBrains Mono', monospace; font-size: .78rem; }
+    .pill { font-size: .68rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+    .pill.micro { background: var(--paddle-soft); color: var(--paddle); }
+    .pill.standard { background: var(--stripe-soft); color: var(--stripe); }
+    .delta-pos { color: var(--green); }
+    .delta-neg { color: var(--red); }
+
+    .empty-msg { text-align: center; color: var(--ink-400); padding: 30px; font-size: .9rem; }
+    .err { color: var(--red); font-size: .85rem; margin-top: 10px; }
+
+    footer { margin-top: 40px; text-align: center; color: var(--ink-400); font-size: .78rem; }
+    footer a { color: var(--ink-500); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">Payment fees</div>
+      <h1><span class="accent">Stripe</span> vs. <span class="accent2">Paddle</span></h1>
+      <p class="lede">Upload your Stripe dashboard exports and see exactly what Paddle would have charged for the same volume. Everything runs locally in your browser — no data leaves your machine.</p>
+    </header>
+
+    <!-- Paddle pricing config -->
+    <section class="card">
+      <div class="section-label">Paddle pricing model</div>
+      <div class="config-grid">
+        <div class="field">
+          <label for="stdPct">Standard rate</label>
+          <div class="input-wrap">
+            <input type="number" id="stdPct" class="pad-right" value="5" step="0.1" min="0">
+            <span class="adorn right">%</span>
+          </div>
+          <span class="hint">for amounts ≥ threshold</span>
+        </div>
+        <div class="field">
+          <label for="fixed">Fixed fee</label>
+          <div class="input-wrap">
+            <span class="adorn left">+</span>
+            <input type="number" id="fixed" class="pad-left" value="0.50" step="0.01" min="0">
+          </div>
+          <span class="hint">per transaction</span>
+        </div>
+        <div class="field">
+          <label for="microThreshold">Micro threshold</label>
+          <div class="input-wrap">
+            <input type="number" id="microThreshold" value="10" step="0.5" min="0">
+          </div>
+          <span class="hint">below this → micro rate</span>
+        </div>
+        <div class="field">
+          <label for="microPct">Micro rate</label>
+          <div class="input-wrap">
+            <input type="number" id="microPct" class="pad-right" value="10" step="0.1" min="0">
+            <span class="adorn right">%</span>
+          </div>
+          <span class="hint">flat, no fixed fee</span>
+        </div>
+      </div>
+      <div class="config-formula" id="formula"></div>
+      <div class="note">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>Paddle publishes pricing in USD. Your Stripe data is in its original currency — if that isn't USD, adjust the fixed fee and threshold above to your currency for a fair comparison.</span>
+      </div>
+    </section>
+
+    <!-- Upload -->
+    <section class="card">
+      <div class="section-label">Stripe CSV exports</div>
+      <div class="drop" id="drop">
+        <div class="di">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="dt">Drop CSV files here or click to browse</div>
+        <div class="ds">Payments export &nbsp;·&nbsp; Fee report (Gebührenaufstellung) &nbsp;·&nbsp; multiple files OK</div>
+        <input type="file" id="fileInput" accept=".csv,text/csv" multiple class="hidden">
+      </div>
+      <div class="files" id="fileList"></div>
+      <div class="err hidden" id="err"></div>
+    </section>
+
+    <!-- Results -->
+    <div id="results" class="hidden">
+
+      <section class="headline" id="headline"></section>
+
+      <section class="card" id="compareCard">
+        <div class="section-label">Side by side</div>
+        <div class="bars" id="bars"></div>
+        <div class="mini-grid" id="miniGrid"></div>
+      </section>
+
+      <section class="card" id="tierCard">
+        <div class="section-label">How Paddle's fee breaks down</div>
+        <div class="tiers" id="tiers"></div>
+      </section>
+
+      <section class="card hidden" id="feeReportCard">
+        <div class="section-label">What Stripe actually charged you (fee report)</div>
+        <div class="fr-total" id="frTotal"></div>
+        <div class="fr-list" id="frList"></div>
+        <div class="note">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span id="frNote"></span>
+        </div>
+      </section>
+
+      <section class="card" id="tableCard">
+        <div class="table-head">
+          <div class="section-label" style="margin-bottom:0">Per-transaction comparison</div>
+          <button class="btn primary" id="exportBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download comparison CSV
+          </button>
+        </div>
+        <div class="table-scroll">
+          <table id="txTable">
+            <thead>
+              <tr>
+                <th>Date</th><th>Transaction</th><th style="text-align:right">Amount</th>
+                <th style="text-align:right">Stripe fee</th><th style="text-align:right">Paddle fee</th>
+                <th>Tier</th><th style="text-align:right">Difference</th>
+              </tr>
+            </thead>
+            <tbody id="txBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div id="emptyResults" class="card">
+      <div class="empty-msg">Upload at least one Stripe CSV export to see the comparison.</div>
+    </div>
+
+    <footer>
+      Calculations are estimates for comparison only. Verify against official Stripe and Paddle pricing for your account. ·
+      <a href="/">More tools</a>
+    </footer>
+  </div>
+
+  <script>
+    // ---------- State ----------
+    const filesData = []; // { name, type, payments?, feeLines? }
+    let lastComparison = null;
+
+    // ---------- Number / CSV parsing ----------
+    function parseNumber(raw) {
+      if (raw == null) return NaN;
+      let s = String(raw).trim();
+      if (s === '') return NaN;
+      s = s.replace(/[^\d.,\-]/g, '');
+      if (s === '' || s === '-') return NaN;
+      const hasComma = s.includes(','), hasDot = s.includes('.');
+      if (hasComma && hasDot) {
+        if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.');
+        else s = s.replace(/,/g, '');
+      } else if (hasComma) {
+        s = s.replace(',', '.');
+      }
+      return parseFloat(s);
+    }
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [], field = '', i = 0, inQuotes = false;
+      // strip BOM
+      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+      while (i < text.length) {
+        const c = text[i];
+        if (inQuotes) {
+          if (c === '"') {
+            if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
+            inQuotes = false; i++; continue;
+          }
+          field += c; i++; continue;
+        }
+        if (c === '"') { inQuotes = true; i++; continue; }
+        if (c === ',') { row.push(field); field = ''; i++; continue; }
+        if (c === '\r') { i++; continue; }
+        if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; i++; continue; }
+        field += c; i++;
+      }
+      if (field !== '' || row.length) { row.push(field); rows.push(row); }
+      return rows.filter(r => !(r.length === 1 && r[0].trim() === ''));
+    }
+
+    function headerIndex(headers) {
+      const map = {};
+      headers.forEach((h, i) => { map[h.trim().toLowerCase()] = i; });
+      return map;
+    }
+
+    // ---------- Detection ----------
+    function detectType(headers) {
+      const h = headers.map(x => x.trim().toLowerCase());
+      const has = n => h.includes(n);
+      if (has('fee_category') || has('balance_transaction_description') || has('fee_description')) return 'feereport';
+      if (has('amount') && has('fee') && has('status')) return 'payments';
+      if (has('amount') && (has('fee') || has('status'))) return 'payments';
+      return 'unknown';
+    }
+
+    // ---------- Processors ----------
+    function processPayments(rows) {
+      const headers = rows[0];
+      const idx = headerIndex(headers);
+      const cId = idx['id'];
+      const cDate = idx['created date (utc)'] ?? idx['created (utc)'] ?? idx['created'];
+      const cAmount = idx['amount'];
+      const cRefund = idx['amount refunded'];
+      const cCur = idx['currency'];
+      const cFee = idx['fee'];
+      const cStatus = idx['status'];
+      const txs = [];
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (cAmount == null || row[cAmount] == null) continue;
+        const amount = parseNumber(row[cAmount]);
+        if (isNaN(amount)) continue;
+        txs.push({
+          id: cId != null ? row[cId] : '',
+          date: cDate != null ? (row[cDate] || '') : '',
+          amount,
+          refunded: cRefund != null ? (parseNumber(row[cRefund]) || 0) : 0,
+          currency: cCur != null ? (row[cCur] || '').toUpperCase() : '',
+          stripeFee: cFee != null ? (parseNumber(row[cFee]) || 0) : 0,
+          status: cStatus != null ? (row[cStatus] || '').trim() : 'Paid',
+        });
+      }
+      return txs;
+    }
+
+    function processFeeReport(rows) {
+      const headers = rows[0];
+      const idx = headerIndex(headers);
+      const cAmount = idx['amount'];
+      const cCur = idx['currency'];
+      const cFeature = idx['feature_name'] ?? idx['balance_transaction_description'];
+      const cCategory = idx['fee_category'];
+      const cDate = idx['balance_transaction_created'] ?? idx['incurred_at'];
+      const lines = [];
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (cAmount == null) continue;
+        const amount = parseNumber(row[cAmount]);
+        if (isNaN(amount)) continue;
+        lines.push({
+          amount,
+          currency: cCur != null ? (row[cCur] || '').toUpperCase() : '',
+          feature: cFeature != null ? (row[cFeature] || 'Fee') : 'Fee',
+          category: cCategory != null ? (row[cCategory] || '') : '',
+          date: cDate != null ? (row[cDate] || '') : '',
+        });
+      }
+      return lines;
+    }
+
+    // ---------- Paddle fee ----------
+    function getConfig() {
+      return {
+        stdPct: parseFloat(document.getElementById('stdPct').value) || 0,
+        fixed: parseFloat(document.getElementById('fixed').value) || 0,
+        microThreshold: parseFloat(document.getElementById('microThreshold').value) || 0,
+        microPct: parseFloat(document.getElementById('microPct').value) || 0,
+      };
+    }
+    function paddleFee(amount, cfg) {
+      if (amount < cfg.microThreshold) {
+        return { fee: amount * cfg.microPct / 100, tier: 'micro' };
+      }
+      return { fee: amount * cfg.stdPct / 100 + cfg.fixed, tier: 'standard' };
+    }
+
+    // ---------- Formatting ----------
+    let CUR = 'EUR';
+    function fmtMoney(n, cur) {
+      const c = cur || CUR || 'EUR';
+      try {
+        return new Intl.NumberFormat(undefined, { style: 'currency', currency: c, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+      } catch (e) {
+        return (n < 0 ? '-' : '') + Math.abs(n).toFixed(2) + ' ' + c;
+      }
+    }
+    function fmtPct(n) { return (n).toFixed(2) + '%'; }
+    function esc(s) { return String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
+
+    // ---------- File handling ----------
+    const drop = document.getElementById('drop');
+    const fileInput = document.getElementById('fileInput');
+    const fileList = document.getElementById('fileList');
+    const errEl = document.getElementById('err');
+
+    drop.addEventListener('click', () => fileInput.click());
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('drag'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+    drop.addEventListener('drop', e => {
+      e.preventDefault(); drop.classList.remove('drag');
+      handleFiles(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', e => { handleFiles(e.target.files); fileInput.value = ''; });
+
+    async function handleFiles(fileObjs) {
+      errEl.classList.add('hidden'); errEl.textContent = '';
+      for (const f of fileObjs) {
+        try {
+          const text = await f.text();
+          const rows = parseCSV(text);
+          if (!rows.length) { showErr(`"${f.name}" appears to be empty.`); continue; }
+          const type = detectType(rows[0]);
+          const entry = { name: f.name, type, rows: rows.length - 1 };
+          if (type === 'payments') entry.payments = processPayments(rows);
+          else if (type === 'feereport') entry.feeLines = processFeeReport(rows);
+          else showErr(`"${f.name}" wasn't recognised as a Stripe payments export or fee report — skipping. (Columns: ${rows[0].slice(0, 4).join(', ')}…)`);
+          if (type !== 'unknown') filesData.push(entry);
+        } catch (err) {
+          showErr(`Could not read "${f.name}": ${err.message}`);
+        }
+      }
+      renderFiles();
+      recompute();
+    }
+
+    function showErr(msg) {
+      errEl.classList.remove('hidden');
+      errEl.innerHTML += (errEl.innerHTML ? '<br>' : '') + esc(msg);
+    }
+
+    function renderFiles() {
+      fileList.innerHTML = '';
+      filesData.forEach((f, i) => {
+        const count = f.type === 'payments' ? `${f.payments.length} payments`
+          : f.type === 'feereport' ? `${f.feeLines.length} fee lines` : `${f.rows} rows`;
+        const label = f.type === 'payments' ? 'PAYMENTS' : f.type === 'feereport' ? 'FEE REPORT' : 'UNKNOWN';
+        const div = document.createElement('div');
+        div.className = 'file-chip';
+        div.innerHTML = `
+          <span class="badge ${f.type}">${label}</span>
+          <span class="fname">${esc(f.name)}</span>
+          <span class="fmeta">${count}</span>
+          <button class="rm" title="Remove" data-i="${i}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>`;
+        fileList.appendChild(div);
+      });
+      fileList.querySelectorAll('.rm').forEach(b => b.addEventListener('click', () => {
+        filesData.splice(parseInt(b.dataset.i), 1);
+        renderFiles(); recompute();
+      }));
+    }
+
+    // ---------- Compute & render ----------
+    const SUCCESS_STATUSES = ['paid', 'succeeded', 'available', 'completed'];
+
+    function recompute() {
+      updateFormula();
+      const cfg = getConfig();
+
+      // gather payments across all payment files
+      const allTx = [];
+      filesData.filter(f => f.type === 'payments').forEach(f => allTx.push(...f.payments));
+      const feeLines = [];
+      filesData.filter(f => f.type === 'feereport').forEach(f => feeLines.push(...f.feeLines));
+
+      const results = document.getElementById('results');
+      const emptyResults = document.getElementById('emptyResults');
+
+      if (!allTx.length && !feeLines.length) {
+        results.classList.add('hidden');
+        emptyResults.classList.remove('hidden');
+        return;
+      }
+      results.classList.remove('hidden');
+      emptyResults.classList.add('hidden');
+
+      // detect currency (most common among payments, else fee lines)
+      CUR = detectCurrency(allTx, feeLines);
+
+      // successful transactions only
+      const success = allTx.filter(t => SUCCESS_STATUSES.includes((t.status || '').toLowerCase()));
+      const excluded = allTx.length - success.length;
+
+      let volume = 0, stripeTotal = 0, paddleTotal = 0, refundTotal = 0;
+      const micro = { count: 0, volume: 0, fee: 0 };
+      const standard = { count: 0, volume: 0, fee: 0 };
+      const tableRows = [];
+
+      success.forEach(t => {
+        const pf = paddleFee(t.amount, cfg);
+        volume += t.amount;
+        stripeTotal += t.stripeFee;
+        paddleTotal += pf.fee;
+        refundTotal += t.refunded || 0;
+        const bucket = pf.tier === 'micro' ? micro : standard;
+        bucket.count++; bucket.volume += t.amount; bucket.fee += pf.fee;
+        tableRows.push({ ...t, paddle: pf.fee, tier: pf.tier });
+      });
+
+      const comparison = { cfg, success, excluded, volume, stripeTotal, paddleTotal, refundTotal, micro, standard, tableRows, feeLines };
+      lastComparison = comparison;
+
+      const hasPayments = success.length > 0;
+      document.getElementById('compareCard').classList.toggle('hidden', !hasPayments);
+      document.getElementById('tierCard').classList.toggle('hidden', !hasPayments);
+      document.getElementById('tableCard').classList.toggle('hidden', !hasPayments);
+      document.getElementById('headline').classList.toggle('hidden', !hasPayments);
+
+      if (hasPayments) {
+        renderHeadline(comparison);
+        renderBars(comparison);
+        renderMini(comparison);
+        renderTiers(comparison);
+        renderTable(comparison);
+      }
+      renderFeeReport(feeLines, hasPayments ? comparison : null);
+    }
+
+    function detectCurrency(txs, lines) {
+      const counts = {};
+      txs.forEach(t => { if (t.currency) counts[t.currency] = (counts[t.currency] || 0) + 1; });
+      if (!Object.keys(counts).length) lines.forEach(l => { if (l.currency) counts[l.currency] = (counts[l.currency] || 0) + 1; });
+      let best = 'EUR', max = 0;
+      for (const k in counts) if (counts[k] > max) { max = counts[k]; best = k; }
+      return best;
+    }
+
+    function renderHeadline(c) {
+      const diff = c.stripeTotal - c.paddleTotal; // positive => Paddle cheaper
+      const save = diff >= 0;
+      const stripeRate = c.volume ? c.stripeTotal / c.volume * 100 : 0;
+      const paddleRate = c.volume ? c.paddleTotal / c.volume * 100 : 0;
+      document.getElementById('headline').innerHTML = `
+        <div class="stat">
+          <div class="top"><span class="dot stripe"></span>Stripe — actual</div>
+          <div class="big mono">${fmtMoney(c.stripeTotal)}</div>
+          <div class="sub">${fmtPct(stripeRate)} effective · from the “Fee” column</div>
+        </div>
+        <div class="stat">
+          <div class="top"><span class="dot paddle"></span>Paddle — estimated</div>
+          <div class="big mono">${fmtMoney(c.paddleTotal)}</div>
+          <div class="sub">${fmtPct(paddleRate)} effective · same ${c.success.length} transactions</div>
+        </div>
+        <div class="stat verdict ${save ? 'save' : 'cost'}">
+          <div class="top">${save ? 'Paddle would be cheaper' : 'Paddle would cost more'}</div>
+          <div class="big mono ${save ? 'save' : 'cost'}">${save ? '−' : '+'}${fmtMoney(Math.abs(diff))}</div>
+          <span class="badge-v ${save ? 'save' : 'cost'}">${save ? 'You’d save' : 'Extra cost'} ${c.stripeTotal ? fmtPct(Math.abs(diff) / c.stripeTotal * 100) : '—'} vs Stripe</span>
+        </div>`;
+    }
+
+    function renderBars(c) {
+      const max = Math.max(c.stripeTotal, c.paddleTotal, 0.0001);
+      document.getElementById('bars').innerHTML = `
+        <div class="bar-row">
+          <span class="lbl">Stripe</span>
+          <div class="bar-track"><div class="bar-fill stripe" style="width:${c.stripeTotal / max * 100}%"></div></div>
+          <span class="val">${fmtMoney(c.stripeTotal)}</span>
+        </div>
+        <div class="bar-row">
+          <span class="lbl">Paddle</span>
+          <div class="bar-track"><div class="bar-fill paddle" style="width:${c.paddleTotal / max * 100}%"></div></div>
+          <span class="val">${fmtMoney(c.paddleTotal)}</span>
+        </div>`;
+    }
+
+    function renderMini(c) {
+      const avg = c.success.length ? c.volume / c.success.length : 0;
+      const items = [
+        ['Transactions', c.success.length + (c.excluded ? ` (+${c.excluded} excl.)` : '')],
+        ['Total volume', fmtMoney(c.volume)],
+        ['Avg. transaction', fmtMoney(avg)],
+        ['Fee difference', (c.stripeTotal - c.paddleTotal >= 0 ? '−' : '+') + fmtMoney(Math.abs(c.stripeTotal - c.paddleTotal))],
+      ];
+      document.getElementById('miniGrid').innerHTML = items.map(([k, v]) =>
+        `<div class="mini"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+    }
+
+    function renderTiers(c) {
+      const cfg = c.cfg;
+      const mk = (b, name, formula) => `
+        <div class="tier">
+          <div class="th"><span class="tname">${name}</span><span class="formula-tag">${formula}</span></div>
+          <div class="trow"><span>Transactions</span><span class="mono">${b.count}</span></div>
+          <div class="trow"><span>Volume</span><span class="mono">${fmtMoney(b.volume)}</span></div>
+          <div class="trow"><span>Paddle fees</span><span class="mono">${fmtMoney(b.fee)}</span></div>
+        </div>`;
+      document.getElementById('tiers').innerHTML =
+        mk(c.micro, `Micro · below ${fmtMoney(cfg.microThreshold)}`, `${cfg.microPct}% flat`) +
+        mk(c.standard, `Standard · ${fmtMoney(cfg.microThreshold)} and up`, `${cfg.stdPct}% + ${fmtMoney(cfg.fixed)}`);
+    }
+
+    function renderTable(c) {
+      const body = document.getElementById('txBody');
+      const rows = c.tableRows.slice().sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+      body.innerHTML = rows.map(t => {
+        const d = t.stripeFee - t.paddle; // positive => paddle cheaper for this tx
+        const dCls = d >= 0 ? 'delta-pos' : 'delta-neg';
+        const idShort = (t.id || '').length > 20 ? t.id.slice(0, 18) + '…' : (t.id || '—');
+        const dateShort = (t.date || '').slice(0, 10);
+        return `<tr>
+          <td>${esc(dateShort)}</td>
+          <td class="id">${esc(idShort)}</td>
+          <td class="num">${fmtMoney(t.amount)}</td>
+          <td class="num">${fmtMoney(t.stripeFee)}</td>
+          <td class="num">${fmtMoney(t.paddle)}</td>
+          <td><span class="pill ${t.tier}">${t.tier}</span></td>
+          <td class="num ${dCls}">${d >= 0 ? '−' : '+'}${fmtMoney(Math.abs(d))}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function renderFeeReport(lines, comparison) {
+      const card = document.getElementById('feeReportCard');
+      if (!lines.length) { card.classList.add('hidden'); return; }
+      card.classList.remove('hidden');
+      const cur = lines.find(l => l.currency)?.currency || CUR;
+      const total = lines.reduce((s, l) => s + l.amount, 0);
+
+      // group by feature, keep a representative category
+      const groups = {};
+      lines.forEach(l => {
+        const key = l.feature || 'Fee';
+        if (!groups[key]) groups[key] = { feature: key, category: l.category, amount: 0, count: 0 };
+        groups[key].amount += l.amount; groups[key].count++;
+      });
+      const arr = Object.values(groups).sort((a, b) => b.amount - a.amount);
+
+      document.getElementById('frTotal').innerHTML =
+        `<span class="amt">${fmtMoney(total, cur)}</span>
+         <span style="color:var(--ink-500);font-size:.86rem">total Stripe fees across ${lines.length} line items</span>`;
+
+      document.getElementById('frList').innerHTML = arr.map(g => `
+        <div class="fr-item">
+          <div><div class="frn">${esc(g.feature)}</div>${g.category ? `<div class="frc">${esc(g.category)}</div>` : ''}</div>
+          <div class="frcount">×${g.count}</div>
+          <div class="fra">${fmtMoney(g.amount, cur)}</div>
+        </div>`).join('');
+
+      let note = 'This is everything Stripe billed across all categories — card processing plus any Connect/application fees, Climate contributions, and other charges that don’t appear in the per-transaction “Fee” column above.';
+      if (comparison) {
+        const diff = total - comparison.paddleTotal;
+        note += ` If this report and your payments export cover the same period, the fuller Stripe vs. Paddle gap is ${fmtMoney(total, cur)} vs. ${fmtMoney(comparison.paddleTotal, cur)} — ` +
+          (diff >= 0 ? `Paddle ${fmtMoney(Math.abs(diff), cur)} cheaper.` : `Paddle ${fmtMoney(Math.abs(diff), cur)} more expensive.`);
+      }
+      document.getElementById('frNote').textContent = note;
+    }
+
+    function updateFormula() {
+      const cfg = getConfig();
+      document.getElementById('formula').innerHTML =
+        `<span>Below <b>${fmtMoney(cfg.microThreshold)}</b>: <b>${cfg.microPct}%</b> of the amount.</span>` +
+        `<span><b>${fmtMoney(cfg.microThreshold)}</b> and up: <b>${cfg.stdPct}%</b> + <b>${fmtMoney(cfg.fixed)}</b>.</span>`;
+    }
+
+    // ---------- Export ----------
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      if (!lastComparison) return;
+      const rows = [['date', 'transaction_id', 'currency', 'amount', 'stripe_fee', 'paddle_fee', 'paddle_tier', 'difference_stripe_minus_paddle']];
+      lastComparison.tableRows.slice().sort((a, b) => (b.date || '').localeCompare(a.date || '')).forEach(t => {
+        rows.push([t.date, t.id, t.currency || CUR, t.amount.toFixed(2), t.stripeFee.toFixed(2), t.paddle.toFixed(2), t.tier, (t.stripeFee - t.paddle).toFixed(2)]);
+      });
+      const csv = rows.map(r => r.map(v => {
+        const s = String(v ?? '');
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'stripe-vs-paddle-comparison.csv';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    // ---------- Config listeners ----------
+    ['stdPct', 'fixed', 'microThreshold', 'microPct'].forEach(id =>
+      document.getElementById(id).addEventListener('input', recompute));
+
+    updateFormula();
+  </script>
+</body>
+</html>
