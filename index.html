@@ -449,6 +449,7 @@
     .tool-card:nth-child(8) { animation-delay: 0.95s; }
     .tool-card:nth-child(9) { animation-delay: 1.05s; }
     .tool-card:nth-child(10) { animation-delay: 1.15s; }
+    .tool-card:nth-child(11) { animation-delay: 1.25s; }
   </style>
 </head>
 <body>
@@ -485,7 +486,7 @@
     <section class="tools-section">
       <div class="section-header">
         <span class="section-title">Available Tools</span>
-        <span class="tool-count" id="toolCount">10 tools</span>
+        <span class="tool-count" id="toolCount">11 tools</span>
       </div>
 
       <div class="tools-grid" id="toolsGrid">
@@ -581,6 +582,24 @@
           <div class="tool-content">
             <h2 class="tool-name">Unterschriftenlistengenerator</h2>
             <p class="tool-description">Aus einer CSV-Datei druckbare Unterschriftenlisten erzeugen — mit eigenem Header, Logo und Footer. Markdown wird unterstützt, Export als PDF.</p>
+          </div>
+          <div class="tool-arrow">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </div>
+        </a>
+        <a href="/nachweise-generator/" class="tool-card" data-keywords="nachweise prävention prävention praevention dpsg pfadfinder führungszeugnis fuehrungszeugnis efz auskunftserklärung präventionsschulung selbstverpflichtung verpflichtungserklärung dokumentation rahmenordnung bundeskinderschutzgesetz stamm stavo csv pdf liste einsichtnahme tätigkeitsausschluss">
+          <div class="tool-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+          </div>
+          <div class="tool-content">
+            <h2 class="tool-name">Nachweise-Listen-Generator</h2>
+            <p class="tool-description">Aus den CSV-Exporten (Auskunftserklärung, Präventionsschulung, Selbstverpflichtung, eFZ) eine druckbare DPSG-Präventionsdokumentation erzeugen — Personen automatisch zusammengeführt, A4 quer als PDF.</p>
           </div>
           <div class="tool-arrow">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">

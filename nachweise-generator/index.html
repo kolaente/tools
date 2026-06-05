@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nachweise-Listen-Generator</title>
+    <style>
+        :root {
+            --blue: #007bff;
+            --blue-dark: #0056b3;
+            --green: #28a745;
+            --border: #ddd;
+            --ink: #111827;
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+            color: var(--ink);
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { text-align: center; margin-bottom: 6px; }
+        .lede {
+            text-align: center;
+            color: #666;
+            margin-bottom: 28px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        h3 { margin: 28px 0 12px; }
+
+        .header-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+            margin-bottom: 8px;
+        }
+        @media (max-width: 700px) { .header-inputs { grid-template-columns: 1fr; } }
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label { margin-bottom: 5px; font-weight: bold; }
+        .input-group input[type="text"] {
+            padding: 9px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+        }
+        .logo-preview { margin-top: 10px; display: none; }
+        .logo-preview img {
+            max-width: 140px; max-height: 60px;
+            border: 1px solid var(--border); border-radius: 4px;
+            background: white; padding: 2px;
+        }
+
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 36px;
+            text-align: center;
+            margin: 8px 0 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--blue);
+            background-color: #f8f9fa;
+        }
+        .upload-area.dragover { border-color: var(--green); background-color: #d4edda; }
+        .upload-text { font-size: 17px; color: #555; margin-bottom: 6px; }
+        .upload-hint { font-size: 13px; color: #999; }
+        .file-input { display: none; }
+
+        .file-list { margin: 0 0 8px; padding: 0; list-style: none; }
+        .file-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            background: #fafafa;
+        }
+        .file-row .fname { font-size: 14px; word-break: break-all; }
+        .file-row .fmeta { font-size: 12px; color: #888; }
+        .file-row select {
+            padding: 6px 8px; border: 1px solid var(--border);
+            border-radius: 4px; font-size: 13px;
+        }
+        .file-row .remove {
+            background: none; border: none; color: #c0392b;
+            font-size: 18px; cursor: pointer; line-height: 1;
+        }
+        .badge-missing { color: #b45309; font-size: 12px; }
+
+        .controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0; }
+        .btn {
+            background: var(--blue); color: white; border: none;
+            padding: 11px 20px; border-radius: 5px; cursor: pointer;
+            font-size: 14px; transition: background 0.25s;
+        }
+        .btn:hover { background: var(--blue-dark); }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-success { background: var(--green); }
+        .btn-success:hover { background: #1e7e34; }
+
+        .status { padding: 10px 12px; margin: 10px 0; border-radius: 5px; display: none; font-size: 14px; }
+        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .status.info { background: #e2e8f0; color: #1e293b; border: 1px solid #cbd5e1; }
+
+        .opt-row { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; font-size: 14px; }
+
+        /* ---- Screen preview (editable) ---- */
+        .preview-wrap { margin-top: 18px; overflow-x: auto; }
+        .hint { font-size: 13px; color: #666; margin-bottom: 10px; }
+        table.preview {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 1050px;
+            font-size: 12px;
+        }
+        table.preview th, table.preview td {
+            border: 1px solid #cbd5e1;
+            padding: 4px 6px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        table.preview thead th {
+            background: #eef2f7;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        table.preview td[contenteditable] { background: #fffef5; min-width: 60px; }
+        table.preview td[contenteditable]:focus { outline: 2px solid var(--blue); background: #fff; }
+        table.preview .colname { text-align: left; }
+        table.preview select { border: none; background: #fffef5; font-size: 12px; width: 100%; }
+        table.preview tbody tr:nth-child(even) td:not([contenteditable]):not(:has(select)) { background: #f9fafb; }
+        .grp { font-size: 10px; color: #475569; }
+
+        .tips {
+            background: #eff6ff; border-radius: 8px; padding: 16px;
+            font-size: 13px; color: #1e40af; margin-top: 26px; line-height: 1.5;
+        }
+        .tips strong { display: block; margin-bottom: 6px; }
+        .tips ul { margin-left: 18px; }
+        .tips code { background: #dbeafe; padding: 1px 4px; border-radius: 3px; }
+
+        /* =====================  PRINT  ===================== */
+        .print-area { display: none; }
+        @media print {
+            body { background: white; margin: 0; }
+            body > *:not(.print-area) { display: none !important; }
+            .print-area { display: block !important; }
+            @page { size: A4 landscape; margin: 10mm; }
+            .doc-page { page-break-after: always; break-after: page; }
+            .doc-page:last-child { page-break-after: auto; break-after: auto; }
+        }
+
+        .doc-page {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #000;
+            font-size: 8.5pt;
+            display: flex;
+            flex-direction: column;
+        }
+        .doc-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10mm;
+            margin-bottom: 4pt;
+        }
+        .doc-head .titles { flex: 1; }
+        .doc-head .stamm {
+            font-size: 11pt;
+            margin-bottom: 5pt;
+            white-space: nowrap;
+        }
+        .doc-head .stamm .line {
+            display: inline-block;
+            border-bottom: 1px solid #000;
+            min-width: 70mm;
+            margin-left: 4pt;
+        }
+        .doc-head .t1 { font-weight: bold; font-size: 9.5pt; line-height: 1.25; }
+        .doc-head .t2 { font-size: 8.5pt; line-height: 1.25; margin-top: 1pt; }
+        .doc-head .note { font-size: 7.5pt; font-style: italic; margin-top: 2pt; color: #222; }
+        .doc-head .logo img { max-height: 22mm; max-width: 55mm; }
+
+        table.doc {
+            border-collapse: collapse;
+            width: 100%;
+            table-layout: fixed;
+        }
+        table.doc th, table.doc td {
+            border: 0.6pt solid #000;
+            padding: 1.5pt 2pt;
+            text-align: center;
+            vertical-align: middle;
+            overflow: hidden;
+            word-wrap: break-word;
+        }
+        table.doc thead th { font-size: 7pt; font-weight: bold; line-height: 1.15; }
+        table.doc .grouphdr { font-size: 8pt; }
+        table.doc tbody td { height: 7.2mm; font-size: 8pt; }
+        table.doc tbody td.idx { font-weight: bold; }
+        table.doc sup { font-size: 6pt; }
+
+        .footnotes {
+            margin-top: 4pt;
+            font-size: 6.8pt;
+            line-height: 1.25;
+            color: #000;
+        }
+        .footnotes div { display: flex; gap: 3pt; }
+        .footnotes sup { font-size: 6pt; min-width: 6pt; }
+
+        .doc-foot {
+            margin-top: auto;
+            padding-top: 6pt;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-size: 8.5pt;
+        }
+        .doc-foot .pageno .line {
+            display: inline-block; border-bottom: 1px solid #000; min-width: 12mm;
+        }
+        .doc-foot .sig { text-align: right; max-width: 60%; }
+        .doc-foot .sig .siglabel { white-space: nowrap; }
+        .doc-foot .sig .sigline {
+            border-bottom: 1px solid #000; min-width: 90mm; display: block;
+            height: 10pt; margin-top: 2pt;
+        }
+        .doc-foot .sig .sigcap { font-size: 7.5pt; margin-top: 1pt; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Nachweise-Listen-Generator</h1>
+        <p class="lede">
+            Aus den CSV-Exporten (Auskunftserklärung, Präventionsschulung, Selbstverpflichtungs&shy;erklärung
+            und erweitertes Führungszeugnis) eine druckbare Gesamt&shy;dokumentation nach dem DPSG-Formular
+            „Umsetzung der Rahmenordnung Prävention" erzeugen — Personen werden automatisch zusammengeführt.
+        </p>
+
+        <div class="header-inputs">
+            <div class="input-group">
+                <label for="stammInput">Stamm</label>
+                <input type="text" id="stammInput" placeholder="z. B. Stamm Mustermann, Musterstadt">
+            </div>
+            <div class="input-group">
+                <label for="logoFile">Logo (oben rechts, optional)</label>
+                <input type="file" id="logoFile" accept="image/*">
+                <div class="logo-preview" id="logoPreview"><img id="logoImg" alt="Logo"></div>
+            </div>
+        </div>
+
+        <h3>CSV-Dateien</h3>
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-text">CSV-Dateien hierher ziehen oder klicken</div>
+            <div class="upload-hint">Mehrere Dateien möglich · Typ wird am Dateinamen erkannt (anpassbar) · .csv</div>
+            <input type="file" id="csvFiles" class="file-input" accept=".csv,text/csv" multiple>
+        </div>
+
+        <ul class="file-list" id="fileList"></ul>
+
+        <div class="status" id="status"></div>
+
+        <div class="controls">
+            <button class="btn" id="buildBtn" onclick="buildTable()" disabled>Liste erzeugen / aktualisieren</button>
+            <button class="btn btn-success" id="printBtn" onclick="printList()" disabled>Drucken / Als PDF speichern</button>
+        </div>
+
+        <div class="preview-wrap" id="previewWrap" style="display:none;">
+            <h3>Vorschau <span style="font-weight:normal;font-size:13px;color:#666;">(Zellen sind bearbeitbar)</span></h3>
+            <p class="hint">Gelb hinterlegte Felder kannst du vor dem Drucken direkt korrigieren. Beim Druck wird auf A4 quer mit 15 Zeilen pro Seite paginiert.</p>
+            <div id="previewContainer"></div>
+        </div>
+
+        <div class="tips">
+            <strong>So funktioniert's</strong>
+            <ul>
+                <li>Exportiere aus der Präventions-Verwaltung je eine Liste als <code>.csv</code>: Auskunftserklärung, Präventionsschulung, Selbstverpflichtungserklärung und erweitertes Führungszeugnis.</li>
+                <li>Alle vier (oder beliebig viele) Dateien hochladen. Personen werden über Nachname, Vorname und Geburtsdatum zusammengeführt.</li>
+                <li><b>Auskunft / Verpflichtung</b> werden als <i>ja/nein</i> abgeleitet (gültiger Nachweis vorhanden → ja). <b>Daten</b> kommen aus „Ausgestellt am" bzw. „Eingesehen am". Alles ist vor dem Druck korrigierbar.</li>
+                <li>„Liegt eine einschlägige Verurteilung vor?" wird mit <i>nein</i> vorbelegt, sobald eine Einsichtnahme dokumentiert ist — bitte prüfen.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="print-area" id="printArea"></div>
+
+    <script>
+        // ---- Spalten der gemeinsamen Zieltabelle (DPSG-Formular) ----
+        const COLS = [
+            { key: 'idx',   label: 'Lfd.\nNummer', group: '', w: 3.5, type: 'idx' },
+            { key: 'name',  label: 'Name', group: '', w: 8.5, type: 'text' },
+            { key: 'vorname', label: 'Vorname', group: '', w: 8.6, type: 'text' },
+            { key: 'auskunft', label: 'Auskunfts-\nerklärung\n(ja/nein)', group: 'Präventionsordnung', w: 5.4, type: 'jn' },
+            { key: 'schulung', label: 'Präventions-\nschulung\n(Datum)', group: 'Präventionsordnung', w: 11.3, type: 'text' },
+            { key: 'verpflichtung', label: 'Verpflichtungs-\nerklärung\n(ja/nein)', group: 'Präventionsordnung', w: 5.4, type: 'jn' },
+            { key: 'efzAusstellung', label: 'Ausstellungs-\ndatum eFZ', group: 'Bundeskinderschutzgesetz', w: 9.8, type: 'text', fn: 2 },
+            { key: 'efzEinsicht', label: 'Datum der\nEinsicht-\nnahme', group: 'Bundeskinderschutzgesetz', w: 9.8, type: 'text' },
+            { key: 'efzDurch', label: 'Einsichtnahme\ndurch (Name)', group: 'Bundeskinderschutzgesetz', w: 16.3, type: 'text', fn: 3 },
+            { key: 'verurteilung', label: 'Liegt eine\neinschlägige\nVerurteilung\nvor? (ja/nein)', group: 'Bundeskinderschutzgesetz', w: 10.0, type: 'jn', fn: 4 },
+            { key: 'efzErneut', label: 'Wann erfolgt\nerneute\nEinsichtnahme?', group: 'Bundeskinderschutzgesetz', w: 11.5, type: 'text', fn: 1 },
+        ];
+        const FOOTNOTES = [
+            'Spätestens nach 5 Jahren muss eine erneute Einsichtnahme erfolgen.',
+            'Zwischen dem Datum der Ausstellung und dem Datum der Einsichtnahme dürfen nicht mehr als drei Monate liegen.',
+            'Die Einsichtnahme kann durch den StaVo oder das Bundesamt erfolgen.',
+            'Siehe Anlage 1 der Vereinbarung zum Ausschluss einschlägig vorbestrafter Personen.'
+        ];
+        const ROWS_PER_PAGE = 15;
+        const TYPES = {
+            auskunft:      'Auskunftserklärung',
+            schulung:      'Präventionsschulung',
+            verpflichtung: 'Selbstverpflichtungserklärung',
+            efz:           'Erweitertes Führungszeugnis',
+        };
+
+        let files = [];   // { name, type, rows: [ {col:val} ] }
+        let model = [];   // merged person rows for the table
+        let logoData = null;
+
+        // ---------------- File handling ----------------
+        const uploadArea = document.getElementById('uploadArea');
+        const csvInput = document.getElementById('csvFiles');
+        uploadArea.addEventListener('click', () => csvInput.click());
+        uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+        uploadArea.addEventListener('drop', e => {
+            e.preventDefault(); uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+        csvInput.addEventListener('change', e => handleFiles(e.target.files));
+
+        document.getElementById('logoFile').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (!file) { logoData = null; document.getElementById('logoPreview').style.display = 'none'; return; }
+            const reader = new FileReader();
+            reader.onload = ev => {
+                logoData = ev.target.result;
+                document.getElementById('logoImg').src = logoData;
+                document.getElementById('logoPreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function guessType(filename) {
+            const n = filename.toLowerCase();
+            if (/verpflicht/.test(n)) return 'verpflichtung';
+            if (/auskunft/.test(n)) return 'auskunft';
+            if (/schulung|prae?vention|prävention/.test(n)) return 'schulung';
+            if (/f(ue|ü)hrungszeugnis|efz/.test(n)) return 'efz';
+            return '';
+        }
+
+        function handleFiles(fileList) {
+            const arr = Array.from(fileList).filter(f => /\.csv$/i.test(f.name));
+            if (!arr.length) { showStatus('Bitte CSV-Dateien auswählen.', 'error'); return; }
+            let pending = arr.length;
+            arr.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    try {
+                        const rows = parseCSV(ev.target.result);
+                        files.push({ name: file.name, type: guessType(file.name), rows });
+                    } catch (err) {
+                        showStatus(`Fehler beim Lesen von "${file.name}": ${err.message}`, 'error');
+                    }
+                    if (--pending === 0) { renderFileList(); buildTable(); }
+                };
+                reader.readAsText(file, 'UTF-8');
+            });
+        }
+
+        function renderFileList() {
+            const ul = document.getElementById('fileList');
+            ul.innerHTML = '';
+            files.forEach((f, i) => {
+                const li = document.createElement('li');
+                li.className = 'file-row';
+                const opts = Object.entries(TYPES)
+                    .map(([k, v]) => `<option value="${k}" ${f.type === k ? 'selected' : ''}>${v}</option>`).join('');
+                li.innerHTML = `
+                    <div>
+                        <div class="fname">${escapeHtml(f.name)}</div>
+                        <div class="fmeta">${f.rows.length} Eintrag${f.rows.length === 1 ? '' : 'e'}${f.type ? '' : ' · <span class="badge-missing">Typ bitte wählen</span>'}</div>
+                    </div>
+                    <select data-i="${i}">
+                        <option value="">— Typ wählen —</option>${opts}
+                    </select>
+                    <button class="remove" data-i="${i}" title="Entfernen">✕</button>`;
+                ul.appendChild(li);
+            });
+            ul.querySelectorAll('select').forEach(sel => sel.addEventListener('change', e => {
+                files[+e.target.dataset.i].type = e.target.value; buildTable();
+            }));
+            ul.querySelectorAll('.remove').forEach(btn => btn.addEventListener('click', e => {
+                files.splice(+e.target.dataset.i, 1); renderFileList(); buildTable();
+            }));
+            const hasFiles = files.length > 0;
+            document.getElementById('buildBtn').disabled = !hasFiles;
+        }
+
+        // ---------------- CSV parsing ----------------
+        function parseCSV(text) {
+            text = text.replace(/^﻿/, '');               // strip BOM
+            const delim = detectDelimiter(text);
+            const records = tokenize(text, delim);
+            if (!records.length) return [];
+            const header = records[0].map(h => h.trim());
+            const out = [];
+            for (let i = 1; i < records.length; i++) {
+                const rec = records[i];
+                if (rec.length === 1 && rec[0] === '') continue;   // blank line
+                if (rec.every(c => c.trim() === '')) continue;
+                const obj = {};
+                header.forEach((h, j) => { obj[h] = (rec[j] ?? '').trim(); });
+                out.push(obj);
+            }
+            return out;
+        }
+
+        function detectDelimiter(text) {
+            const firstLine = text.split(/\r?\n/)[0] || '';
+            const counts = { ',': 0, ';': 0, '\t': 0 };
+            let q = false;
+            for (const ch of firstLine) {
+                if (ch === '"') q = !q;
+                else if (!q && ch in counts) counts[ch]++;
+            }
+            return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0] || ',';
+        }
+
+        // RFC-4180-ish tokenizer that respects quoted fields incl. newlines.
+        function tokenize(text, delim) {
+            const records = [];
+            let row = [], field = '', inQ = false;
+            for (let i = 0; i < text.length; i++) {
+                const c = text[i];
+                if (inQ) {
+                    if (c === '"') {
+                        if (text[i + 1] === '"') { field += '"'; i++; }
+                        else inQ = false;
+                    } else field += c;
+                } else {
+                    if (c === '"') inQ = true;
+                    else if (c === delim) { row.push(field); field = ''; }
+                    else if (c === '\n') { row.push(field); records.push(row); row = []; field = ''; }
+                    else if (c === '\r') { /* ignore, handled by \n */ }
+                    else field += c;
+                }
+            }
+            if (field !== '' || row.length) { row.push(field); records.push(row); }
+            return records;
+        }
+
+        // ---------------- Helpers ----------------
+        function escapeHtml(s) {
+            return (s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+        // Be lenient about header naming variations.
+        function field(row, name) {
+            if (name in row) return row[name];
+            const want = norm(name);
+            for (const k in row) if (norm(k) === want) return row[k];
+            return '';
+        }
+        function norm(s) {
+            return (s || '').toString().toLowerCase().trim()
+                .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+                .replace(/[^a-z0-9]+/g, '');
+        }
+        // Format any recognisable date to DD.MM.YYYY. Returns '' if none found.
+        function fmtDate(v) {
+            if (!v) return '';
+            v = v.toString().trim();
+            let m = v.match(/(\d{4})-(\d{2})-(\d{2})/);            // ISO 2026-05-26
+            if (m) return `${m[3]}.${m[2]}.${m[1]}`;
+            m = v.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);         // already DD.MM.YYYY
+            if (m) {
+                const y = m[3].length === 2 ? '20' + m[3] : m[3];
+                return `${m[1].padStart(2, '0')}.${m[2].padStart(2, '0')}.${y}`;
+            }
+            return '';
+        }
+        // First non-empty formatted date among the given fields.
+        function firstDate(row, names) {
+            for (const n of names) { const d = fmtDate(field(row, n)); if (d) return d; }
+            return '';
+        }
+        // A proof counts as present/valid if the status or any validity date says so.
+        function hasValidProof(row) {
+            const status = (field(row, 'Status der Person') || '').toLowerCase();
+            if (/^g(ü|ue)ltig/.test(status) || status.includes('gültig bis') || status.includes('gueltig')) return true;
+            if (firstDate(row, ['Gültig bis', 'Gültig ab', 'Ausgestellt am', 'Eingesehen am'])) return true;
+            return false;
+        }
+        function personKey(row) {
+            return [norm(field(row, 'Nachname')), norm(field(row, 'Vorname')), (field(row, 'Geburtsdatum') || '').trim()].join('|');
+        }
+
+        // ---------------- Merge ----------------
+        function buildTable() {
+            const byType = {};
+            files.forEach(f => { if (f.type) (byType[f.type] = byType[f.type] || []).push(...f.rows); });
+
+            const persons = new Map();
+            function ensure(row) {
+                const key = personKey(row);
+                if (!persons.has(key)) {
+                    persons.set(key, {
+                        name: field(row, 'Nachname'), vorname: field(row, 'Vorname'),
+                        geb: field(row, 'Geburtsdatum'),
+                        auskunft: '', schulung: '', verpflichtung: '',
+                        efzAusstellung: '', efzEinsicht: '', efzDurch: '', verurteilung: '', efzErneut: ''
+                    });
+                }
+                return persons.get(key);
+            }
+
+            (byType.auskunft || []).forEach(r => { ensure(r).auskunft = hasValidProof(r) ? 'ja' : 'nein'; });
+            (byType.verpflichtung || []).forEach(r => { ensure(r).verpflichtung = hasValidProof(r) ? 'ja' : 'nein'; });
+            (byType.schulung || []).forEach(r => {
+                ensure(r).schulung = firstDate(r, ['Ausgestellt am', 'Gültig ab', 'Eingesehen am']);
+            });
+            (byType.efz || []).forEach(r => {
+                const p = ensure(r);
+                p.efzAusstellung = fmtDate(field(r, 'Ausgestellt am'));
+                p.efzEinsicht = fmtDate(field(r, 'Eingesehen am'));
+                p.efzDurch = field(r, 'Eingesehen durch');
+                p.efzErneut = firstDate(r, ['Gültig bis', 'Fälligkeit']);
+                // Default the "Verurteilung" answer once an inspection is documented.
+                if (p.efzEinsicht && !p.verurteilung) p.verurteilung = 'nein';
+            });
+
+            model = Array.from(persons.values()).sort((a, b) =>
+                (a.name || '').localeCompare(b.name || '', 'de') ||
+                (a.vorname || '').localeCompare(b.vorname || '', 'de'));
+
+            renderPreview();
+            document.getElementById('printBtn').disabled = model.length === 0;
+            if (!files.length) { showStatus('Keine Dateien geladen.', 'info'); return; }
+            const unmapped = files.filter(f => !f.type).length;
+            const typesIn = Object.keys(byType).map(t => TYPES[t]).join(', ') || 'keine';
+            showStatus(`${model.length} Person(en) zusammengeführt aus: ${typesIn}.` +
+                (unmapped ? ` ${unmapped} Datei(en) ohne Typ werden ignoriert.` : ''), unmapped ? 'info' : 'success');
+        }
+
+        // ---------------- Preview (editable) ----------------
+        function renderPreview() {
+            const wrap = document.getElementById('previewWrap');
+            const cont = document.getElementById('previewContainer');
+            if (!model.length) { wrap.style.display = 'none'; return; }
+            wrap.style.display = 'block';
+
+            // Header row 1: plain columns get rowspan 2, grouped columns share a colspan cell.
+            let h1 = '<tr>';
+            let i = 0;
+            while (i < COLS.length) {
+                const c = COLS[i];
+                if (c.group === '') {
+                    h1 += `<th rowspan="2" class="${c.key === 'name' || c.key === 'vorname' ? 'colname' : ''}">${nl(c.label)}</th>`;
+                    i++;
+                } else {
+                    let span = 1;
+                    while (i + span < COLS.length && COLS[i + span].group === c.group) span++;
+                    h1 += `<th colspan="${span}" class="grp">${escapeHtml(c.group)}</th>`;
+                    i += span;
+                }
+            }
+            h1 += '</tr>';
+            let h2 = '<tr>';
+            COLS.forEach(c => { if (c.group !== '') h2 += `<th>${nl(c.label)}${c.fn ? `<sup>${c.fn}</sup>` : ''}</th>`; });
+            h2 += '</tr>';
+
+            let body = '';
+            model.forEach((p, idx) => {
+                body += '<tr>';
+                COLS.forEach(c => {
+                    if (c.type === 'idx') body += `<td>${idx + 1}</td>`;
+                    else if (c.key === 'name') body += `<td contenteditable data-i="${idx}" data-k="name" class="colname">${escapeHtml(p.name)}</td>`;
+                    else if (c.key === 'vorname') body += `<td contenteditable data-i="${idx}" data-k="vorname" class="colname">${escapeHtml(p.vorname)}</td>`;
+                    else if (c.type === 'jn') {
+                        const v = p[c.key] || '';
+                        body += `<td><select data-i="${idx}" data-k="${c.key}">
+                            <option value="" ${v === '' ? 'selected' : ''}></option>
+                            <option value="ja" ${v === 'ja' ? 'selected' : ''}>ja</option>
+                            <option value="nein" ${v === 'nein' ? 'selected' : ''}>nein</option></select></td>`;
+                    } else body += `<td contenteditable data-i="${idx}" data-k="${c.key}">${escapeHtml(p[c.key])}</td>`;
+                });
+                body += '</tr>';
+            });
+
+            cont.innerHTML = `<table class="preview"><thead>${h1}${h2}</thead><tbody>${body}</tbody></table>`;
+            cont.querySelectorAll('td[contenteditable]').forEach(td => td.addEventListener('input', e => {
+                model[+td.dataset.i][td.dataset.k] = td.textContent.trim();
+            }));
+            cont.querySelectorAll('select').forEach(sel => sel.addEventListener('change', e => {
+                model[+sel.dataset.i][sel.dataset.k] = sel.value;
+            }));
+        }
+        function nl(s) { return escapeHtml(s).replace(/\n/g, '<br>'); }
+
+        // ---------------- Print ----------------
+        function printList() {
+            if (!model.length) { showStatus('Keine Daten zum Drucken.', 'error'); return; }
+            const stamm = document.getElementById('stammInput').value.trim();
+            const pageCount = Math.max(1, Math.ceil(model.length / ROWS_PER_PAGE));
+            const area = document.getElementById('printArea');
+            area.innerHTML = '';
+            for (let pg = 0; pg < pageCount; pg++) {
+                const slice = model.slice(pg * ROWS_PER_PAGE, (pg + 1) * ROWS_PER_PAGE);
+                area.appendChild(buildPrintPage(slice, pg * ROWS_PER_PAGE, stamm, pg + 1, pageCount));
+            }
+            window.print();
+        }
+
+        function buildPrintPage(rows, offset, stamm, pageNo, pageTotal) {
+            const page = document.createElement('div');
+            page.className = 'doc-page';
+
+            // Header
+            const head = document.createElement('div');
+            head.className = 'doc-head';
+            head.innerHTML = `
+                <div class="titles">
+                    <div class="stamm">Stamm: <span class="line">${escapeHtml(stamm)}</span></div>
+                    <div class="t1">Umsetzung der Rahmenordnung Prävention und der Vereinbarung zum Tätigkeitsausschluss einschlägig vorbestrafter Personen</div>
+                    <div class="t2">Dokumentation der Umsetzung und Einsichtnahmen in erweiterte Führungszeugnisse (eFZ) gemäß § 30a Bundeszentralregistergesetz</div>
+                    <div class="note">Bei Versand an das Diözesanbüro auf der Kopie auszufüllen:</div>
+                </div>
+                ${logoData ? `<div class="logo"><img src="${logoData}" alt=""></div>` : ''}`;
+            page.appendChild(head);
+
+            // Table
+            const colgroup = COLS.map(c => `<col style="width:${c.w}%">`).join('');
+            // group header row
+            let h1 = '<tr>', i = 0;
+            while (i < COLS.length) {
+                const c = COLS[i];
+                if (c.group === '') { h1 += `<th rowspan="2">${nl(c.label)}</th>`; i++; }
+                else {
+                    let span = 1;
+                    while (i + span < COLS.length && COLS[i + span].group === c.group) span++;
+                    h1 += `<th colspan="${span}" class="grouphdr">${escapeHtml(c.group)}</th>`;
+                    i += span;
+                }
+            }
+            h1 += '</tr>';
+            let h2 = '<tr>';
+            COLS.forEach(c => { if (c.group !== '') h2 += `<th>${nl(c.label)}${c.fn ? `<sup>${c.fn}</sup>` : ''}</th>`; });
+            h2 += '</tr>';
+
+            let body = '';
+            for (let r = 0; r < ROWS_PER_PAGE; r++) {
+                const p = rows[r];
+                body += '<tr>';
+                COLS.forEach(c => {
+                    if (c.type === 'idx') body += `<td class="idx">${p ? (offset + r + 1) : ''}</td>`;
+                    else body += `<td>${p ? escapeHtml(p[c.key === 'name' ? 'name' : c.key === 'vorname' ? 'vorname' : c.key] || '') : ''}</td>`;
+                });
+                body += '</tr>';
+            }
+            const table = document.createElement('table');
+            table.className = 'doc';
+            table.innerHTML = `<colgroup>${colgroup}</colgroup><thead>${h1}${h2}</thead><tbody>${body}</tbody>`;
+            page.appendChild(table);
+
+            // Footnotes
+            const fn = document.createElement('div');
+            fn.className = 'footnotes';
+            fn.innerHTML = FOOTNOTES.map((t, idx) => `<div><sup>${idx + 1}</sup><span>${escapeHtml(t)}</span></div>`).join('');
+            page.appendChild(fn);
+
+            // Footer
+            const foot = document.createElement('div');
+            foot.className = 'doc-foot';
+            foot.innerHTML = `
+                <div class="pageno">Seite <b>${pageNo}</b> von <b>${pageTotal}</b></div>
+                <div class="sig">
+                    <span class="siglabel">Für die Richtigkeit der Angaben:</span>
+                    <span class="sigline"></span>
+                    <div class="sigcap">Datum, Unterschrift Stammesvorstand</div>
+                </div>`;
+            page.appendChild(foot);
+            return page;
+        }
+
+        // ---------------- Status ----------------
+        function showStatus(msg, type) {
+            const el = document.getElementById('status');
+            el.textContent = msg;
+            el.className = `status ${type}`;
+            el.style.display = 'block';
+            if (type === 'success') setTimeout(() => { el.style.display = 'none'; }, 4000);
+        }
+    </script>
+</body>
+</html>
