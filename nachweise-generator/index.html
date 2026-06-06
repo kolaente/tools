@@ -147,14 +147,23 @@
         table.preview select { border: none; background: #fffef5; font-size: 12px; width: 100%; }
         table.preview tbody tr:nth-child(even) td:not([contenteditable]):not(:has(select)) { background: #f9fafb; }
         .grp { font-size: 10px; color: #475569; }
-        table.preview .actcol { border: none; background: transparent !important; width: 30px; padding: 2px; }
+        table.preview .actcol {
+            border: none; background: transparent !important; width: 56px; padding: 2px;
+            white-space: nowrap;
+        }
         table.preview thead .actcol { background: transparent; }
+        table.preview .rowsel { width: 16px; height: 16px; vertical-align: middle; cursor: pointer; margin-right: 4px; }
         .rowdel {
             background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5;
             border-radius: 4px; width: 24px; height: 24px; line-height: 1;
-            cursor: pointer; font-size: 13px; padding: 0;
+            cursor: pointer; font-size: 13px; padding: 0; vertical-align: middle;
         }
         .rowdel:hover { background: #fecaca; }
+        .preview-toolbar {
+            display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+            margin: 4px 0 12px;
+        }
+        .preview-toolbar .sel-hint { font-size: 13px; color: #666; }
 
         .tips {
             background: #eff6ff; border-radius: 8px; padding: 16px;
@@ -294,6 +303,10 @@
         <div class="preview-wrap" id="previewWrap" style="display:none;">
             <h3>Vorschau <span style="font-weight:normal;font-size:13px;color:#666;">(Zellen sind bearbeitbar)</span></h3>
             <p class="hint">Gelb hinterlegte Felder kannst du vor dem Drucken direkt korrigieren. Mit ✕ am Zeilenende lässt sich ein Eintrag entfernen. Beim Druck wird auf A4 quer mit 15 Zeilen pro Seite paginiert.</p>
+            <div class="preview-toolbar" id="previewToolbar" style="display:none;">
+                <button class="btn" id="mergeBtn" onclick="mergeSelected()" disabled>Ausgewählte zusammenführen</button>
+                <span class="sel-hint">Zwei oder mehr Zeilen ankreuzen, um Einträge derselben Person (z. B. nach Namensänderung) zusammenzuführen. Die oberste Auswahl bleibt führend.</span>
+            </div>
             <div id="previewContainer"></div>
         </div>
 
@@ -704,7 +717,7 @@
                             <option value="nein" ${v === 'nein' ? 'selected' : ''}>nein</option></select></td>`;
                     } else body += `<td contenteditable data-i="${idx}" data-k="${c.key}">${escapeHtml(p[c.key])}</td>`;
                 });
-                body += `<td class="actcol"><button class="rowdel" data-i="${idx}" title="Eintrag entfernen">✕</button></td>`;
+                body += `<td class="actcol"><input type="checkbox" class="rowsel" data-i="${idx}" title="Zum Zusammenführen auswählen"><button class="rowdel" data-i="${idx}" title="Eintrag entfernen">✕</button></td>`;
                 body += '</tr>';
             });
 
@@ -720,6 +733,9 @@
             cont.querySelectorAll('.rowdel').forEach(btn => btn.addEventListener('click', e => {
                 removeEntry(+btn.dataset.i);
             }));
+            cont.querySelectorAll('.rowsel').forEach(cb => cb.addEventListener('change', updateMergeBtn));
+            document.getElementById('previewToolbar').style.display = 'flex';
+            updateMergeBtn();
         }
 
         function removeEntry(idx) {
@@ -727,6 +743,31 @@
             renderPreview();
             document.getElementById('printBtn').disabled = model.length === 0;
             showStatus(`Eintrag entfernt. ${model.length} Person(en) verbleiben.`, 'info');
+        }
+
+        function updateMergeBtn() {
+            const n = document.querySelectorAll('.rowsel:checked').length;
+            const btn = document.getElementById('mergeBtn');
+            if (!btn) return;
+            btn.disabled = n < 2;
+            btn.textContent = n >= 2 ? `${n} Einträge zusammenführen` : 'Ausgewählte zusammenführen';
+        }
+
+        // Merge the checked rows into one person. The topmost selection stays
+        // leading; empty fields are filled from the other rows. Useful when a
+        // name change split the same person across the eFZ and the CSV sources.
+        function mergeSelected() {
+            const checked = [...document.querySelectorAll('.rowsel:checked')].map(c => +c.dataset.i).sort((a, b) => a - b);
+            if (checked.length < 2) return;
+            const FIELDS = ['name', 'vorname', 'auskunft', 'schulung', 'verpflichtung',
+                'efzAusstellung', 'efzEinsicht', 'efzDurch', 'verurteilung', 'efzErneut'];
+            const primary = model[checked[0]];
+            const others = checked.slice(1).map(i => model[i]);
+            others.forEach(o => FIELDS.forEach(f => { if (!primary[f] && o[f]) primary[f] = o[f]; }));
+            checked.slice(1).sort((a, b) => b - a).forEach(i => model.splice(i, 1));
+            renderPreview();
+            document.getElementById('printBtn').disabled = model.length === 0;
+            showStatus(`${others.length + 1} Einträge zu „${primary.name}, ${primary.vorname}" zusammengeführt. Name bei Bedarf in der Zeile anpassen.`, 'success');
         }
         function nl(s) { return escapeHtml(s).replace(/\n/g, '<br>'); }
 
