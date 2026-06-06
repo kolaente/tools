@@ -225,13 +225,29 @@
     }
 
     // The eFZ export may hold several rows per person. Collapse them by
-    // Mitgliedsnummer (the stable identity); fall back to ID / name+birthdate when
-    // no Mitgliedsnummer is present. The newest row leads, but every field is
-    // filled from the newest row that actually has a value.
+    // Mitgliedsnummer (the stable identity). Some exports repeat a person on two
+    // rows where only one carries the Mitgliedsnummer (merged cells / repeated
+    // header blocks), so a numberless row is grouped with its numbered twin via
+    // name+birthdate. Falls back to ID / name+birthdate when no number exists at
+    // all. The newest row leads; each field is filled from the newest row that
+    // actually has a value.
     function dedupeEfz(rows) {
+        const keyToNr = new Map();
+        for (const r of rows) {
+            const nr = (field(r, 'Mitgliedsnummer') || '').toString().trim();
+            if (nr) { const pk = personKey(r); if (!keyToNr.has(pk)) keyToNr.set(pk, nr); }
+        }
+        function groupId(r) {
+            const nr = (field(r, 'Mitgliedsnummer') || '').toString().trim();
+            if (nr) return 'nr:' + nr;
+            const pk = personKey(r);
+            if (keyToNr.has(pk)) return 'nr:' + keyToNr.get(pk);   // numberless twin
+            const id = (field(r, 'ID') || '').toString().trim();
+            return id ? 'id:' + id : 'pk:' + pk;
+        }
         const groups = new Map();
         for (const r of rows) {
-            const id = (field(r, 'Mitgliedsnummer') || field(r, 'ID') || '').toString().trim() || personKey(r);
+            const id = groupId(r);
             if (!groups.has(id)) groups.set(id, []);
             groups.get(id).push(r);
         }

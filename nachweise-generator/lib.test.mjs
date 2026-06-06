@@ -101,6 +101,37 @@ test('dedupeEfz keeps newest per Mitgliedsnummer, fills blanks from older rows',
     assert.equal(out[0]['Gültig bis'], '20.03.2026');
 });
 
+test('dedupeEfz collapses twin rows where only one has a Mitgliedsnummer', () => {
+    const rows = [
+        { Mitgliedsnummer: '42463', Nachname: 'Schulz', Vorname: 'Sara', Geburtsdatum: '17.05.99',
+          'Ausgestellt am': '05.06.2019', 'Eingesehen am': '07.08.2019', 'Eingesehen durch': 'Bundesbüro (1)' },
+        { Mitgliedsnummer: '', Nachname: 'Schulz', Vorname: 'Sara', Geburtsdatum: '17.05.99',
+          'Ausgestellt am': '02.02.2024', 'Eingesehen am': '20.02.2024', 'Eingesehen durch': 'Bundesbüro (2)' },
+    ];
+    const out = dedupeEfz(rows);
+    assert.equal(out.length, 1, 'numberless twin merges with its numbered row');
+    assert.equal(out[0]['Eingesehen am'], '20.02.2024');     // newest wins
+    assert.equal(out[0].Mitgliedsnummer, '42463');           // number carried over
+});
+
+test('buildModel: twin eFZ rows (with/without Mitgliedsnummer) yield one person + one debug row', () => {
+    const auskunft = parseCSV('Nachname;Vorname;Geburtsdatum;Status der Person\nSchulz;Sara;17.05.99;Gültig');
+    const efz = [
+        { Mitgliedsnummer: '42463', Nachname: 'Schulz', Vorname: 'Sara', Geburtsdatum: '17.05.99 00:00',
+          'Ausgestellt am': '05.6.2019', 'Eingesehen am': '07.8.2019', 'Eingesehen durch': 'Bundesbüro (1)' },
+        { Mitgliedsnummer: '', Nachname: 'Schulz', Vorname: 'Sara', Geburtsdatum: '17.05.99 00:00',
+          'Ausgestellt am': '02.2.2024', 'Eingesehen am': '20.2.2024', 'Eingesehen durch': 'Bundesbüro (2)' },
+    ];
+    const { model, stats, debug } = buildModel([
+        { type: 'auskunft', rows: auskunft },
+        { type: 'efz', rows: efz },
+    ]);
+    assert.equal(model.length, 1);
+    assert.equal(stats.efzMatched, 1);
+    assert.equal(debug.efz.length, 1, 'debug shows the person once');
+    assert.equal(model[0].efzEinsicht, '20.02.2024');
+});
+
 test('buildModel: the real-world case — 2-digit CSV date + eFZ time-suffix + changed surname → merges', () => {
     const auskunft = parseCSV('Nachname;Vorname;Geburtsdatum;Gültig ab;Status der Person\nNeumann;Sara;17.05.99;2024-01-01;Gültig');
     const efz = [{
