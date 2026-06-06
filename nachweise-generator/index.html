@@ -141,12 +141,11 @@
             font-weight: bold;
             font-size: 11px;
         }
-        table.preview td[contenteditable] { background: #fff7d6; min-width: 60px; }
-        table.preview td[contenteditable]:focus { outline: 2px solid var(--blue); background: #fff; }
-        table.preview td:has(> select) { background: #fff7d6; }
+        table.preview td[contenteditable] { min-width: 60px; }
+        table.preview td[contenteditable]:focus { outline: 2px solid var(--blue); }
         table.preview .colname { text-align: left; }
-        table.preview select { border: none; background: #fff7d6; font-size: 12px; width: 100%; }
-        table.preview tbody tr:nth-child(even) td:not([contenteditable]):not(:has(select)):not(.actcol) { background: #f9fafb; }
+        table.preview select { border: none; background: transparent; font-size: 12px; width: 100%; }
+        table.preview tbody tr:nth-child(even) td:not(.actcol) { background: #f9fafb; }
         .grp { font-size: 10px; color: #475569; }
         table.preview .actcol {
             border: none; background: transparent !important; width: 56px; padding: 2px;
@@ -303,7 +302,7 @@
 
         <div class="preview-wrap" id="previewWrap" style="display:none;">
             <h3>Vorschau <span style="font-weight:normal;font-size:13px;color:#666;">(Zellen sind bearbeitbar)</span></h3>
-            <p class="hint">Alle gelb hinterlegten Felder sind direkt bearbeitbar — vor dem Drucken prüfen und ggf. korrigieren. Mit ✕ am Zeilenende lässt sich ein Eintrag entfernen. Beim Druck wird auf A4 quer mit 15 Zeilen pro Seite paginiert.</p>
+            <p class="hint">Alle Felder sind direkt bearbeitbar — vor dem Drucken prüfen und ggf. korrigieren. Mit ✕ am Zeilenende lässt sich ein Eintrag entfernen. Beim Druck wird auf A4 quer mit 15 Zeilen pro Seite paginiert.</p>
             <div class="preview-toolbar" id="previewToolbar" style="display:none;">
                 <button class="btn" id="mergeBtn" onclick="mergeSelected()" disabled>Ausgewählte zusammenführen</button>
                 <span class="sel-hint">Zwei oder mehr Zeilen ankreuzen, um Einträge derselben Person (z. B. nach Namensänderung) zusammenzuführen. Die oberste Auswahl bleibt führend.</span>
@@ -565,12 +564,13 @@
                 .normalize('NFKD').replace(/[̀-ͯ]/g, '')   // strip any remaining accents
                 .replace(/[^a-z0-9]+/g, '');
         }
-        // Expand a 2-digit year. Dates here (birthdates, past inspections) are not
-        // in the future, so a year that would land ahead of today is 19xx.
+        // Expand a 2-digit year. Pivot a bit past today (covers ~5-year eFZ
+        // re-check dates) — beyond that a year is treated as 19xx (birthdates).
         function expandYear(y) {
             if (y.length !== 2) return y;
             const n = +y;
-            return String(2000 + n <= new Date().getFullYear() ? 2000 + n : 1900 + n);
+            const cutoff = (new Date().getFullYear() + 10) % 100;
+            return String(n <= cutoff ? 2000 + n : 1900 + n);
         }
         // Format any recognisable date to DD.MM.YYYY. Returns '' if none found.
         function fmtDate(v) {
