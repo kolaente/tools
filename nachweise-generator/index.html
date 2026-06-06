@@ -662,15 +662,35 @@
                 return persons.get(key);
             }
 
+            // Names can differ between the eFZ (Bundesamt) and the CSV (diözesan)
+            // systems. The birthdate is the stable identifier, so match an eFZ row
+            // to an existing person when the birthdate matches AND at least one name
+            // part matches — covering marriage/name changes and typos, while a pure
+            // same-birthday coincidence (no shared name) still stays separate.
+            function findExisting(row) {
+                const key = personKey(row);
+                if (persons.has(key)) return persons.get(key);
+                const dob = isoDate(field(row, 'Geburtsdatum'));
+                if (!dob) return null;
+                const nn = norm(field(row, 'Nachname'));
+                const vn = norm(field(row, 'Vorname'));
+                const cand = [];
+                for (const p of persons.values()) {
+                    if (isoDate(p.geb) === dob && ((nn && norm(p.name) === nn) || (vn && norm(p.vorname) === vn))) cand.push(p);
+                }
+                return cand.length === 1 ? cand[0] : null;
+            }
+
             (byType.auskunft || []).forEach(r => { ensure(r).auskunft = hasValidProof(r) ? 'ja' : 'nein'; });
             (byType.verpflichtung || []).forEach(r => { ensure(r).verpflichtung = hasValidProof(r) ? 'ja' : 'nein'; });
             (byType.schulung || []).forEach(r => {
                 ensure(r).schulung = firstDate(r, ['Ausgestellt am', 'Gültig ab', 'Eingesehen am']);
             });
             // The eFZ export can contain several rows per person — reduce to the
-            // newest entry per Mitgliedsnummer before adding it to the table.
+            // newest entry per Mitgliedsnummer, then attach it to the matching
+            // person (fuzzy by birthdate + name) or add it as a new entry.
             dedupeEfz(byType.efz || []).forEach(r => {
-                const p = ensure(r);
+                const p = findExisting(r) || ensure(r);
                 p.efzAusstellung = fmtDate(field(r, 'Ausgestellt am'));
                 p.efzEinsicht = fmtDate(field(r, 'Eingesehen am'));
                 p.efzDurch = field(r, 'Eingesehen durch');
