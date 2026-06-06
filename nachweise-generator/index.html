@@ -565,6 +565,13 @@
                 .normalize('NFKD').replace(/[̀-ͯ]/g, '')   // strip any remaining accents
                 .replace(/[^a-z0-9]+/g, '');
         }
+        // Expand a 2-digit year. Dates here (birthdates, past inspections) are not
+        // in the future, so a year that would land ahead of today is 19xx.
+        function expandYear(y) {
+            if (y.length !== 2) return y;
+            const n = +y;
+            return String(2000 + n <= new Date().getFullYear() ? 2000 + n : 1900 + n);
+        }
         // Format any recognisable date to DD.MM.YYYY. Returns '' if none found.
         function fmtDate(v) {
             if (!v) return '';
@@ -572,10 +579,7 @@
             let m = v.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);        // ISO 2026-05-26
             if (m) return `${m[3].padStart(2, '0')}.${m[2].padStart(2, '0')}.${m[1]}`;
             m = v.match(/(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/);   // DD.MM.YYYY or DD/MM/YYYY
-            if (m) {
-                const y = m[3].length === 2 ? '20' + m[3] : m[3];
-                return `${m[1].padStart(2, '0')}.${m[2].padStart(2, '0')}.${y}`;
-            }
+            if (m) return `${m[1].padStart(2, '0')}.${m[2].padStart(2, '0')}.${expandYear(m[3])}`;
             return '';
         }
         // Normalise any recognisable date to ISO YYYY-MM-DD (for stable matching).
@@ -584,7 +588,7 @@
             let m = v.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
             if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
             m = v.match(/(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/);   // DD.MM.YYYY or DD/MM/YYYY
-            if (m) { const y = m[3].length === 2 ? '20' + m[3] : m[3]; return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`; }
+            if (m) return `${expandYear(m[3])}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
             return v;
         }
         // Add n years to a date, keeping DD.MM.YYYY output. '' if unparseable.
