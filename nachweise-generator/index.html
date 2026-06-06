@@ -302,7 +302,7 @@
                 <li>Exportiere aus der Präventions-Verwaltung je eine Liste als <code>.csv</code>: Auskunftserklärung, Präventionsschulung, Selbstverpflichtungserklärung und erweitertes Führungszeugnis.</li>
                 <li>Alle vier (oder beliebig viele) Dateien hochladen. Personen werden über Nachname, Vorname und Geburtsdatum zusammengeführt.</li>
                 <li><b>Auskunft / Verpflichtung</b> werden als <i>ja/nein</i> abgeleitet (gültiger Nachweis vorhanden → ja). <b>Daten</b> kommen aus „Ausgestellt am" bzw. „Eingesehen am". Alles ist vor dem Druck korrigierbar.</li>
-                <li>„Liegt eine einschlägige Verurteilung vor?" wird mit <i>nein</i> vorbelegt, sobald eine Einsichtnahme dokumentiert ist — bitte prüfen.</li>
+                <li>„Liegt eine einschlägige Verurteilung vor?" ist immer mit <i>nein</i> vorbelegt — bitte prüfen.</li>
             </ul>
         </div>
     </div>
@@ -534,7 +534,7 @@
                         name: field(row, 'Nachname'), vorname: field(row, 'Vorname'),
                         geb: field(row, 'Geburtsdatum'),
                         auskunft: '', schulung: '', verpflichtung: '',
-                        efzAusstellung: '', efzEinsicht: '', efzDurch: '', verurteilung: '', efzErneut: ''
+                        efzAusstellung: '', efzEinsicht: '', efzDurch: '', verurteilung: 'nein', efzErneut: ''
                     });
                 }
                 return persons.get(key);
@@ -551,8 +551,6 @@
                 p.efzEinsicht = fmtDate(field(r, 'Eingesehen am'));
                 p.efzDurch = field(r, 'Eingesehen durch');
                 p.efzErneut = firstDate(r, ['Gültig bis', 'Fälligkeit']);
-                // Default the "Verurteilung" answer once an inspection is documented.
-                if (p.efzEinsicht && !p.verurteilung) p.verurteilung = 'nein';
             });
 
             model = Array.from(persons.values()).sort((a, b) =>
