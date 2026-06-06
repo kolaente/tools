@@ -319,15 +319,26 @@
 
         const efzDebug = [];
         let efzMatched = 0, efzNew = 0;
-        dedupeEfz(byType.efz || []).forEach(r => {
+        // Several deduped eFZ rows can still resolve to the same person (e.g. a
+        // numberless continuation row carrying the new name but empty dates).
+        // Process newest first and only fill empty fields, so a blank row never
+        // overwrites real data and the newest non-empty value wins per field.
+        const dedupedEfz = dedupeEfz(byType.efz || []).sort((a, b) =>
+            dateSortKey(field(b, 'Eingesehen am') || field(b, 'Ausgestellt am'))
+            - dateSortKey(field(a, 'Eingesehen am') || field(a, 'Ausgestellt am')));
+        dedupedEfz.forEach(r => {
             const existing = findExisting(r);
             const matched = !!existing;
             if (matched) efzMatched++; else efzNew++;
             const p = existing || ensure(r);
-            p.efzAusstellung = fmtDate(field(r, 'Ausgestellt am'));
-            p.efzEinsicht = fmtDate(field(r, 'Eingesehen am'));
-            p.efzDurch = field(r, 'Eingesehen durch');
-            p.efzErneut = firstDate(r, ['Gültig bis', 'Fälligkeit']);
+            const aus = fmtDate(field(r, 'Ausgestellt am'));
+            const ein = fmtDate(field(r, 'Eingesehen am'));
+            const durch = field(r, 'Eingesehen durch');
+            const erneut = firstDate(r, ['Gültig bis', 'Fälligkeit']);
+            if (aus && !p.efzAusstellung) p.efzAusstellung = aus;
+            if (ein && !p.efzEinsicht) p.efzEinsicht = ein;
+            if (durch && !p.efzDurch) p.efzDurch = durch;
+            if (erneut && !p.efzErneut) p.efzErneut = erneut;
             efzDebug.push({
                 nachname: field(r, 'Nachname'), vorname: field(r, 'Vorname'),
                 mitgliedsnummer: field(r, 'Mitgliedsnummer'),
