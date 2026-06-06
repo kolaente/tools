@@ -146,6 +146,14 @@
         table.preview select { border: none; background: #fffef5; font-size: 12px; width: 100%; }
         table.preview tbody tr:nth-child(even) td:not([contenteditable]):not(:has(select)) { background: #f9fafb; }
         .grp { font-size: 10px; color: #475569; }
+        table.preview .actcol { border: none; background: transparent !important; width: 30px; padding: 2px; }
+        table.preview thead .actcol { background: transparent; }
+        .rowdel {
+            background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5;
+            border-radius: 4px; width: 24px; height: 24px; line-height: 1;
+            cursor: pointer; font-size: 13px; padding: 0;
+        }
+        .rowdel:hover { background: #fecaca; }
 
         .tips {
             background: #eff6ff; border-radius: 8px; padding: 16px;
@@ -284,7 +292,7 @@
 
         <div class="preview-wrap" id="previewWrap" style="display:none;">
             <h3>Vorschau <span style="font-weight:normal;font-size:13px;color:#666;">(Zellen sind bearbeitbar)</span></h3>
-            <p class="hint">Gelb hinterlegte Felder kannst du vor dem Drucken direkt korrigieren. Beim Druck wird auf A4 quer mit 15 Zeilen pro Seite paginiert.</p>
+            <p class="hint">Gelb hinterlegte Felder kannst du vor dem Drucken direkt korrigieren. Mit ✕ am Zeilenende lässt sich ein Eintrag entfernen. Beim Druck wird auf A4 quer mit 15 Zeilen pro Seite paginiert.</p>
             <div id="previewContainer"></div>
         </div>
 
@@ -602,16 +610,29 @@
                             <option value="nein" ${v === 'nein' ? 'selected' : ''}>nein</option></select></td>`;
                     } else body += `<td contenteditable data-i="${idx}" data-k="${c.key}">${escapeHtml(p[c.key])}</td>`;
                 });
+                body += `<td class="actcol"><button class="rowdel" data-i="${idx}" title="Eintrag entfernen">✕</button></td>`;
                 body += '</tr>';
             });
 
-            cont.innerHTML = `<table class="preview"><thead>${h1}${h2}</thead><tbody>${body}</tbody></table>`;
+            // Screen-only action column header (spans both header rows of the preview).
+            const h1p = h1.replace('</tr>', '<th rowspan="2" class="actcol"></th></tr>');
+            cont.innerHTML = `<table class="preview"><thead>${h1p}${h2}</thead><tbody>${body}</tbody></table>`;
             cont.querySelectorAll('td[contenteditable]').forEach(td => td.addEventListener('input', e => {
                 model[+td.dataset.i][td.dataset.k] = td.textContent.trim();
             }));
             cont.querySelectorAll('select').forEach(sel => sel.addEventListener('change', e => {
                 model[+sel.dataset.i][sel.dataset.k] = sel.value;
             }));
+            cont.querySelectorAll('.rowdel').forEach(btn => btn.addEventListener('click', e => {
+                removeEntry(+btn.dataset.i);
+            }));
+        }
+
+        function removeEntry(idx) {
+            model.splice(idx, 1);
+            renderPreview();
+            document.getElementById('printBtn').disabled = model.length === 0;
+            showStatus(`Eintrag entfernt. ${model.length} Person(en) verbleiben.`, 'info');
         }
         function nl(s) { return escapeHtml(s).replace(/\n/g, '<br>'); }
 
