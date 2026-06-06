@@ -446,7 +446,7 @@
             const unmapped = files.filter(f => !f.type).length;
             const { efzMatched, efzNew, types } = result.stats;
             const typesIn = types.map(t => TYPES[t]).join(', ') || 'keine';
-            const efzInfo = (efzMatched + efzNew) ? ` eFZ: ${efzMatched} zugeordnet, ${efzNew} ohne Treffer in den anderen Listen (eigene Zeile).` : '';
+            const efzInfo = (efzMatched + efzNew) ? ` eFZ: ${efzMatched} zugeordnet, ${efzNew} ohne Person in den Listen (ausgelassen).` : '';
             showStatus(`${model.length} Person(en) zusammengeführt aus: ${typesIn}.${efzInfo}` +
                 (unmapped ? ` ${unmapped} Datei(en) ohne Typ werden ignoriert.` : ''), unmapped ? 'info' : 'success');
         }
@@ -470,7 +470,7 @@
                 <td>${escapeHtml(p.name)}</td><td>${escapeHtml(p.vorname)}</td>
                 <td>${escapeHtml(p.gebRaw)}</td><td>${escapeHtml(p.gebIso)}</td></tr>`).join('');
             body.innerHTML = `
-                <p class="dbg-hint">Vergleiche das <b>normalisierte Geburtsdatum</b> der eFZ-Zeilen mit den Personen aus den anderen Listen. Stimmen sie nicht überein, liegt es am Datumsformat; sonst an den Namen.</p>
+                <p class="dbg-hint">eFZ-Zeilen ohne Treffer werden <b>nicht</b> in die Liste übernommen (nur Personen aus Auskunft/Schulung/Verpflichtung erscheinen). Vergleiche das <b>normalisierte Geburtsdatum</b> der eFZ-Zeilen mit den Personen aus den anderen Listen: stimmt es nicht überein, liegt es am Datumsformat; sonst an den Namen.</p>
                 <h4>eFZ-Zeilen (${d.efz.length})</h4>
                 <table class="dbg"><thead><tr><th>Nachname</th><th>Vorname</th><th>Mitgl.-Nr.</th><th>Geb. (roh)</th><th>Geb. (norm.)</th><th>Treffer</th><th>zugeordnet zu</th></tr></thead><tbody>${efzRows || '<tr><td colspan="7">keine</td></tr>'}</tbody></table>
                 <h4>Personen aus Auskunft/Schulung/Verpflichtung (${d.csvPersons.length})</h4>

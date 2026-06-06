@@ -169,7 +169,30 @@ test('buildModel: the real-world case — 2-digit CSV date + eFZ time-suffix + c
     assert.equal(p.verurteilung, 'nein');     // always pre-set
 });
 
-test('buildModel: same birthday but no shared name part stays separate', () => {
+test('buildModel: CSV people without eFZ stay; eFZ people without CSV are dropped', () => {
+    const auskunft = parseCSV('Nachname;Vorname;Geburtsdatum;Status der Person\n'
+        + 'Anders;Anna;01.01.90;Gültig\nBecker;Ben;02.02.91;Noch nie vorgelegt');
+    const efz = [
+        // matches Anders
+        { Mitgliedsnummer: '1', Nachname: 'Anders', Vorname: 'Anna', Geburtsdatum: '01.01.90',
+          'Ausgestellt am': '01.01.2022', 'Eingesehen am': '15.01.2022', 'Eingesehen durch': 'Bundesbüro (1)' },
+        // no person on any list -> must be dropped
+        { Mitgliedsnummer: '2', Nachname: 'Dorn', Vorname: 'Dirk', Geburtsdatum: '04.04.93',
+          'Ausgestellt am': '02.02.2022', 'Eingesehen am': '16.02.2022', 'Eingesehen durch': 'Bundesbüro (2)' },
+    ];
+    const { model, stats } = buildModel([
+        { type: 'auskunft', rows: auskunft },
+        { type: 'efz', rows: efz },
+    ]);
+    assert.deepEqual(model.map(p => p.name), ['Anders', 'Becker']); // Becker (no eFZ) stays, Dorn dropped
+    assert.equal(model.find(p => p.name === 'Anders').efzEinsicht, '15.01.2022');
+    assert.equal(model.find(p => p.name === 'Becker').efzEinsicht, '');
+    assert.equal(stats.efzMatched, 1);
+    assert.equal(stats.efzNew, 1);   // Dorn counted but not added
+    assert.equal(model.some(p => p.name === 'Dorn'), false);
+});
+
+test('buildModel: same birthday but no shared name part is not matched (and dropped)', () => {
     const auskunft = parseCSV('Nachname;Vorname;Geburtsdatum;Status der Person\nBerg;Tom;07.07.90;Gültig');
     const efz = [{
         Mitgliedsnummer: '1', Nachname: 'Wolf', Vorname: 'Karl', Geburtsdatum: '07.07.90',
@@ -179,7 +202,7 @@ test('buildModel: same birthday but no shared name part stays separate', () => {
         { type: 'auskunft', rows: auskunft },
         { type: 'efz', rows: efz },
     ]);
-    assert.equal(model.length, 2);
+    assert.deepEqual(model.map(p => p.name), ['Berg']);
     assert.equal(stats.efzMatched, 0);
     assert.equal(stats.efzNew, 1);
 });

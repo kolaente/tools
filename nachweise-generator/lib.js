@@ -330,15 +330,18 @@
             const existing = findExisting(r);
             const matched = !!existing;
             if (matched) efzMatched++; else efzNew++;
-            const p = existing || ensure(r);
-            const aus = fmtDate(field(r, 'Ausgestellt am'));
-            const ein = fmtDate(field(r, 'Eingesehen am'));
-            const durch = field(r, 'Eingesehen durch');
-            const erneut = firstDate(r, ['Gültig bis', 'Fälligkeit']);
-            if (aus && !p.efzAusstellung) p.efzAusstellung = aus;
-            if (ein && !p.efzEinsicht) p.efzEinsicht = ein;
-            if (durch && !p.efzDurch) p.efzDurch = durch;
-            if (erneut && !p.efzErneut) p.efzErneut = erneut;
+            // eFZ only enriches people who are already on a CSV list. eFZ entries
+            // without a matching person are dropped (not added as their own row).
+            if (existing) {
+                const aus = fmtDate(field(r, 'Ausgestellt am'));
+                const ein = fmtDate(field(r, 'Eingesehen am'));
+                const durch = field(r, 'Eingesehen durch');
+                const erneut = firstDate(r, ['Gültig bis', 'Fälligkeit']);
+                if (aus && !existing.efzAusstellung) existing.efzAusstellung = aus;
+                if (ein && !existing.efzEinsicht) existing.efzEinsicht = ein;
+                if (durch && !existing.efzDurch) existing.efzDurch = durch;
+                if (erneut && !existing.efzErneut) existing.efzErneut = erneut;
+            }
             efzDebug.push({
                 nachname: field(r, 'Nachname'), vorname: field(r, 'Vorname'),
                 mitgliedsnummer: field(r, 'Mitgliedsnummer'),
