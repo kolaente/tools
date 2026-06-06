@@ -1,0 +1,9 @@
+{
+  "name": "nachweise-generator",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Data layer + tests for the Nachweise-Listen-Generator tool",
+  "scripts": {
+    "test": "node --test"
+  }
+}
