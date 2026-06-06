@@ -488,6 +488,7 @@
             const ein = o['erstelltAmFormatiert'] || o['erstelltAm'] || '';   // Datum der Einsichtnahme
             const autor = (o['autor_mgl_id'] || '').toString().trim();
             return {
+                'Mitgliedsnummer': o['Mitgliedsnummer'] || '',
                 'Nachname': o['Nachname'] || '',
                 'Vorname': o['Vorname'] || '',
                 'Geburtsdatum': isoDate(o['Geburtsdatum'] || ''),
@@ -600,6 +601,19 @@
         function personKey(row) {
             return [norm(field(row, 'Nachname')), norm(field(row, 'Vorname')), isoDate(field(row, 'Geburtsdatum'))].join('|');
         }
+        // The eFZ export may hold several rows per person. Collapse them by
+        // Mitgliedsnummer (the stable identity), keeping the newest inspection;
+        // fall back to ID / name+birthdate when no Mitgliedsnummer is present.
+        function dedupeEfz(rows) {
+            const groups = new Map();
+            for (const r of rows) {
+                const id = (field(r, 'Mitgliedsnummer') || field(r, 'ID') || '').toString().trim() || personKey(r);
+                const k = dateSortKey(field(r, 'Eingesehen am') || field(r, 'Ausgestellt am'));
+                const cur = groups.get(id);
+                if (!cur || k >= cur.k) groups.set(id, { r, k });
+            }
+            return Array.from(groups.values(), g => g.r);
+        }
 
         // ---------------- Merge ----------------
         function buildTable() {
@@ -625,19 +639,15 @@
             (byType.schulung || []).forEach(r => {
                 ensure(r).schulung = firstDate(r, ['Ausgestellt am', 'Gültig ab', 'Eingesehen am']);
             });
-            // Only the eFZ export can contain several rows per person — apply them
-            // oldest first so the newest Einsichtnahme wins (overwrites older values).
-            (byType.efz || [])
-                .slice()
-                .sort((a, b) => dateSortKey(field(a, 'Eingesehen am') || field(a, 'Ausgestellt am'))
-                              - dateSortKey(field(b, 'Eingesehen am') || field(b, 'Ausgestellt am')))
-                .forEach(r => {
-                    const p = ensure(r);
-                    p.efzAusstellung = fmtDate(field(r, 'Ausgestellt am'));
-                    p.efzEinsicht = fmtDate(field(r, 'Eingesehen am'));
-                    p.efzDurch = field(r, 'Eingesehen durch');
-                    p.efzErneut = firstDate(r, ['Gültig bis', 'Fälligkeit']);
-                });
+            // The eFZ export can contain several rows per person — reduce to the
+            // newest entry per Mitgliedsnummer before adding it to the table.
+            dedupeEfz(byType.efz || []).forEach(r => {
+                const p = ensure(r);
+                p.efzAusstellung = fmtDate(field(r, 'Ausgestellt am'));
+                p.efzEinsicht = fmtDate(field(r, 'Eingesehen am'));
+                p.efzDurch = field(r, 'Eingesehen durch');
+                p.efzErneut = firstDate(r, ['Gültig bis', 'Fälligkeit']);
+            });
 
             model = Array.from(persons.values()).sort((a, b) =>
                 (a.name || '').localeCompare(b.name || '', 'de') ||
