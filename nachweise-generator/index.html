@@ -141,11 +141,12 @@
             font-weight: bold;
             font-size: 11px;
         }
-        table.preview td[contenteditable] { background: #fffef5; min-width: 60px; }
+        table.preview td[contenteditable] { background: #fff7d6; min-width: 60px; }
         table.preview td[contenteditable]:focus { outline: 2px solid var(--blue); background: #fff; }
+        table.preview td:has(> select) { background: #fff7d6; }
         table.preview .colname { text-align: left; }
-        table.preview select { border: none; background: #fffef5; font-size: 12px; width: 100%; }
-        table.preview tbody tr:nth-child(even) td:not([contenteditable]):not(:has(select)) { background: #f9fafb; }
+        table.preview select { border: none; background: #fff7d6; font-size: 12px; width: 100%; }
+        table.preview tbody tr:nth-child(even) td:not([contenteditable]):not(:has(select)):not(.actcol) { background: #f9fafb; }
         .grp { font-size: 10px; color: #475569; }
         table.preview .actcol {
             border: none; background: transparent !important; width: 56px; padding: 2px;
@@ -302,7 +303,7 @@
 
         <div class="preview-wrap" id="previewWrap" style="display:none;">
             <h3>Vorschau <span style="font-weight:normal;font-size:13px;color:#666;">(Zellen sind bearbeitbar)</span></h3>
-            <p class="hint">Gelb hinterlegte Felder kannst du vor dem Drucken direkt korrigieren. Mit ✕ am Zeilenende lässt sich ein Eintrag entfernen. Beim Druck wird auf A4 quer mit 15 Zeilen pro Seite paginiert.</p>
+            <p class="hint">Alle gelb hinterlegten Felder sind direkt bearbeitbar — vor dem Drucken prüfen und ggf. korrigieren. Mit ✕ am Zeilenende lässt sich ein Eintrag entfernen. Beim Druck wird auf A4 quer mit 15 Zeilen pro Seite paginiert.</p>
             <div class="preview-toolbar" id="previewToolbar" style="display:none;">
                 <button class="btn" id="mergeBtn" onclick="mergeSelected()" disabled>Ausgewählte zusammenführen</button>
                 <span class="sel-hint">Zwei oder mehr Zeilen ankreuzen, um Einträge derselben Person (z. B. nach Namensänderung) zusammenzuführen. Die oberste Auswahl bleibt führend.</span>
@@ -615,17 +616,31 @@
             return [norm(field(row, 'Nachname')), norm(field(row, 'Vorname')), isoDate(field(row, 'Geburtsdatum'))].join('|');
         }
         // The eFZ export may hold several rows per person. Collapse them by
-        // Mitgliedsnummer (the stable identity), keeping the newest inspection;
-        // fall back to ID / name+birthdate when no Mitgliedsnummer is present.
+        // Mitgliedsnummer (the stable identity); fall back to ID / name+birthdate
+        // when no Mitgliedsnummer is present. Within each group the newest row
+        // leads, but every field is filled from the newest row that actually has
+        // a value — so a blank field in the latest record doesn't lose older data.
         function dedupeEfz(rows) {
             const groups = new Map();
             for (const r of rows) {
                 const id = (field(r, 'Mitgliedsnummer') || field(r, 'ID') || '').toString().trim() || personKey(r);
-                const k = dateSortKey(field(r, 'Eingesehen am') || field(r, 'Ausgestellt am'));
-                const cur = groups.get(id);
-                if (!cur || k >= cur.k) groups.set(id, { r, k });
+                if (!groups.has(id)) groups.set(id, []);
+                groups.get(id).push(r);
             }
-            return Array.from(groups.values(), g => g.r);
+            const FIELDS = ['Nachname', 'Vorname', 'Geburtsdatum', 'Mitgliedsnummer', 'ID',
+                'Ausgestellt am', 'Eingesehen am', 'Eingesehen durch', 'Gültig bis', 'Fälligkeit', 'Status der Person'];
+            const out = [];
+            for (const list of groups.values()) {
+                list.sort((a, b) => dateSortKey(field(b, 'Eingesehen am') || field(b, 'Ausgestellt am'))
+                                  - dateSortKey(field(a, 'Eingesehen am') || field(a, 'Ausgestellt am')));
+                const merged = {};
+                for (const f of FIELDS) {
+                    merged[f] = '';
+                    for (const r of list) { const v = field(r, f); if (v) { merged[f] = v; break; } }
+                }
+                out.push(merged);
+            }
+            return out;
         }
 
         // ---------------- Merge ----------------
