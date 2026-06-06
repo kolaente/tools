@@ -180,6 +180,18 @@
         table.dbg tr.ok td { background: #ecfdf5; }
         table.dbg tr.miss td { background: #fef2f2; }
 
+        /* ---- Merge-Logik Erklärung ---- */
+        .merge-info {
+            margin-top: 18px; border: 1px solid var(--border); border-radius: 8px;
+            padding: 12px 16px; background: #f8fafc; font-size: 14px; line-height: 1.55;
+        }
+        .merge-info summary { cursor: pointer; font-weight: bold; color: #334155; }
+        .merge-info-body { margin-top: 10px; color: #334155; }
+        .merge-info-body p { margin: 8px 0; }
+        .merge-info-body ul { margin: 6px 0 10px 20px; }
+        .merge-info-body li { margin-bottom: 4px; }
+        .merge-info-body code { background: #e2e8f0; padding: 1px 4px; border-radius: 3px; }
+
         .tips {
             background: #eff6ff; border-radius: 8px; padding: 16px;
             font-size: 13px; color: #1e40af; margin-top: 26px; line-height: 1.5;
@@ -333,13 +345,45 @@
         <div class="tips">
             <strong>So funktioniert's</strong>
             <ul>
-                <li>Exportiere aus der Präventions-Verwaltung je eine Liste als <code>.csv</code>: Auskunftserklärung, Präventionsschulung, Selbstverpflichtungserklärung und erweitertes Führungszeugnis.</li>
+                <li>Die CSV-Listen stammen aus <b>Campflow</b> (Präventions-Verwaltung): exportiere dort je eine Liste als <code>.csv</code> — Auskunftserklärung, Präventionsschulung, Selbstverpflichtungserklärung und erweitertes Führungszeugnis.</li>
                 <li>Auch <code>.xlsx</code>/<code>.xls</code> wird gelesen — inkl. des DPSG-OTD-Exports der Sachbescheinigungen (eFZ): Ausstellungsdatum (<code>fzDatumFormatiert</code>) und Einsichtnahme (<code>erstelltAm</code>) werden übernommen, „Einsichtnahme durch" wird auf <i>Bundesbüro (autor_mgl_id)</i> gesetzt und die erneute Einsichtnahme auf Einsichtnahme + 5 Jahre vorbelegt.</li>
                 <li>Alle Dateien (CSV und Excel gemischt) hochladen. Personen werden über Nachname, Vorname und Geburtsdatum zusammengeführt.</li>
                 <li><b>Auskunft / Verpflichtung</b> werden als <i>ja/nein</i> abgeleitet (gültiger Nachweis vorhanden → ja). <b>Daten</b> kommen aus „Ausgestellt am" bzw. „Eingesehen am". Alles ist vor dem Druck korrigierbar.</li>
                 <li>„Liegt eine einschlägige Verurteilung vor?" ist immer mit <i>nein</i> vorbelegt — bitte prüfen.</li>
             </ul>
         </div>
+
+        <details class="merge-info">
+            <summary>Wie werden die Listen zusammengeführt?</summary>
+            <div class="merge-info-body">
+                <p>Die CSV-Listen stammen aus <b>Campflow</b>; das erweiterte Führungszeugnis (eFZ) kann zusätzlich
+                als Excel-Datei (z. B. DPSG-OTD-Export) eingelesen werden.</p>
+
+                <p><b>Wer in der Liste steht:</b> Die Liste wird durch die Erklärungs-Listen bestimmt
+                (Auskunftserklärung, Präventionsschulung, Selbstverpflichtungserklärung). Jede Person aus
+                diesen Listen erscheint genau einmal — auch ohne eingetragenes Führungszeugnis.</p>
+
+                <p><b>Abgleich derselben Person über alle Dateien:</b> Personen werden über
+                <b>Nachname + Vorname + Geburtsdatum</b> zusammengeführt. Vorher wird normalisiert, damit
+                Schreibweisen zusammenpassen:</p>
+                <ul>
+                    <li>Umlaute/ß werden vereinheitlicht (<code>Müller</code> = <code>Mueller</code>), Groß-/Kleinschreibung und Sonderzeichen ignoriert.</li>
+                    <li>Datumsangaben werden auf ein einheitliches Format gebracht — egal ob <code>17.05.99</code>, <code>17.05.99 00:00</code> oder <code>1999-05-17</code>. Zweistellige Jahre werden sinnvoll ergänzt (Geburtsjahre → 19xx, nahe Zukunft → 20xx).</li>
+                </ul>
+
+                <p><b>Erweitertes Führungszeugnis (eFZ):</b></p>
+                <ul>
+                    <li>Mehrere eFZ-Zeilen pro Person werden über die <b>Mitgliedsnummer</b> zusammengefasst; die <b>neueste</b> Einsichtnahme gewinnt. Zeilen, die dieselbe Person ohne Mitgliedsnummer wiederholen, werden über Name + Geburtsdatum derselben Person zugeordnet.</li>
+                    <li>Weil sich Namen zwischen Bundesamt (eFZ) und Verwaltung (CSV) unterscheiden können (z. B. nach Heirat), wird ein eFZ einer Person zugeordnet, wenn das <b>Geburtsdatum übereinstimmt und mindestens ein Namensteil</b> (Vor- oder Nachname) passt. Gleicher Geburtstag ganz ohne Namensübereinstimmung wird <i>nicht</i> automatisch zusammengeführt.</li>
+                    <li>Leere eFZ-Felder überschreiben keine bereits vorhandenen Daten.</li>
+                    <li>eFZ-Einträge, zu denen es <b>keine Person</b> in den Erklärungs-Listen gibt, werden <b>ausgelassen</b>.</li>
+                </ul>
+
+                <p><b>Ableitungen:</b> „Auskunft" und „Verpflichtung" werden zu <i>ja/nein</i> (gültiger Nachweis vorhanden → ja). „Liegt eine einschlägige Verurteilung vor?" ist mit <i>nein</i> vorbelegt.</p>
+
+                <p><b>Manuelle Korrektur:</b> Lässt sich eine Person nicht automatisch zuordnen (z. B. beide Namensteile geändert), kannst du die betreffenden Zeilen in der Vorschau ankreuzen und über „Zusammenführen" vereinen oder mit ✕ entfernen. Die Diagnose-Box oben zeigt, welche eFZ-Zeile welcher Person zugeordnet wurde.</p>
+            </div>
+        </details>
     </div>
 
     <div class="print-area" id="printArea"></div>
