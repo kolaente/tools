@@ -132,6 +132,22 @@ test('buildModel: twin eFZ rows (with/without Mitgliedsnummer) yield one person 
     assert.equal(model[0].efzEinsicht, '20.02.2024');
 });
 
+test('buildModel: a blank eFZ row never clobbers real data for a changed-name person', () => {
+    const auskunft = parseCSV('Nachname;Vorname;Geburtsdatum;Status der Person\nNeumann;Sara;17.05.99;Gültig');
+    // Real eFZ under the OLD surname (with data) + a numberless continuation row
+    // under the NEW surname with empty dates.
+    const efz = [
+        { Mitgliedsnummer: '42463', Nachname: 'Schulz', Vorname: 'Sara', Geburtsdatum: '17.05.99 00:00',
+          'Ausgestellt am': '05.6.2019', 'Eingesehen am': '07.8.2019', 'Eingesehen durch': 'Bundesbüro (1)' },
+        { Mitgliedsnummer: '', Nachname: 'Neumann', Vorname: 'Sara', Geburtsdatum: '17.05.99 00:00',
+          'Ausgestellt am': '', 'Eingesehen am': '', 'Eingesehen durch': '' },
+    ];
+    const { model } = buildModel([{ type: 'auskunft', rows: auskunft }, { type: 'efz', rows: efz }]);
+    const n = model.find(p => p.name === 'Neumann');
+    assert.equal(n.efzEinsicht, '07.08.2019');
+    assert.equal(n.efzDurch, 'Bundesbüro (1)');
+});
+
 test('buildModel: the real-world case — 2-digit CSV date + eFZ time-suffix + changed surname → merges', () => {
     const auskunft = parseCSV('Nachname;Vorname;Geburtsdatum;Gültig ab;Status der Person\nNeumann;Sara;17.05.99;2024-01-01;Gültig');
     const efz = [{
