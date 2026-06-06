@@ -560,17 +560,18 @@
             return '';
         }
         function norm(s) {
-            return (s || '').toString().toLowerCase().trim()
+            return (s || '').toString().normalize('NFC').toLowerCase().trim()
                 .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+                .normalize('NFKD').replace(/[̀-ͯ]/g, '')   // strip any remaining accents
                 .replace(/[^a-z0-9]+/g, '');
         }
         // Format any recognisable date to DD.MM.YYYY. Returns '' if none found.
         function fmtDate(v) {
             if (!v) return '';
             v = v.toString().trim();
-            let m = v.match(/(\d{4})-(\d{2})-(\d{2})/);            // ISO 2026-05-26
-            if (m) return `${m[3]}.${m[2]}.${m[1]}`;
-            m = v.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);         // already DD.MM.YYYY
+            let m = v.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);        // ISO 2026-05-26
+            if (m) return `${m[3].padStart(2, '0')}.${m[2].padStart(2, '0')}.${m[1]}`;
+            m = v.match(/(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/);   // DD.MM.YYYY or DD/MM/YYYY
             if (m) {
                 const y = m[3].length === 2 ? '20' + m[3] : m[3];
                 return `${m[1].padStart(2, '0')}.${m[2].padStart(2, '0')}.${y}`;
@@ -580,9 +581,9 @@
         // Normalise any recognisable date to ISO YYYY-MM-DD (for stable matching).
         function isoDate(v) {
             v = (v || '').toString().trim();
-            let m = v.match(/(\d{4})-(\d{2})-(\d{2})/);
-            if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-            m = v.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);
+            let m = v.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+            if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+            m = v.match(/(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})/);   // DD.MM.YYYY or DD/MM/YYYY
             if (m) { const y = m[3].length === 2 ? '20' + m[3] : m[3]; return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`; }
             return v;
         }
@@ -689,8 +690,11 @@
             // The eFZ export can contain several rows per person — reduce to the
             // newest entry per Mitgliedsnummer, then attach it to the matching
             // person (fuzzy by birthdate + name) or add it as a new entry.
+            let efzMatched = 0, efzNew = 0;
             dedupeEfz(byType.efz || []).forEach(r => {
-                const p = findExisting(r) || ensure(r);
+                const existing = findExisting(r);
+                if (existing) efzMatched++; else efzNew++;
+                const p = existing || ensure(r);
                 p.efzAusstellung = fmtDate(field(r, 'Ausgestellt am'));
                 p.efzEinsicht = fmtDate(field(r, 'Eingesehen am'));
                 p.efzDurch = field(r, 'Eingesehen durch');
@@ -706,7 +710,8 @@
             if (!files.length) { showStatus('Keine Dateien geladen.', 'info'); return; }
             const unmapped = files.filter(f => !f.type).length;
             const typesIn = Object.keys(byType).map(t => TYPES[t]).join(', ') || 'keine';
-            showStatus(`${model.length} Person(en) zusammengeführt aus: ${typesIn}.` +
+            const efzInfo = (efzMatched + efzNew) ? ` eFZ: ${efzMatched} zugeordnet, ${efzNew} ohne Treffer in den anderen Listen (eigene Zeile).` : '';
+            showStatus(`${model.length} Person(en) zusammengeführt aus: ${typesIn}.${efzInfo}` +
                 (unmapped ? ` ${unmapped} Datei(en) ohne Typ werden ignoriert.` : ''), unmapped ? 'info' : 'success');
         }
 
