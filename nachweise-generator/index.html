@@ -625,7 +625,8 @@
             (byType.schulung || []).forEach(r => {
                 ensure(r).schulung = firstDate(r, ['Ausgestellt am', 'Gültig ab', 'Eingesehen am']);
             });
-            // Apply oldest → newest so the most recent inspection per person wins.
+            // Only the eFZ export can contain several rows per person — apply them
+            // oldest first so the newest Einsichtnahme wins (overwrites older values).
             (byType.efz || [])
                 .slice()
                 .sort((a, b) => dateSortKey(field(a, 'Eingesehen am') || field(a, 'Ausgestellt am'))
