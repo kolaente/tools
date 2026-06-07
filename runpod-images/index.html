@@ -454,6 +454,44 @@
     }
     .close-lb:hover { color: var(--accent-red); border-color: var(--accent-red); }
 
+    .lb-nav {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 52px; height: 52px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: 50%;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+      z-index: 2001;
+    }
+    .lb-nav-prev { left: 28px; }
+    .lb-nav-next { right: 28px; }
+    .lb-nav:hover:not(:disabled) {
+      color: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 4px var(--shadow-glow);
+    }
+    .lb-nav:disabled { opacity: 0.25; cursor: not-allowed; }
+
+    .lb-counter {
+      position: fixed;
+      top: 30px; left: 50%;
+      transform: translateX(-50%);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 16px;
+      z-index: 2001;
+    }
+
     /* Toast */
     .toast {
       position: fixed;
@@ -479,6 +517,9 @@
     @media (max-width: 640px) {
       .creds-row, .grid-2 { grid-template-columns: 1fr; }
       .adv-grid { grid-template-columns: repeat(2, 1fr); }
+      .lb-nav { width: 42px; height: 42px; }
+      .lb-nav-prev { left: 10px; }
+      .lb-nav-next { right: 10px; }
     }
   </style>
 </head>
@@ -607,6 +648,17 @@
     <button class="close-lb" id="closeLb" title="Close (Esc)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+    <span class="lb-counter" id="lbCounter"></span>
+    <button class="lb-nav lb-nav-prev" id="lbPrev" title="Previous (←)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
+    <button class="lb-nav lb-nav-next" id="lbNext" title="Next (→)">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
       </svg>
     </button>
     <div class="lightbox-inner">
@@ -953,6 +1005,7 @@
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
     // ---- Gallery rendering ----
+    let galleryItems = [];
     function fmtTime(ts) {
       const d = new Date(ts);
       return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -981,6 +1034,7 @@
     }
 
     function prependCard(item) {
+      galleryItems.unshift(item);
       $('galleryGrid').prepend(makeCard(item));
     }
 
@@ -991,10 +1045,10 @@
     }
 
     async function renderGallery() {
-      const items = (await dbAll()).sort((a, b) => b.createdAt - a.createdAt);
+      galleryItems = (await dbAll()).sort((a, b) => b.createdAt - a.createdAt);
       const grid = $('galleryGrid');
       grid.innerHTML = '';
-      items.forEach(it => grid.appendChild(makeCard(it)));
+      galleryItems.forEach(it => grid.appendChild(makeCard(it)));
       refreshGalleryChrome();
     }
 
@@ -1007,7 +1061,9 @@
 
     // ---- Lightbox ----
     let lbItem = null;
-    function openLightbox(item) {
+    let lbIndex = -1;
+
+    function renderLb(item) {
       lbItem = item;
       $('lbImg').src = item.src;
       $('lbPrompt').textContent = item.prompt || '(no prompt)';
@@ -1024,17 +1080,41 @@
         item.seed != null ? `seed ${item.seed}` : null
       ].filter(Boolean);
       $('lbParams').textContent = parts.join('  ·  ');
+      // counter + nav button state
+      $('lbCounter').textContent = `${lbIndex + 1} / ${galleryItems.length}`;
+      $('lbPrev').disabled = lbIndex <= 0;
+      $('lbNext').disabled = lbIndex >= galleryItems.length - 1;
+    }
+
+    function openLightbox(item) {
+      lbIndex = galleryItems.findIndex(i => i.id === item.id);
+      if (lbIndex === -1) { lbIndex = 0; }
+      renderLb(galleryItems[lbIndex] || item);
       $('lightbox').classList.add('active');
       document.body.style.overflow = 'hidden';
+    }
+    function navLightbox(delta) {
+      const next = lbIndex + delta;
+      if (next < 0 || next >= galleryItems.length) return;
+      lbIndex = next;
+      renderLb(galleryItems[lbIndex]);
     }
     function closeLightbox() {
       $('lightbox').classList.remove('active');
       document.body.style.overflow = '';
       lbItem = null;
+      lbIndex = -1;
     }
     $('closeLb').addEventListener('click', closeLightbox);
+    $('lbPrev').addEventListener('click', () => navLightbox(-1));
+    $('lbNext').addEventListener('click', () => navLightbox(1));
     $('lightbox').addEventListener('click', (e) => { if (e.target === $('lightbox')) closeLightbox(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+    document.addEventListener('keydown', (e) => {
+      if (!$('lightbox').classList.contains('active')) return;
+      if (e.key === 'Escape') closeLightbox();
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); navLightbox(-1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); navLightbox(1); }
+    });
 
     $('lbDownload').addEventListener('click', () => {
       if (!lbItem) return;
@@ -1062,9 +1142,17 @@
       await dbDelete(id);
       const el = document.querySelector(`.image-card[data-id="${id}"]`);
       if (el) el.remove();
+      const removedIndex = galleryItems.findIndex(i => i.id === id);
+      if (removedIndex !== -1) galleryItems.splice(removedIndex, 1);
       refreshGalleryChrome();
-      closeLightbox();
       toast('Image deleted');
+      // stay in the lightbox on the neighbouring image, or close if none left
+      if (galleryItems.length === 0) {
+        closeLightbox();
+      } else {
+        lbIndex = Math.min(removedIndex, galleryItems.length - 1);
+        renderLb(galleryItems[lbIndex]);
+      }
     });
 
     $('generateBtn').addEventListener('click', generate);
