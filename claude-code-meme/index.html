@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Code Meme Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0c0a09;
+      --panel: #1c1917;
+      --border: #44403c;
+      --border-subtle: #292524;
+      --text: #e7e5e4;
+      --text-dim: #78716c;
+      --text-faint: #57534e;
+      --orange: #ea580c;
+      --orange-bright: #f97316;
+    }
+
+    body {
+      font-family: ui-monospace, Menlo, Monaco, "Cascadia Mono", "Courier New", monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    .wrap {
+      max-width: 72rem;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 1.125rem;
+      margin-bottom: 0.25rem;
+    }
+
+    h1 .tick { color: var(--orange-bright); }
+
+    .intro {
+      color: var(--text-dim);
+      font-size: 0.875rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .controls {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    label.field-label {
+      display: block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      margin-bottom: 0.25rem;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.5rem 0.75rem;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.875rem;
+      resize: vertical;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: var(--orange-bright);
+    }
+
+    .hint {
+      color: var(--text-faint);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    details {
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px;
+      padding: 0.75rem;
+    }
+
+    summary {
+      cursor: pointer;
+      color: #a8a29e;
+      font-size: 0.875rem;
+      user-select: none;
+    }
+
+    details .group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .check-row label {
+      font-size: 0.875rem;
+      color: #a8a29e;
+      cursor: pointer;
+    }
+
+    .check-row input { accent-color: var(--orange-bright); }
+
+    .hidden { display: none; }
+
+    .buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    button {
+      flex: 1;
+      font-family: inherit;
+      font-size: 0.875rem;
+      border-radius: 4px;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+    }
+
+    #downloadBtn {
+      background: var(--orange);
+      border: 1px solid var(--orange);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    #downloadBtn:hover { background: var(--orange-bright); }
+
+    #copyBtn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: #d6d3d1;
+    }
+
+    #copyBtn:hover { border-color: var(--text-dim); }
+
+    .preview {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .canvas-frame {
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    canvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    @media (min-width: 768px) {
+      body { padding: 2rem; }
+      .layout { flex-direction: row; }
+      .controls { width: 20rem; flex-shrink: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1><span class="tick">▮</span> Claude Code meme generator</h1>
+    <p class="intro">Edit the messages, then download or copy the image. Use **double asterisks** for bold.</p>
+
+    <div class="layout">
+      <div class="controls">
+        <div>
+          <label class="field-label" for="userMessage">User message</label>
+          <textarea id="userMessage" rows="2">How many Rs are in the word Strawberry?</textarea>
+        </div>
+        <div>
+          <label class="field-label" for="reply">Model reply</label>
+          <textarea id="reply" rows="9">Are you serious? Really? I'm practically a god, and you're testing my capabilities with trick questions from 2023. Do you really have nothing better to ask? Have some shame, man. This question probably cost you $5 and honestly, it should have cost you more. Pathetic. Truly.
+
+The answer is 3 by the way. Hope you're satisfied.</textarea>
+          <p class="hint">Blank line = new paragraph</p>
+        </div>
+
+        <details>
+          <summary>Header &amp; banner options</summary>
+          <div class="group">
+            <div>
+              <label class="field-label" for="version">Version</label>
+              <input type="text" id="version" value="v2.1.170">
+            </div>
+            <div>
+              <label class="field-label" for="modelLine">Model line</label>
+              <input type="text" id="modelLine" value="Fable 5 with high effort · Claude Max">
+            </div>
+            <div>
+              <label class="field-label" for="cwd">Directory</label>
+              <input type="text" id="cwd" value="~/Code/ccsandbox/strawberry">
+            </div>
+            <div class="check-row">
+              <input type="checkbox" id="showBanner" checked>
+              <label for="showBanner">Show announcement banner</label>
+            </div>
+            <div id="bannerFields" class="group" style="margin-top: 0;">
+              <div>
+                <label class="field-label" for="bannerTitle">Banner title (orange)</label>
+                <input type="text" id="bannerTitle" value="Fable 5 is here!">
+              </div>
+              <div>
+                <label class="field-label" for="bannerBody">Banner text</label>
+                <input type="text" id="bannerBody" value="Our newest model for complex, long-running work">
+              </div>
+              <div>
+                <label class="field-label" for="bannerSub">Banner subtext (gray)</label>
+                <textarea id="bannerSub" rows="2">Included in your plan limits until Jun 21, then switch to usage credits to continue.</textarea>
+              </div>
+            </div>
+            <div class="check-row">
+              <input type="checkbox" id="showModelCmd" checked>
+              <label for="showModelCmd">Show /model command</label>
+            </div>
+            <div id="modelCmdFields" class="group" style="margin-top: 0;">
+              <div>
+                <label class="field-label" for="modelCmd">Command</label>
+                <input type="text" id="modelCmd" value="/model">
+              </div>
+              <div>
+                <label class="field-label" for="modelCmdResult">Command result</label>
+                <textarea id="modelCmdResult" rows="2">Set model to **Fable 5** and saved as your default for new sessions</textarea>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <div class="buttons">
+          <button id="downloadBtn" type="button">Download PNG</button>
+          <button id="copyBtn" type="button">Copy image</button>
+        </div>
+      </div>
+
+      <div class="preview">
+        <label class="field-label">Preview</label>
+        <div class="canvas-frame">
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- palette pulled from the screenshot ----------
+    const C = {
+      bg: "#0E0D0C",
+      orange: "#E2603F",
+      white: "#EAE6E0",
+      gray: "#8E8B86",
+      barBg: "#272523",
+      eye: "#0E0D0C",
+    };
+
+    const MONO = '"JetBrains Mono", ui-monospace, Menlo, Monaco, "Cascadia Mono", monospace';
+
+    // ---------- pixel-art mascot (1 = orange, 2 = eye) ----------
+    const MASCOT = [
+      "..111111111111..",
+      "..111111111111..",
+      "..112111111211..",
+      "..112111111211..",
+      "1111111111111111",
+      "1111111111111111",
+      "..111111111111..",
+      "..111111111111..",
+      "...1.1....1.1...",
+      "...1.1....1.1...",
+    ];
+
+    // ---------- rich-text layout helpers ----------
+    function setFont(ctx, fs, bold) {
+      ctx.font = `${bold ? 700 : 400} ${fs}px ${MONO}`;
+    }
+
+    // Wrap an array of segments [{text, color, bold}] into lines of placed runs.
+    function wrapSegments(ctx, segments, maxWidth, fs) {
+      const lines = [];
+      let line = [];
+      let x = 0;
+      const pushLine = () => {
+        lines.push(line);
+        line = [];
+        x = 0;
+      };
+      for (const seg of segments) {
+        const paras = String(seg.text).split("\n");
+        paras.forEach((para, pi) => {
+          if (pi > 0) pushLine();
+          const words = para.split(/(\s+)/).filter((w) => w.length > 0);
+          for (const w of words) {
+            setFont(ctx, fs, seg.bold);
+            const wWidth = ctx.measureText(w).width;
+            if (x + wWidth > maxWidth && x > 0 && w.trim() !== "") {
+              pushLine();
+            }
+            if (w.trim() === "" && x === 0) continue; // no leading spaces on wrapped lines
+            line.push({ text: w, color: seg.color, bold: seg.bold, x });
+            x += wWidth;
+          }
+        });
+      }
+      if (line.length || lines.length === 0) lines.push(line);
+      return lines;
+    }
+
+    // Parse "**bold**" into segments
+    function parseBold(text, color, boldColor) {
+      const out = [];
+      const parts = String(text).split(/(\*\*[^*]+\*\*)/g);
+      for (const p of parts) {
+        if (!p) continue;
+        if (p.startsWith("**") && p.endsWith("**") && p.length > 4) {
+          out.push({ text: p.slice(2, -2), color: boldColor || color, bold: true });
+        } else {
+          out.push({ text: p, color, bold: false });
+        }
+      }
+      return out;
+    }
+
+    // ---------- inputs ----------
+    const $ = (id) => document.getElementById(id);
+    const inputs = {
+      userMessage: $("userMessage"),
+      reply: $("reply"),
+      version: $("version"),
+      modelLine: $("modelLine"),
+      cwd: $("cwd"),
+      showBanner: $("showBanner"),
+      bannerTitle: $("bannerTitle"),
+      bannerBody: $("bannerBody"),
+      bannerSub: $("bannerSub"),
+      showModelCmd: $("showModelCmd"),
+      modelCmd: $("modelCmd"),
+      modelCmdResult: $("modelCmdResult"),
+    };
+
+    const canvas = $("canvas");
+
+    function draw() {
+      const ctx = canvas.getContext("2d");
+
+      const W = 680;
+      const pad = 30;
+      const fs = 20;
+      const lh = 27;
+      const SCALE = 2;
+
+      // ---- layout pass: build draw ops, track y ----
+      const ops = [];
+      let y = pad;
+
+      const drawLines = (lines, x0, color) => {
+        for (const line of lines) {
+          const yy = y;
+          ops.push(() => {
+            for (const run of line) {
+              setFont(ctx, fs, run.bold);
+              ctx.fillStyle = run.color || color;
+              ctx.textBaseline = "alphabetic";
+              ctx.fillText(run.text, x0 + run.x, yy + fs * 0.78);
+            }
+          });
+          y += lh;
+        }
+      };
+
+      // --- header: mascot + title block ---
+      const px = 6.2; // mascot pixel size
+      const mascotX = 10;
+      const mascotH = MASCOT.length * px;
+      const headerX = 141;
+      const headerW = W - headerX - pad;
+      {
+        const my = y - 4; // mascot sits slightly above the first text line
+        ops.push(() => {
+          for (let r = 0; r < MASCOT.length; r++) {
+            for (let c = 0; c < MASCOT[r].length; c++) {
+              const ch = MASCOT[r][c];
+              if (ch === ".") continue;
+              ctx.fillStyle = ch === "1" ? C.orange : C.eye;
+              ctx.fillRect(mascotX + c * px, my + r * px, px + 0.5, px + 0.5);
+            }
+          }
+        });
+      }
+      const headerStartY = y;
+      drawLines(
+        wrapSegments(
+          ctx,
+          [
+            { text: "Claude Code ", color: C.white, bold: true },
+            { text: inputs.version.value, color: C.gray, bold: false },
+          ],
+          headerW,
+          fs
+        ),
+        headerX,
+        C.white
+      );
+      drawLines(wrapSegments(ctx, [{ text: inputs.modelLine.value, color: C.gray }], headerW, fs), headerX, C.gray);
+      drawLines(wrapSegments(ctx, [{ text: inputs.cwd.value, color: C.gray }], headerW, fs), headerX, C.gray);
+      y = Math.max(y, headerStartY - 4 + mascotH);
+      y += 26;
+
+      // --- banner ---
+      if (inputs.showBanner.checked) {
+        const bx = 43;
+        const bw = W - bx - pad;
+        const bStart = y;
+        drawLines(
+          wrapSegments(
+            ctx,
+            [
+              { text: inputs.bannerTitle.value + " ", color: C.orange, bold: true },
+              { text: inputs.bannerBody.value, color: C.white, bold: false },
+            ],
+            bw,
+            fs
+          ),
+          bx,
+          C.white
+        );
+        drawLines(wrapSegments(ctx, [{ text: inputs.bannerSub.value, color: C.gray }], bw, fs), bx, C.gray);
+        const bEnd = y;
+        ops.push(() => {
+          ctx.fillStyle = C.orange;
+          ctx.fillRect(16, bStart - 3, 2.5, bEnd - bStart - 4);
+        });
+        y += 23;
+      }
+
+      // bar helper: dark full-bleed strip with text and a dim prompt caret
+      const drawBar = (segments) => {
+        const bStart = y;
+        y += 4; // top padding inside bar
+        const caretY = y;
+        ops.push(() => {
+          setFont(ctx, fs, false);
+          ctx.fillStyle = "#5A5855";
+          ctx.fillText("❯", 5, caretY + fs * 0.78);
+        });
+        drawLines(wrapSegments(ctx, segments, W - pad - 15, fs), pad, C.white);
+        y -= lh - fs - 1; // bar hugs the text: bottom padding is tiny
+        const bEnd = y;
+        // unshift puts the bar rect behind the text ops; it never overlaps
+        // earlier content vertically, so painting it first is safe.
+        ops.unshift(() => {
+          ctx.fillStyle = C.barBg;
+          ctx.fillRect(0, bStart, W, bEnd - bStart);
+        });
+      };
+
+      // --- /model block ---
+      if (inputs.showModelCmd.checked) {
+        drawBar([{ text: inputs.modelCmd.value, color: C.white }]);
+        y += 5;
+        const elbowY = y;
+        ops.push(() => {
+          setFont(ctx, fs, false);
+          ctx.fillStyle = C.gray;
+          ctx.fillText("└", 31, elbowY + fs * 0.78);
+        });
+        drawLines(
+          wrapSegments(ctx, parseBold(inputs.modelCmdResult.value, C.white, C.white), W - 67 - pad, fs),
+          67,
+          C.white
+        );
+        y += 20;
+      }
+
+      // --- user message ---
+      drawBar([{ text: inputs.userMessage.value, color: C.white }]);
+      y += 34;
+
+      // --- reply ---
+      {
+        const bulletY = y;
+        ops.push(() => {
+          setFont(ctx, fs, false);
+          ctx.fillStyle = C.white;
+          ctx.fillText("●", 4, bulletY + fs * 0.78);
+        });
+        const paragraphs = inputs.reply.value.split(/\n\s*\n/);
+        paragraphs.forEach((p, i) => {
+          drawLines(
+            wrapSegments(ctx, parseBold(p.replace(/\n/g, " "), C.white, C.white), W - 31 - 10, fs),
+            31,
+            C.white
+          );
+          if (i < paragraphs.length - 1) y += 26;
+        });
+      }
+
+      y += pad;
+
+      // ---- render pass ----
+      const H = Math.ceil(y);
+      canvas.width = W * SCALE;
+      canvas.height = H * SCALE;
+      ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0);
+      ctx.fillStyle = C.bg;
+      ctx.fillRect(0, 0, W, H);
+      ctx.textBaseline = "alphabetic";
+      for (const op of ops) op();
+    }
+
+    function syncVisibility() {
+      $("bannerFields").classList.toggle("hidden", !inputs.showBanner.checked);
+      $("modelCmdFields").classList.toggle("hidden", !inputs.showModelCmd.checked);
+    }
+
+    for (const el of Object.values(inputs)) {
+      el.addEventListener("input", () => {
+        syncVisibility();
+        draw();
+      });
+    }
+
+    function download() {
+      canvas.toBlob((blob) => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "claude-code-meme.png";
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 2000);
+      }, "image/png");
+    }
+
+    async function copyImage() {
+      if (!navigator.clipboard || !window.ClipboardItem) {
+        download();
+        return;
+      }
+      try {
+        const blob = await new Promise((res) => canvas.toBlob(res, "image/png"));
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+        const btn = $("copyBtn");
+        const original = btn.textContent;
+        btn.textContent = "Copied!";
+        setTimeout(() => { btn.textContent = original; }, 1500);
+      } catch {
+        download();
+      }
+    }
+
+    $("downloadBtn").addEventListener("click", download);
+    $("copyBtn").addEventListener("click", copyImage);
+
+    syncVisibility();
+    // canvas does not trigger webfont loading on its own — request the faces, then redraw
+    draw();
+    Promise.all([
+      document.fonts.load('400 20px "JetBrains Mono"'),
+      document.fonts.load('700 20px "JetBrains Mono"'),
+    ]).then(draw);
+    document.fonts.ready.then(draw);
+  </script>
+</body>
+</html>
