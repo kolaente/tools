@@ -1,0 +1,602 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ETF-Sparplan-Rechner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --paper:#e9ece5;
+    --card:#f5f7f1;
+    --ink:#14201b;
+    --ink-soft:#46544c;
+    --line:#cfd5c9;
+    --line-soft:#dde2d6;
+    --emerald:#157a59;
+    --emerald-deep:#0e5d44;
+    --emerald-tint:rgba(21,122,89,.12);
+    --amber:#c47e22;
+    --amber-deep:#9c6212;
+    --amber-tint:rgba(196,126,34,.14);
+    --blue:#3f6f99;
+    --blue-deep:#2f567a;
+    --blue-tint:rgba(63,111,153,.10);
+    --shadow:0 1px 2px rgba(20,32,27,.04),0 8px 24px rgba(20,32,27,.06);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    padding:clamp(16px,3vw,40px);
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+
+  /* ---- header ---- */
+  header{margin-bottom:28px}
+  .eyebrow{
+    font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--emerald-deep);margin:0 0 8px;
+  }
+  h1{
+    font-family:'Fraunces',serif;font-weight:600;font-size:clamp(28px,4.4vw,46px);
+    line-height:1.04;letter-spacing:-.01em;margin:0;max-width:18ch;
+  }
+  header p{color:var(--ink-soft);margin:12px 0 0;max-width:60ch}
+
+  .layout{display:grid;grid-template-columns:340px 1fr;gap:24px;align-items:start}
+  @media (max-width:860px){.layout{grid-template-columns:1fr}}
+
+  /* ---- controls ---- */
+  .panel{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:22px;box-shadow:var(--shadow);
+  }
+  .panel h2{
+    font-family:'Fraunces',serif;font-weight:600;font-size:17px;margin:0 0 18px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .panel h2 .dot{width:7px;height:7px;border-radius:50%;background:var(--emerald)}
+
+  .field{margin-bottom:20px}
+  .field:last-child{margin-bottom:4px}
+  .field .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:9px}
+  .field label{font-size:13px;font-weight:600;color:var(--ink)}
+  .field .hint{font-size:11px;color:var(--ink-soft);font-weight:500}
+  .valbox{
+    display:inline-flex;align-items:baseline;gap:3px;
+    background:#fff;border:1px solid var(--line);border-radius:8px;padding:3px 9px;
+    font-variant-numeric:tabular-nums;
+  }
+  .valbox input{
+    border:0;background:transparent;font:inherit;font-weight:700;color:var(--ink);
+    width:5.2ch;text-align:right;padding:0;outline:none;
+    font-variant-numeric:tabular-nums;
+  }
+  .valbox.wide input{width:6.4ch}
+  .valbox .unit{font-size:12px;font-weight:600;color:var(--ink-soft)}
+
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:6px;
+    background:linear-gradient(var(--emerald),var(--emerald)) no-repeat,var(--line-soft);
+    background-size:var(--fill,40%) 100%;cursor:pointer;margin:0;
+  }
+  input[type=range].amber{background:linear-gradient(var(--amber),var(--amber)) no-repeat,var(--line-soft);background-size:var(--fill,40%) 100%}
+  input[type=range].blue{background:linear-gradient(var(--blue),var(--blue)) no-repeat,var(--line-soft);background-size:var(--fill,40%) 100%}
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+    background:#fff;border:2px solid var(--emerald);box-shadow:0 1px 4px rgba(20,32,27,.25);
+    margin-top:-1px;transition:transform .08s;
+  }
+  input[type=range].amber::-webkit-slider-thumb{border-color:var(--amber)}
+  input[type=range].blue::-webkit-slider-thumb{border-color:var(--blue)}
+  input[type=range]::-webkit-slider-thumb:active{transform:scale(1.18)}
+  input[type=range]::-moz-range-thumb{
+    width:18px;height:18px;border-radius:50%;background:#fff;border:2px solid var(--emerald);
+    box-shadow:0 1px 4px rgba(20,32,27,.25);
+  }
+  input[type=range].amber::-moz-range-thumb{border-color:var(--amber)}
+  input[type=range].blue::-moz-range-thumb{border-color:var(--blue)}
+  input[type=range]:focus-visible{outline:2px solid var(--emerald-deep);outline-offset:3px}
+
+  .divider{height:1px;background:var(--line-soft);margin:22px -22px;border:0}
+  .phase-tag{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--amber-deep);margin:0 0 14px}
+  .phase-tag.green{color:var(--emerald-deep)}
+  .phase-tag.blue{color:var(--blue-deep)}
+
+  .check{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink-soft);font-weight:500;cursor:pointer;margin-top:6px;line-height:1.35}
+  .check input{width:16px;height:16px;accent-color:var(--blue);cursor:pointer;flex:none}
+  .check b{color:var(--ink)}
+
+  .compare{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:17px 18px;box-shadow:var(--shadow)}
+  .compare.off{display:none}
+  .compare .ch{font-family:'Fraunces',serif;font-weight:600;font-size:15px;margin:0 0 13px;display:flex;align-items:center;gap:8px}
+  .compare .ch i{width:7px;height:7px;border-radius:50%;background:var(--blue);flex:none}
+  .compare .vs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:13px}
+  @media(max-width:680px){.compare .vs{grid-template-columns:1fr}}
+  .compare .col{border:1px solid var(--line-soft);border-radius:11px;padding:12px 13px;transition:border-color .15s,background .15s}
+  .compare .col.win{border-color:var(--blue);background:var(--blue-tint)}
+  .compare .col .t{font-size:11.5px;font-weight:600;color:var(--ink-soft);margin:0 0 6px}
+  .compare .col .d{font-family:'Fraunces',serif;font-weight:600;font-size:20px;font-variant-numeric:tabular-nums}
+  .compare .col .e{font-size:12px;color:var(--ink-soft);margin-top:3px;font-variant-numeric:tabular-nums}
+  .compare .verdict{font-size:13px;color:var(--ink-soft);line-height:1.5;margin:0}
+
+  /* ---- results ---- */
+  .results{display:flex;flex-direction:column;gap:20px}
+
+  .hero{
+    background:var(--ink);color:#eef1ea;border-radius:16px;padding:26px 28px;
+    box-shadow:var(--shadow);position:relative;overflow:hidden;
+  }
+  .hero::after{
+    content:"";position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;
+    background:radial-gradient(circle,rgba(196,126,34,.25),transparent 70%);
+  }
+  .hero .k{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9fb3a6;margin:0 0 6px}
+  .hero .big{
+    font-family:'Fraunces',serif;font-weight:600;font-size:clamp(38px,7vw,64px);line-height:1;
+    letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+  }
+  .hero .big small{font-size:.42em;font-weight:500;color:#cdd8cf;letter-spacing:0}
+  .hero .sub{color:#b7c5b9;margin:12px 0 0;max-width:46ch;font-size:13.5px;position:relative}
+
+  .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  @media (max-width:680px){.cards{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px 15px;box-shadow:var(--shadow)}
+  .stat .k{font-size:11.5px;font-weight:600;color:var(--ink-soft);margin:0 0 7px;letter-spacing:.02em;min-height:2.4em}
+  .stat .v{font-family:'Fraunces',serif;font-weight:600;font-size:23px;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .stat .sv{font-size:11.5px;font-weight:600;margin-top:3px;color:var(--ink-soft)}
+  .stat .sv.up{color:var(--emerald-deep)}
+  .stat .accent-bar{height:3px;border-radius:3px;margin-bottom:13px;width:26px}
+
+  /* ---- chart ---- */
+  .chartcard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px 16px;box-shadow:var(--shadow)}
+  .chartcard .ctop{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+  .chartcard h3{font-family:'Fraunces',serif;font-weight:600;font-size:17px;margin:0}
+  .legend{display:flex;gap:16px;font-size:12px;font-weight:600;color:var(--ink-soft)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+  svg{width:100%;height:auto;display:block;font-variant-numeric:tabular-nums}
+  .ax{fill:var(--ink-soft);font-size:11px;font-weight:500}
+  .grid{stroke:var(--line-soft);stroke-width:1}
+  .pivot{stroke:var(--ink);stroke-width:1.4;stroke-dasharray:4 4;opacity:.55}
+  .pivot-lbl{fill:var(--ink);font-size:11px;font-weight:700}
+
+  .note{font-size:12px;color:var(--ink-soft);margin:18px 2px 0;line-height:1.55}
+  .note b{color:var(--ink)}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">ETF-Sparplan · Anspar- &amp; Entnahmephase</p>
+    <h1>Wie lange trägt dich dein Depot?</h1>
+    <p>Stell deine Parameter ein und sieh sofort, wie viel Kapital sich ansammelt — und wie lange du daraus entnehmen kannst, während der Rest weiter Rendite erwirtschaftet.</p>
+  </header>
+
+  <div class="layout">
+    <!-- CONTROLS -->
+    <section class="panel" aria-label="Parameter">
+      <h2><span class="dot"></span>Deine Parameter</h2>
+
+      <p class="phase-tag green">Ansparphase</p>
+
+      <div class="field">
+        <div class="top">
+          <label for="rate-r">Einzahlrate pro Monat</label>
+          <span class="valbox"><input id="rate" type="text" inputmode="numeric" value="250"><span class="unit">€</span></span>
+        </div>
+        <input id="rate-r" type="range" min="0" max="2000" step="25" value="250">
+      </div>
+
+      <div class="field">
+        <div class="top">
+          <label for="years-r">Einzahldauer</label>
+          <span class="valbox"><input id="years" type="text" inputmode="numeric" value="20"><span class="unit">Jahre</span></span>
+        </div>
+        <input id="years-r" type="range" min="1" max="45" step="1" value="20">
+      </div>
+
+      <div class="field">
+        <div class="top">
+          <label for="return-r">Rendite <span class="hint">p.a.</span></label>
+          <span class="valbox"><input id="return" type="text" inputmode="decimal" value="7"><span class="unit">%</span></span>
+        </div>
+        <input id="return-r" type="range" min="0" max="12" step="0.1" value="7">
+      </div>
+
+      <div class="field">
+        <div class="top">
+          <label for="dyn-r">Dynamik <span class="hint">jährl. Erhöhung d. Rate</span></label>
+          <span class="valbox"><input id="dyn" type="text" inputmode="decimal" value="2"><span class="unit">%</span></span>
+        </div>
+        <input id="dyn-r" type="range" min="0" max="10" step="0.5" value="2">
+      </div>
+
+      <hr class="divider">
+      <p class="phase-tag">Entnahmephase</p>
+
+      <div class="field">
+        <div class="top">
+          <label for="wd-r">Entnahme pro Monat</label>
+          <span class="valbox wide"><input id="wd" type="text" inputmode="numeric" value="1500"><span class="unit">€</span></span>
+        </div>
+        <input id="wd-r" type="range" class="amber" min="0" max="10000" step="50" value="1500">
+      </div>
+
+      <div class="field">
+        <div class="top">
+          <label for="wdinc-r">Entnahme-Dynamik <span class="hint">jährl. Inflationsausgleich</span></label>
+          <span class="valbox"><input id="wdinc" type="text" inputmode="decimal" value="2"><span class="unit">%</span></span>
+        </div>
+        <input id="wdinc-r" type="range" class="amber" min="0" max="8" step="0.5" value="2">
+      </div>
+
+      <div class="field">
+        <div class="top">
+          <label for="tax-r">Steuer auf Gewinne <span class="hint">Abgeltungst. m. Teilfreist.</span></label>
+          <span class="valbox"><input id="tax" type="text" inputmode="decimal" value="18.5"><span class="unit">%</span></span>
+        </div>
+        <input id="tax-r" type="range" class="amber" min="0" max="30" step="0.5" value="18.5">
+      </div>
+
+      <hr class="divider">
+      <p class="phase-tag blue">Absicherung · Umschichtung</p>
+
+      <div class="field">
+        <div class="top">
+          <label for="safe-r">Anteil in sichere Anlagen</label>
+          <span class="valbox"><input id="safe" type="text" inputmode="numeric" value="30"><span class="unit">%</span></span>
+        </div>
+        <input id="safe-r" type="range" class="blue" min="0" max="100" step="5" value="30">
+      </div>
+
+      <div class="field">
+        <div class="top">
+          <label for="glide-r">Umschichtung beginnt <span class="hint">Jahre vor Entnahme</span></label>
+          <span class="valbox"><input id="glide" type="text" inputmode="numeric" value="5"><span class="unit">Jahre</span></span>
+        </div>
+        <input id="glide-r" type="range" class="blue" min="0" max="15" step="1" value="5">
+      </div>
+
+      <div class="field">
+        <div class="top">
+          <label for="saferet-r">Sichere Rendite <span class="hint">p.a.</span></label>
+          <span class="valbox"><input id="saferet" type="text" inputmode="decimal" value="2.5"><span class="unit">%</span></span>
+        </div>
+        <input id="saferet-r" type="range" class="blue" min="0" max="6" step="0.1" value="2.5">
+      </div>
+
+      <label class="check">
+        <input type="checkbox" id="crash">
+        <span>Börsencrash zum Entnahmestart simulieren <b>(−35&nbsp;%)</b></span>
+      </label>
+    </section>
+
+    <!-- RESULTS -->
+    <div class="results">
+      <div class="hero">
+        <p class="k">Entnahmedauer</p>
+        <div class="big" id="hero-big">—</div>
+        <p class="sub" id="hero-sub"></p>
+      </div>
+
+      <div class="cards">
+        <div class="stat">
+          <div class="accent-bar" style="background:var(--emerald)"></div>
+          <p class="k">Endkapital bei Entnahmestart</p>
+          <div class="v" id="s-end">—</div>
+        </div>
+        <div class="stat">
+          <div class="accent-bar" style="background:var(--ink)"></div>
+          <p class="k">Eingezahlt gesamt</p>
+          <div class="v" id="s-paid">—</div>
+        </div>
+        <div class="stat">
+          <div class="accent-bar" style="background:var(--emerald)"></div>
+          <p class="k">davon Kursgewinne</p>
+          <div class="v" id="s-gain">—</div>
+          <div class="sv up" id="s-gain-pct"></div>
+        </div>
+        <div class="stat">
+          <div class="accent-bar" style="background:var(--amber)"></div>
+          <p class="k">Ausgezahlt (netto) gesamt</p>
+          <div class="v" id="s-wd">—</div>
+          <div class="sv" id="s-tax"></div>
+        </div>
+      </div>
+
+      <div class="compare off" id="compare"></div>
+
+      <div class="chartcard">
+        <div class="ctop">
+          <h3>Depotverlauf</h3>
+          <div class="legend">
+            <span><i style="background:var(--emerald)"></i>Ansparen</span>
+            <span><i style="background:var(--amber)"></i>Entnehmen</span>
+          </div>
+        </div>
+        <svg id="chart" viewBox="0 0 800 340" preserveAspectRatio="none" role="img" aria-label="Diagramm des Depotverlaufs"></svg>
+      </div>
+
+      <p class="note">
+        <b>Annahmen:</b> Einzahlung jeweils zu Monatsbeginn, monatliche Verzinsung aus der angegebenen Jahresrendite, Dynamik wird zu jedem neuen Sparjahr aufgeschlagen. In der Entnahmephase wird zu Monatsbeginn entnommen, der Rest bleibt investiert und wächst weiter; die Entnahme-Dynamik erhöht den Entnahmebetrag zu jedem neuen Jahr und gleicht so die Inflation aus. Die Umschichtung verlagert in den letzten Jahren vor der Entnahme schrittweise einen Anteil in sichere Anlagen mit eigener, niedrigerer Rendite (monatliches Rebalancing auf die Zielquote). Der Crash-Test zieht zum Entnahmestart einmalig 35&nbsp;% vom riskanten Depotteil ab. Die <b>Entnahme pro Monat ist der Netto-Betrag</b>, den du behältst: Steuer fällt nur auf den Gewinnanteil jeder Auszahlung an (anteilige Verrechnung über die Restkostenbasis), dafür wird etwas mehr aus dem Depot verkauft. Der Default 18,5&nbsp;% entspricht der Abgeltungsteuer inkl. Soli mit 30&nbsp;% Teilfreistellung für Aktien-ETFs. <b>Nicht berücksichtigt:</b> Vorabpauschale während der Ansparphase, Sparerpauschbetrag, Kirchensteuer, Kosten und laufende Renditeschwankungen. Reine Modellrechnung, keine Anlageberatung.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+const eur0 = new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+const num  = new Intl.NumberFormat('de-DE',{maximumFractionDigits:0});
+
+// link each text input with its range slider
+const pairs = [['rate','rate-r'],['years','years-r'],['return','return-r'],['dyn','dyn-r'],['wd','wd-r'],['wdinc','wdinc-r'],['tax','tax-r'],['safe','safe-r'],['glide','glide-r'],['saferet','saferet-r']];
+function sliderFill(r){
+  const min=+r.min,max=+r.max,v=+r.value;
+  r.style.setProperty('--fill', ((v-min)/(max-min)*100)+'%');
+}
+pairs.forEach(([t,rg])=>{
+  const ti=document.getElementById(t), ri=document.getElementById(rg);
+  ri.addEventListener('input',()=>{ti.value=ri.value; sliderFill(ri); calc();});
+  ti.addEventListener('input',()=>{
+    let v=parseFloat(ti.value.replace(',','.'));
+    if(!isNaN(v)){ v=Math.min(+ri.max,Math.max(+ri.min,v)); ri.value=v; sliderFill(ri);}
+    calc();
+  });
+  ti.addEventListener('blur',()=>{ti.value=ri.value;});
+  sliderFill(ri);
+});
+
+document.getElementById('crash').addEventListener('change', calc);
+
+const CAP = 1200; // simulate withdrawals up to 100 years
+
+function simulate(p){
+  const rmRisk = Math.pow(1+p.ret/100, 1/12) - 1;       // risky (ETF) monthly rate
+  const rmSafe = Math.pow(1+p.safeRet/100, 1/12) - 1;   // safe monthly rate
+  const accumMonths = p.years*12;
+  const glideStart = Math.max(0, (p.years - p.glideYears))*12; // month shifting begins
+  const glideSpan  = Math.max(1, accumMonths - glideStart);
+
+  let bal=0, paid=0, monthly=p.rate;
+  const series=[{m:0,bal:0,phase:'a'}];
+  for(let y=0; y<p.years; y++){
+    if(y>0) monthly *= (1+p.dyn/100);
+    for(let mo=0; mo<12; mo++){
+      const t=y*12+mo+1;
+      let frac=0;                                       // share already in safe assets
+      if(t>glideStart) frac=p.safePct*Math.min(1,(t-glideStart)/glideSpan);
+      const rm=(1-frac)*rmRisk + frac*rmSafe;           // blended monthly return
+      bal += monthly; paid += monthly;
+      bal *= (1+rm);
+      series.push({m:t, bal, phase:'a'});
+    }
+  }
+  let endBal = bal;
+
+  // optional market crash at withdrawal start — hits only the risky sleeve
+  if(p.crash>0) endBal = endBal*((1-p.safePct)*(1-p.crash) + p.safePct);
+
+  // withdrawal phase: allocation held at target (rmW = blended return)
+  // 'wd' is the desired NET monthly spend; tax is charged only on the gain
+  // portion of each sale, tracked via the remaining cost basis.
+  const rmW = (1-p.safePct)*rmRisk + p.safePct*rmSafe;
+  const taxRate = p.tax;
+  series.push({m:accumMonths, bal:endBal, phase:'w'});  // anchor (shows crash drop)
+  let value=endBal, basis=paid;            // portfolio value & remaining cost basis
+  let wMonths=0, netWithdrawn=0, taxPaid=0, depleted=false, curWd=p.wd;
+  if(p.wd>0){
+    for(let i=0;i<CAP;i++){
+      if(i>0 && i%12===0) curWd *= (1+p.wdInc/100); // raise withdrawal each new year
+      const gainRatio = value>0 ? Math.max(0, 1 - basis/value) : 0; // taxable share
+      const denom = 1 - taxRate*gainRatio;
+      const gross = denom>0 ? curWd/denom : value+1;  // sell this much to net curWd
+      if(gross >= value){ // last (partial) month — sell everything that's left
+        const gp=value*gainRatio, tx=gp*taxRate;
+        taxPaid += tx; netWithdrawn += (value - tx);
+        value=0; wMonths++; depleted=true;
+        series.push({m:accumMonths+wMonths, bal:0, phase:'w'});
+        break;
+      }
+      const tx = gross*gainRatio*taxRate;
+      taxPaid += tx; netWithdrawn += curWd;
+      basis -= gross*(1-gainRatio); if(basis<0) basis=0;
+      value -= gross; value *= (1+rmW); wMonths++;
+      series.push({m:accumMonths+wMonths, bal:value, phase:'w'});
+    }
+  }
+  const perpetual = (p.wd>0 && !depleted); // survived 100y -> effectively endless
+  return {rmRisk,endBal,paid,gain:endBal-paid,accumMonths,wMonths,withdrawn:netWithdrawn,taxPaid,depleted,perpetual,series,wd:p.wd,wdInc:p.wdInc,lastWd:curWd,safePct:p.safePct,crash:p.crash,tax:p.tax};
+}
+
+function fmtDur(months){
+  const y=Math.floor(months/12), m=months%12;
+  if(y===0) return m+' Mon.';
+  if(m===0) return y+(y===1?' Jahr':' Jahre');
+  return y+(y===1?' Jahr':' Jahre')+' '+m+' Mon.';
+}
+
+function durShort(r){
+  if(r.wd<=0) return '—';
+  if(r.perpetual) return 'unbegrenzt';
+  const y=Math.floor(r.wMonths/12), m=r.wMonths%12;
+  return y+'\u00a0J.'+(m? ' '+m+'\u00a0M.':'');
+}
+
+function renderCompare(p, main){
+  const cmp=document.getElementById('compare');
+  if(p.safePct<=0){ cmp.className='compare off'; cmp.innerHTML=''; return; }
+  const base=simulate({...p, safePct:0});
+  const score=r=> r.perpetual?Infinity:(r.wd<=0?-1:r.wMonths);
+  const mainWins=score(main)>score(base), baseWins=score(base)>score(main);
+  const endDiff=Math.abs(main.endBal-base.endBal);
+
+  let verdict;
+  if(p.crash>0){
+    verdict = mainWins
+      ? 'Beim Crash federt die Umschichtung den Einbruch ab — dein Depot startet mit rund '+eur0.format(endDiff)+' mehr und die Entnahme reicht länger. Genau dafür ist die sichere Quote da.'
+      : 'Selbst mit Crash liegt das reine ETF-Depot hier noch vorn — für dieses Szenario war die sichere Quote nicht nötig.';
+  } else {
+    verdict = 'Ohne Crash kostet dich die Umschichtung rund '+eur0.format(endDiff)+' Endkapital — der Preis für ruhigere Nerven. Der Nutzen zeigt sich erst beim Crash: Schalte den Crash-Test ein, um ihn sichtbar zu machen.';
+  }
+  cmp.className='compare';
+  cmp.innerHTML =
+    '<p class="ch"><i></i>Absicherungs-Effekt'+(p.crash>0?' · Crash −35\u00a0% zum Entnahmestart':'')+'</p>'+
+    '<div class="vs">'+
+      '<div class="col'+(mainWins?' win':'')+'">'+
+        '<p class="t">Mit Umschichtung · '+Math.round(p.safePct*100)+'\u00a0% sicher</p>'+
+        '<div class="d">'+durShort(main)+'</div>'+
+        '<div class="e">Depotstart: '+eur0.format(main.endBal)+'</div>'+
+      '</div>'+
+      '<div class="col'+(baseWins?' win':'')+'">'+
+        '<p class="t">Reines ETF-Depot · 0\u00a0% sicher</p>'+
+        '<div class="d">'+durShort(base)+'</div>'+
+        '<div class="e">Depotstart: '+eur0.format(base.endBal)+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<p class="verdict">'+verdict+'</p>';
+}
+
+function calc(){
+  const p={
+    rate:+document.getElementById('rate').value || 0,
+    years:Math.max(1, Math.round(+document.getElementById('years').value)||1),
+    ret:+document.getElementById('return').value || 0,
+    dyn:+document.getElementById('dyn').value || 0,
+    wd:+document.getElementById('wd').value || 0,
+    wdInc:+document.getElementById('wdinc').value || 0,
+    tax:(+document.getElementById('tax').value || 0)/100,
+    safePct:(+document.getElementById('safe').value || 0)/100,
+    glideYears:Math.round(+document.getElementById('glide').value || 0),
+    safeRet:+document.getElementById('saferet').value || 0,
+    crash:document.getElementById('crash').checked ? 0.35 : 0,
+  };
+  const r=simulate(p);
+  renderCompare(p, r);
+
+  // hero
+  const big=document.getElementById('hero-big'), sub=document.getElementById('hero-sub');
+  if(p.wd<=0){
+    big.innerHTML='—';
+    sub.textContent='Trage eine monatliche Entnahme ein, um zu sehen, wie lange dein Depot reicht.';
+  } else if(r.perpetual){
+    big.innerHTML='Unbegrenzt';
+    if(r.wdInc>0){
+      sub.innerHTML='Auch mit jährlich +'+r.wdInc.toString().replace('.',',')+' % steigender Entnahme reicht das Kapital über 100 Jahre — die Erträge tragen die Entnahme dauerhaft.';
+    } else {
+      sub.innerHTML='Die monatlichen Erträge übersteigen deine Entnahme — das Kapital bleibt erhalten und <b style="color:#dfe7df">wächst sogar weiter</b>. Du lebst praktisch nur von den Zinsen.';
+    }
+  } else {
+    const y=Math.floor(r.wMonths/12), m=r.wMonths%12;
+    big.innerHTML = y + ' <small>'+(y===1?'Jahr':'Jahre')+(m? '&nbsp; '+m+' Mon.':'')+'</small>';
+    const incTxt = r.wdInc>0
+      ? ' Start bei '+eur0.format(p.wd)+'/Monat'+(p.tax>0?' netto':'')+', jährlich +'+r.wdInc.toString().replace('.',',')+' % (zuletzt '+eur0.format(r.lastWd)+'/Monat).'
+      : ' bei '+eur0.format(p.wd)+' pro Monat'+(p.tax>0?' netto':'')+'.';
+    const taxTxt = (p.tax>0 && r.taxPaid>0) ? ' Davon gehen '+eur0.format(r.taxPaid)+' an Steuern.' : '';
+    sub.innerHTML = 'So lange trägt dein Depot die Entnahme'+incTxt+' Insgesamt stehen dir netto <b style="color:#dfe7df">'+eur0.format(r.withdrawn)+'</b> zur Verfügung.'+taxTxt;
+  }
+
+  // cards
+  document.getElementById('s-end').textContent  = eur0.format(r.endBal);
+  document.getElementById('s-paid').textContent = eur0.format(r.paid);
+  document.getElementById('s-gain').textContent = eur0.format(r.gain);
+  const gpEl=document.getElementById('s-gain-pct');
+  if(r.paid>0){
+    const gp=Math.round(r.gain/r.paid*100);
+    gpEl.textContent=(gp>=0?'+':'')+gp+' % auf das Eingezahlte';
+    gpEl.classList.toggle('up', gp>=0);
+  } else { gpEl.textContent=''; }
+  document.getElementById('s-wd').textContent   = p.wd>0 ? eur0.format(r.withdrawn) : '—';
+  document.getElementById('s-tax').textContent  = (p.wd>0 && r.taxPaid>0) ? 'zzgl. '+eur0.format(r.taxPaid)+' Steuern' : '';
+
+  drawChart(r);
+}
+
+function drawChart(r){
+  const W=800,H=340, padL=58,padR=14,padT=16,padB=30;
+  const innerW=W-padL-padR, innerH=H-padT-padB;
+
+  // limit x for perpetual case so the chart stays readable
+  let data=r.series;
+  if(r.perpetual){
+    const maxM=r.accumMonths + Math.min(r.wMonths, 30*12);
+    data=data.filter(d=>d.m<=maxM);
+  }
+  const maxM = data[data.length-1].m || 1;
+  const maxBal = Math.max(...data.map(d=>d.bal), 1);
+
+  const X=m=>padL + (m/maxM)*innerW;
+  const Y=b=>padT + innerH - (b/maxBal)*innerH;
+
+  const accum = data.filter(d=>d.phase==='a');
+  const wd    = data.filter(d=>d.phase==='w');
+
+  const areaPath = pts=>{
+    if(!pts.length) return '';
+    let d='M '+X(pts[0].m)+' '+(padT+innerH);
+    pts.forEach(p=>d+=' L '+X(p.m).toFixed(1)+' '+Y(p.bal).toFixed(1));
+    d+=' L '+X(pts[pts.length-1].m)+' '+(padT+innerH)+' Z';
+    return d;
+  };
+  const linePath = pts=>{
+    if(!pts.length) return '';
+    return 'M '+pts.map(p=>X(p.m).toFixed(1)+' '+Y(p.bal).toFixed(1)).join(' L ');
+  };
+
+  // y gridlines
+  const ticks=4; let grid='';
+  for(let i=0;i<=ticks;i++){
+    const val=maxBal*i/ticks, y=Y(val);
+    grid+=`<line class="grid" x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}"/>`;
+    const lbl = val>=1000 ? Math.round(val/1000)+'k €' : Math.round(val)+' €';
+    grid+=`<text class="ax" x="${padL-8}" y="${(y+4).toFixed(1)}" text-anchor="end">${lbl}</text>`;
+  }
+  // x labels (years)
+  const totalYears=Math.ceil(maxM/12);
+  const stepY = totalYears<=12?2 : totalYears<=24?5 : 10;
+  let xlab='';
+  for(let yy=0; yy<=totalYears; yy+=stepY){
+    const x=X(yy*12);
+    xlab+=`<text class="ax" x="${x.toFixed(1)}" y="${H-10}" text-anchor="middle">${yy} J.</text>`;
+  }
+
+  // pivot marker
+  const px=X(r.accumMonths), peakY=Y(accum.length?accum[accum.length-1].bal:0);
+  const wdStartY=Y(wd.length?wd[0].bal:0);
+  const crashLeft = px>W*0.78;
+  const crashMark = r.crash>0 ? `
+    <line x1="${px.toFixed(1)}" y1="${peakY.toFixed(1)}" x2="${px.toFixed(1)}" y2="${wdStartY.toFixed(1)}" stroke="#b23b2e" stroke-width="2.2"/>
+    <circle cx="${px.toFixed(1)}" cy="${wdStartY.toFixed(1)}" r="4.5" fill="#b23b2e"/>
+    <text x="${(px+(crashLeft?-7:7)).toFixed(1)}" y="${((peakY+wdStartY)/2+4).toFixed(1)}" fill="#b23b2e" font-size="11" font-weight="700" text-anchor="${crashLeft?'end':'start'}">−35 %</text>` : '';
+  const pivot = `
+    <line class="pivot" x1="${px.toFixed(1)}" y1="${padT}" x2="${px.toFixed(1)}" y2="${padT+innerH}"/>
+    <circle cx="${px.toFixed(1)}" cy="${peakY.toFixed(1)}" r="4.5" fill="#14201b"/>
+    <text class="pivot-lbl" x="${px.toFixed(1)}" y="${padT-3}" text-anchor="${px>W*0.7?'end':'middle'}">Sparen → Entnehmen</text>
+    ${crashMark}`;
+
+  document.getElementById('chart').innerHTML = `
+    <defs>
+      <linearGradient id="gE" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="var(--emerald)" stop-opacity=".30"/>
+        <stop offset="1" stop-color="var(--emerald)" stop-opacity=".03"/>
+      </linearGradient>
+      <linearGradient id="gA" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="var(--amber)" stop-opacity=".30"/>
+        <stop offset="1" stop-color="var(--amber)" stop-opacity=".03"/>
+      </linearGradient>
+    </defs>
+    ${grid}${xlab}
+    <path d="${areaPath(accum)}" fill="url(#gE)"/>
+    <path d="${areaPath(wd)}" fill="url(#gA)"/>
+    <path d="${linePath(accum)}" fill="none" stroke="var(--emerald)" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="${linePath(wd)}" fill="none" stroke="var(--amber)" stroke-width="2.4" stroke-linejoin="round"/>
+    ${pivot}
+  `;
+}
+
+calc();
+</script>
