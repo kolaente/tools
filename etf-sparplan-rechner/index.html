@@ -110,7 +110,12 @@
 
   .check{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink-soft);font-weight:500;cursor:pointer;margin-top:6px;line-height:1.35}
   .check input{width:16px;height:16px;accent-color:var(--blue);cursor:pointer;flex:none}
+  .check.amber input{accent-color:var(--amber)}
   .check b{color:var(--ink)}
+
+  .conv{font-size:11.5px;color:var(--amber-deep);font-weight:600;margin:-4px 2px 16px;line-height:1.45;font-variant-numeric:tabular-nums}
+  .conv.off{display:none}
+  .conv b{color:var(--ink)}
 
   .compare{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:17px 18px;box-shadow:var(--shadow)}
   .compare.off{display:none}
@@ -227,6 +232,12 @@
         <input id="wd-r" type="range" class="amber" min="0" max="10000" step="50" value="1500">
       </div>
 
+      <label class="check amber" style="margin-top:-6px;margin-bottom:12px">
+        <input type="checkbox" id="todaymoney">
+        <span>Betrag in <b>heutiger Kaufkraft</b> angeben — wird mit der Inflation (= Entnahme-Dynamik) auf den Entnahmestart hochgerechnet</span>
+      </label>
+      <p class="conv off" id="wd-conv"></p>
+
       <div class="field">
         <div class="top">
           <label for="wdinc-r">Entnahme-Dynamik <span class="hint">jährl. Inflationsausgleich</span></label>
@@ -323,7 +334,7 @@
       </div>
 
       <p class="note">
-        <b>Annahmen:</b> Einzahlung jeweils zu Monatsbeginn, monatliche Verzinsung aus der angegebenen Jahresrendite, Dynamik wird zu jedem neuen Sparjahr aufgeschlagen. In der Entnahmephase wird zu Monatsbeginn entnommen, der Rest bleibt investiert und wächst weiter; die Entnahme-Dynamik erhöht den Entnahmebetrag zu jedem neuen Jahr und gleicht so die Inflation aus. Die Umschichtung verlagert in den letzten Jahren vor der Entnahme schrittweise einen Anteil in sichere Anlagen mit eigener, niedrigerer Rendite (monatliches Rebalancing auf die Zielquote). Der Crash-Test zieht zum Entnahmestart einmalig 35&nbsp;% vom riskanten Depotteil ab. Die <b>Entnahme pro Monat ist der Netto-Betrag</b>, den du behältst: Steuer fällt nur auf den Gewinnanteil jeder Auszahlung an (anteilige Verrechnung über die Restkostenbasis), dafür wird etwas mehr aus dem Depot verkauft. Der Default 18,5&nbsp;% entspricht der Abgeltungsteuer inkl. Soli mit 30&nbsp;% Teilfreistellung für Aktien-ETFs. <b>Nicht berücksichtigt:</b> Vorabpauschale während der Ansparphase, Sparerpauschbetrag, Kirchensteuer, Kosten und laufende Renditeschwankungen. Reine Modellrechnung, keine Anlageberatung.
+        <b>Annahmen:</b> Einzahlung jeweils zu Monatsbeginn, monatliche Verzinsung aus der angegebenen Jahresrendite, Dynamik wird zu jedem neuen Sparjahr aufgeschlagen. In der Entnahmephase wird zu Monatsbeginn entnommen, der Rest bleibt investiert und wächst weiter; die Entnahme-Dynamik erhöht den Entnahmebetrag zu jedem neuen Jahr und gleicht so die Inflation aus. Mit der Option <b>heutige Kaufkraft</b> gibst du die gewünschte Entnahme in heutigem Geld an; sie wird mit derselben Rate über die Ansparphase auf den Entnahmestart hochgerechnet, sodass deine Kaufkraft vom ersten bis zum letzten Entnahmemonat konstant bleibt. Die Umschichtung verlagert in den letzten Jahren vor der Entnahme schrittweise einen Anteil in sichere Anlagen mit eigener, niedrigerer Rendite (monatliches Rebalancing auf die Zielquote). Der Crash-Test zieht zum Entnahmestart einmalig 35&nbsp;% vom riskanten Depotteil ab. Die <b>Entnahme pro Monat ist der Netto-Betrag</b>, den du behältst: Steuer fällt nur auf den Gewinnanteil jeder Auszahlung an (anteilige Verrechnung über die Restkostenbasis), dafür wird etwas mehr aus dem Depot verkauft. Der Default 18,5&nbsp;% entspricht der Abgeltungsteuer inkl. Soli mit 30&nbsp;% Teilfreistellung für Aktien-ETFs. <b>Nicht berücksichtigt:</b> Vorabpauschale während der Ansparphase, Sparerpauschbetrag, Kirchensteuer, Kosten und laufende Renditeschwankungen. Reine Modellrechnung, keine Anlageberatung.
       </p>
     </div>
   </div>
@@ -352,6 +363,7 @@ pairs.forEach(([t,rg])=>{
 });
 
 document.getElementById('crash').addEventListener('change', calc);
+document.getElementById('todaymoney').addEventListener('change', calc);
 
 const CAP = 1200; // simulate withdrawals up to 100 years
 
@@ -462,13 +474,22 @@ function renderCompare(p, main){
 }
 
 function calc(){
+  const years = Math.max(1, Math.round(+document.getElementById('years').value)||1);
+  const wdInc  = +document.getElementById('wdinc').value || 0;
+  const wdInput = +document.getElementById('wd').value || 0;
+  const todayMoney = document.getElementById('todaymoney').checked;
+  // project today's purchasing power onto the withdrawal start using the same
+  // inflation rate that keeps it constant during the withdrawal phase (wdInc)
+  const inflFactor = Math.pow(1 + wdInc/100, years);
+  const wdNominal = todayMoney ? wdInput*inflFactor : wdInput;
+
   const p={
     rate:+document.getElementById('rate').value || 0,
-    years:Math.max(1, Math.round(+document.getElementById('years').value)||1),
+    years,
     ret:+document.getElementById('return').value || 0,
     dyn:+document.getElementById('dyn').value || 0,
-    wd:+document.getElementById('wd').value || 0,
-    wdInc:+document.getElementById('wdinc').value || 0,
+    wd:wdNominal,
+    wdInc,
     tax:(+document.getElementById('tax').value || 0)/100,
     safePct:(+document.getElementById('safe').value || 0)/100,
     glideYears:Math.round(+document.getElementById('glide').value || 0),
@@ -478,6 +499,16 @@ function calc(){
   const r=simulate(p);
   renderCompare(p, r);
 
+  // conversion hint under the withdrawal field
+  const conv=document.getElementById('wd-conv');
+  if(todayMoney && wdInput>0){
+    conv.className='conv';
+    conv.innerHTML='Entspricht zum Entnahmestart in '+years+' '+(years===1?'Jahr':'Jahren')+' rund <b>'+eur0.format(wdNominal)+' / Monat</b> bei '+wdInc.toString().replace('.',',')+' % Inflation p.a. Darauf wird dein Kapital ausgelegt.';
+  } else {
+    conv.className='conv off';
+    conv.innerHTML='';
+  }
+
   // hero
   const big=document.getElementById('hero-big'), sub=document.getElementById('hero-sub');
   if(p.wd<=0){
@@ -485,10 +516,11 @@ function calc(){
     sub.textContent='Trage eine monatliche Entnahme ein, um zu sehen, wie lange dein Depot reicht.';
   } else if(r.perpetual){
     big.innerHTML='Unbegrenzt';
+    const ppTxt = todayMoney ? ' Das hält durchgehend die Kaufkraft von <b style="color:#dfe7df">'+eur0.format(wdInput)+'/Monat von heute</b>.' : '';
     if(r.wdInc>0){
-      sub.innerHTML='Auch mit jährlich +'+r.wdInc.toString().replace('.',',')+' % steigender Entnahme reicht das Kapital über 100 Jahre — die Erträge tragen die Entnahme dauerhaft.';
+      sub.innerHTML='Auch mit jährlich +'+r.wdInc.toString().replace('.',',')+' % steigender Entnahme reicht das Kapital über 100 Jahre — die Erträge tragen die Entnahme dauerhaft.'+ppTxt;
     } else {
-      sub.innerHTML='Die monatlichen Erträge übersteigen deine Entnahme — das Kapital bleibt erhalten und <b style="color:#dfe7df">wächst sogar weiter</b>. Du lebst praktisch nur von den Zinsen.';
+      sub.innerHTML='Die monatlichen Erträge übersteigen deine Entnahme — das Kapital bleibt erhalten und <b style="color:#dfe7df">wächst sogar weiter</b>. Du lebst praktisch nur von den Zinsen.'+ppTxt;
     }
   } else {
     const y=Math.floor(r.wMonths/12), m=r.wMonths%12;
@@ -497,7 +529,8 @@ function calc(){
       ? ' Start bei '+eur0.format(p.wd)+'/Monat'+(p.tax>0?' netto':'')+', jährlich +'+r.wdInc.toString().replace('.',',')+' % (zuletzt '+eur0.format(r.lastWd)+'/Monat).'
       : ' bei '+eur0.format(p.wd)+' pro Monat'+(p.tax>0?' netto':'')+'.';
     const taxTxt = (p.tax>0 && r.taxPaid>0) ? ' Davon gehen '+eur0.format(r.taxPaid)+' an Steuern.' : '';
-    sub.innerHTML = 'So lange trägt dein Depot die Entnahme'+incTxt+' Insgesamt stehen dir netto <b style="color:#dfe7df">'+eur0.format(r.withdrawn)+'</b> zur Verfügung.'+taxTxt;
+    const ppTxt = todayMoney ? ' Die Entnahme hält durchgehend die Kaufkraft von <b style="color:#dfe7df">'+eur0.format(wdInput)+'/Monat von heute</b>.' : '';
+    sub.innerHTML = 'So lange trägt dein Depot die Entnahme'+incTxt+' Insgesamt stehen dir netto <b style="color:#dfe7df">'+eur0.format(r.withdrawn)+'</b> zur Verfügung.'+taxTxt+ppTxt;
   }
 
   // cards
