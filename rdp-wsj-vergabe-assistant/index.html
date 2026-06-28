@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vergabe- & Freigabe-Assistent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1a1f1b;
+    --paper:#e6e9e1;
+    --surface:#f7f8f3;
+    --surface-2:#eef1e9;
+    --line:#cdd3c6;
+    --line-soft:#dde1d6;
+    --pine:#1f5641;
+    --pine-d:#163f30;
+    --moss:#2f7a57;
+    --ochre:#b3741a;
+    --ochre-soft:#f4e6c8;
+    --brick:#a83a2b;
+    --brick-soft:#f2dad4;
+    --muted:#6a7268;
+    --shadow:0 1px 2px rgba(22,40,30,.06),0 6px 22px rgba(22,40,30,.07);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;
+    background:
+      radial-gradient(120% 60% at 100% 0%, #edefe8 0%, var(--paper) 55%) fixed;
+    color:var(--ink);
+    font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 20px 72px}
+
+  /* ---------- Header ---------- */
+  header.masthead{
+    border-bottom:1.5px solid var(--ink);
+    padding-bottom:18px;margin-bottom:26px;
+  }
+  .kicker{
+    font-family:"JetBrains Mono",monospace;font-weight:700;
+    text-transform:uppercase;letter-spacing:.16em;font-size:11px;
+    color:var(--pine);display:flex;gap:10px;align-items:center;
+  }
+  .kicker::after{content:"";flex:1;height:1px;background:var(--line)}
+  h1{
+    font-family:"Bricolage Grotesque",sans-serif;font-weight:800;
+    font-size:clamp(30px,5.4vw,50px);line-height:1.02;letter-spacing:-.02em;
+    margin:12px 0 6px;
+  }
+  .lede{max-width:60ch;color:var(--muted);font-size:15px;margin:0}
+  .lede b{color:var(--ink);font-weight:600}
+
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:24px;align-items:start}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}}
+
+  /* ---------- Form panel ---------- */
+  .panel{
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);overflow:hidden;
+  }
+  .panel-h{
+    padding:14px 18px;border-bottom:1px solid var(--line-soft);
+    display:flex;align-items:baseline;gap:8px;background:var(--surface-2);
+  }
+  .panel-h .n{font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--pine);font-size:12px}
+  .panel-h h2{margin:0;font-family:"Bricolage Grotesque",sans-serif;font-size:16px;font-weight:700;letter-spacing:-.01em}
+  .panel-b{padding:18px}
+
+  .field{margin-bottom:18px}
+  .field:last-child{margin-bottom:0}
+  label.lab{display:block;font-weight:600;font-size:13.5px;margin-bottom:7px}
+  .hint{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:2px}
+
+  .amount-row{display:flex;align-items:stretch;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;transition:border-color .15s,box-shadow .15s}
+  .amount-row:focus-within{border-color:var(--pine);box-shadow:0 0 0 3px rgba(31,86,65,.14)}
+  .amount-row .cur{display:flex;align-items:center;padding:0 14px;font-family:"JetBrains Mono",monospace;font-weight:700;color:var(--muted);background:var(--surface-2);border-right:1px solid var(--line-soft)}
+  .amount-row input{flex:1;border:0;outline:0;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:22px;padding:12px 14px;background:transparent;color:var(--ink);min-width:0}
+  .amount-row input::placeholder{color:#aab0a4}
+
+  .seg{display:flex;gap:6px;background:var(--surface-2);padding:4px;border-radius:10px;border:1px solid var(--line-soft)}
+  .seg button{flex:1;border:0;background:transparent;font:inherit;font-weight:600;font-size:13px;color:var(--muted);padding:8px 6px;border-radius:7px;cursor:pointer;transition:.15s}
+  .seg button[aria-pressed="true"]{background:#fff;color:var(--pine-d);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .seg button:hover:not([aria-pressed="true"]){color:var(--ink)}
+
+  .vat{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;color:var(--muted)}
+  .vat input{width:64px;font-family:"JetBrains Mono",monospace;font-weight:700;padding:6px 8px;border:1.5px solid var(--line);border-radius:7px;text-align:right;font-size:13px;color:var(--ink)}
+  .vat input:focus{outline:0;border-color:var(--pine)}
+
+  .toggle{display:flex;align-items:flex-start;gap:11px;padding:11px 12px;border:1px solid var(--line-soft);border-radius:10px;cursor:pointer;background:#fff;transition:.15s;margin-bottom:9px}
+  .toggle:last-child{margin-bottom:0}
+  .toggle:hover{border-color:var(--line)}
+  .toggle input{margin-top:3px;accent-color:var(--pine);width:16px;height:16px;flex:none}
+  .toggle .tt{font-weight:600;font-size:13.5px}
+  .toggle .td{display:block;font-weight:400;color:var(--muted);font-size:12px;margin-top:1px}
+
+  /* ---------- Ladder ---------- */
+  .ladder{margin-top:20px}
+  .rung{
+    display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+    padding:9px 12px;border:1px solid var(--line-soft);border-radius:10px;margin-bottom:6px;
+    background:var(--surface);transition:.18s;position:relative;
+  }
+  .rung .lvl{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:13px;color:var(--muted);white-space:nowrap}
+  .rung .tg{font-size:12px;color:var(--muted)}
+  .rung .dot{width:9px;height:9px;border-radius:50%;background:var(--line);justify-self:end}
+  .rung.active{background:linear-gradient(90deg,var(--pine) 0%,var(--moss) 130%);border-color:var(--pine-d);box-shadow:0 6px 16px rgba(31,86,65,.22)}
+  .rung.active .lvl,.rung.active .tg{color:#fff}
+  .rung.active .tg{opacity:.92}
+  .rung.active .dot{background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.25)}
+  .rung.passed{opacity:.55}
+  .rung.passed .dot{background:var(--moss)}
+
+  /* ---------- Result ---------- */
+  .result-head{
+    display:flex;flex-wrap:wrap;align-items:center;gap:12px;
+    padding:16px 18px;border-radius:14px 14px 0 0;
+    background:linear-gradient(100deg,var(--pine-d),var(--pine));color:#fff;
+  }
+  .result-head .gross{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:26px;letter-spacing:-.01em}
+  .result-head .band-pill{margin-left:auto;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:12px;background:rgba(255,255,255,.16);padding:6px 11px;border-radius:999px;border:1px solid rgba(255,255,255,.25)}
+  .net-note{flex-basis:100%;font-size:12px;color:rgba(255,255,255,.8);margin-top:-4px}
+
+  .result-body{background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 14px 14px;box-shadow:var(--shadow);padding:18px}
+
+  .banner{display:flex;gap:12px;align-items:flex-start;padding:13px 15px;border-radius:11px;margin-bottom:16px;font-size:13.5px}
+  .banner .ic{font-family:"Bricolage Grotesque";font-weight:800;font-size:16px;line-height:1;flex:none;width:24px;height:24px;border-radius:6px;display:grid;place-items:center}
+  .banner.stop{background:var(--brick-soft);border:1px solid #e3b3a9;color:#7a2418}
+  .banner.stop .ic{background:var(--brick);color:#fff}
+  .banner.note{background:var(--surface-2);border:1px solid var(--line-soft);color:var(--ink)}
+  .banner.note .ic{background:var(--ink);color:#fff}
+  .banner.special{background:var(--ochre-soft);border:1px solid #e3cb95;color:#7a5211}
+  .banner.special .ic{background:var(--ochre);color:#fff}
+  .banner b{font-weight:600}
+
+  .sect-label{font-family:"JetBrains Mono",monospace;font-weight:700;text-transform:uppercase;letter-spacing:.12em;font-size:10.5px;color:var(--muted);margin:6px 0 10px}
+
+  ol.steps{list-style:none;margin:0;padding:0;counter-reset:s}
+  ol.steps li{
+    display:grid;grid-template-columns:auto 1fr;gap:13px;
+    padding:13px 0;border-top:1px solid var(--line-soft);
+  }
+  ol.steps li:first-child{border-top:0;padding-top:2px}
+  .badge{
+    flex:none;width:26px;height:26px;border-radius:7px;display:grid;place-items:center;
+    font-family:"Bricolage Grotesque";font-weight:800;font-size:13px;margin-top:1px;
+  }
+  .b-req{background:var(--pine);color:#fff}
+  .b-rec{background:var(--ochre-soft);color:var(--ochre);border:1px solid #e3cb95}
+  .b-info{background:#fff;color:var(--pine);border:1.5px solid var(--pine)}
+  .b-no{background:var(--surface-2);color:var(--muted);border:1px solid var(--line-soft)}
+  .step-t{font-weight:600;font-size:14.5px;line-height:1.35}
+  .step-d{font-size:13px;color:var(--muted);margin-top:3px}
+  .step-d a{color:var(--pine);text-decoration:underline;text-underline-offset:2px}
+  li.muted .step-t{color:var(--muted);font-weight:500}
+
+  .tag{display:inline-block;font-family:"JetBrains Mono",monospace;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;border-radius:5px;margin-left:7px;vertical-align:1.5px}
+  .t-req{background:var(--pine);color:#fff}
+  .t-rec{background:var(--ochre-soft);color:var(--ochre)}
+  .t-info{background:#fff;color:var(--pine);border:1px solid var(--pine)}
+  .t-no{background:var(--surface-2);color:var(--muted)}
+
+  .actions{display:flex;gap:10px;margin-top:18px;flex-wrap:wrap}
+  .btn{font:inherit;font-weight:600;font-size:13px;padding:9px 16px;border-radius:9px;cursor:pointer;border:1.5px solid var(--line);background:#fff;color:var(--ink);transition:.15s}
+  .btn:hover{border-color:var(--pine);color:var(--pine)}
+  .btn.primary{background:var(--pine);border-color:var(--pine);color:#fff}
+  .btn.primary:hover{background:var(--pine-d)}
+
+  .empty{padding:34px 20px;text-align:center;color:var(--muted);font-size:14px}
+  .empty .big{font-family:"Bricolage Grotesque";font-weight:800;font-size:34px;color:var(--line);margin-bottom:6px}
+
+  footer{margin-top:32px;font-size:11.5px;color:var(--muted);line-height:1.5;border-top:1px solid var(--line-soft);padding-top:14px}
+
+  *:focus-visible{outline:2px solid var(--pine);outline-offset:2px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+  @media print{
+    body{background:#fff}
+    .panel,.ladder,.actions,footer,.kicker{display:none!important}
+    .grid{display:block}
+    .result-body,.result-head{box-shadow:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="kicker">rdp · Finanzen &nbsp;•&nbsp; Wertgrenzen &amp; Freigaben</div>
+    <h1>Was muss ich tun?</h1>
+    <p class="lede">Trag den <b>Bruttowert der Gesamthöhe des Auftrags</b> ein (inkl. MwSt., nicht eine Einzelrechnung). Der Assistent zeigt dir Schritt für Schritt die nötigen Freigaben, Dokumentation und Finance-Team-Schritte.</p>
+  </header>
+
+  <div class="grid">
+    <!-- INPUT -->
+    <div>
+      <div class="panel">
+        <div class="panel-h"><span class="n">01</span><h2>Auftrag eingeben</h2></div>
+        <div class="panel-b">
+
+          <div class="field">
+            <label class="lab" for="amount">Wert des Auftrags
+              <span class="hint">Gesamthöhe des Auftrags, nicht eine einzelne Rechnung.</span>
+            </label>
+            <div class="amount-row">
+              <span class="cur">€</span>
+              <input id="amount" type="text" inputmode="decimal" placeholder="0,00" autocomplete="off" aria-describedby="vatline">
+            </div>
+            <div class="seg" role="group" aria-label="Brutto oder Netto" style="margin-top:10px">
+              <button type="button" id="btnBrutto" aria-pressed="true">Brutto (inkl. MwSt.)</button>
+              <button type="button" id="btnNetto" aria-pressed="false">Netto</button>
+            </div>
+            <div class="vat" id="vatline" hidden>
+              <span>MwSt.-Satz</span>
+              <input id="vat" type="text" inputmode="decimal" value="19" aria-label="Mehrwertsteuersatz in Prozent">
+              <span>%</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="lab">Art des Vorgangs</label>
+            <div class="seg" role="group" aria-label="Art des Vorgangs">
+              <button type="button" id="btnAusgabe" aria-pressed="true">Einzelausgabe / Rechnung</button>
+              <button type="button" id="btnVertrag" aria-pressed="false">Vertrag</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="lab">Rahmenbedingungen</label>
+            <label class="toggle">
+              <input type="checkbox" id="budget" checked>
+              <span><span class="tt">Aufwand ist vom Haushalt abgedeckt</span><span class="td">Sonst muss zuerst eine Anpassung des Haushaltes erwirkt werden.</span></span>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" id="special">
+              <span><span class="tt">Gästehaus / Herberge / Zeltplatz oder Druckerei / Agentur</span><span class="td">Finance Team muss dann immer vorab informiert werden.</span></span>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" id="hoc">
+              <span><span class="tt">Die Ausgabe erfolgt durch eine*n HoC</span><span class="td">Ändert ab 2.000 € den möglichen Ersatz-Freigabeweg.</span></span>
+            </label>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- LADDER -->
+      <div class="ladder" id="ladder" aria-hidden="true"></div>
+    </div>
+
+    <!-- RESULT -->
+    <div>
+      <div id="result">
+        <div class="result-body" style="border-radius:14px;border-top:1px solid var(--line)">
+          <div class="empty">
+            <div class="big">€</div>
+            Gib oben einen Betrag ein – hier erscheint deine konkrete To-do-Liste.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Orientierungshilfe auf Basis der rdp-Wertgrenzen. Es gilt immer der Bruttowert und die Gesamthöhe des Auftrags. Niemand darf sich eine erforderliche Freigabe selbst erteilen (Vier-Augen-Prinzip); ersatzweise gilt eine höhere Freigabe-Instanz. Im Zweifel zählt der offizielle Originaltext und die Abstimmung mit dem Finance Team.
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---- State ----
+  var state = {
+    raw: "",
+    mode: "brutto",   // brutto | netto
+    vat: 19,
+    kind: "ausgabe",  // ausgabe | vertrag
+    budget: true,
+    special: false,
+    hoc: false
+  };
+
+  var eur = new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'});
+
+  function parseNum(s){
+    if(!s) return NaN;
+    s = String(s).trim().replace(/\s|€/g,'');
+    // German format: 1.234,56  -> handle thousand dots & comma decimal
+    if(s.indexOf(',') > -1){ s = s.replace(/\./g,'').replace(',', '.'); }
+    var n = parseFloat(s);
+    return isNaN(n) ? NaN : n;
+  }
+
+  function gross(){
+    var n = parseNum(state.raw);
+    if(isNaN(n)) return NaN;
+    if(state.mode === 'netto'){
+      var v = parseNum(state.vat); if(isNaN(v)) v = 0;
+      return n * (1 + v/100);
+    }
+    return n;
+  }
+
+  var BANDS = [
+    {label:'< 150 €',     tag:'Kleinbetrag'},
+    {label:'≥ 150 €',     tag:'Standard'},
+    {label:'≥ 800 €',     tag:'Freigabe nötig'},
+    {label:'≥ 2.000 €',   tag:'Doku + Freigabe'},
+    {label:'≥ 10.000 €',  tag:'2 HoCs + FIN'},
+    {label:'≥ 25.000 €',  tag:'Ringvorstand + FIN'}
+  ];
+
+  function bandOf(g){
+    if(g < 150) return 0;
+    if(g < 800) return 1;
+    if(g < 2000) return 2;
+    if(g < 10000) return 3;
+    if(g < 25000) return 4;
+    return 5;
+  }
+
+  // ---- Step builders ----
+  function step(badge, title, detail, tag){
+    return {badge:badge, title:title, detail:detail||"", tag:tag||badge};
+  }
+
+  function buildSteps(g, b){
+    var isV = state.kind === 'vertrag';
+    var steps = [];
+
+    // 1. rdp address
+    if(b === 0){
+      steps.push(step('rec','Möglichst auf rdp-Adresse ausstellen lassen',
+        'Bei Kleinbeträgen empfohlen, aber nicht zwingend.'));
+    } else {
+      steps.push(step('req','Rechnung / Vertrag auf die rdp-Adresse ausstellen',
+        'Pflicht ab 150 €.'));
+    }
+
+    // 2. compare prices
+    steps.push(step('req','Preise und Aufwände vergleichen',
+        'Gilt für jeden Betrag.'));
+
+    // 3. Documentation (>=2000) — do this BEFORE approvals
+    if(b >= 3){
+      steps.push(step('req','Schriftliche Vergabedokumentation vorab erstellen',
+        'In der Regel mit drei (3) schriftlichen Vergleichsangeboten. Vorlage: Confluence-Seite „Formulare“.'));
+    }
+
+    // 4. Approval
+    if(b <= 1){
+      steps.push(step('no','Keine Freigabe erforderlich','', 'no'));
+    } else if(b === 2){
+      steps.push(step('req','Freigabe der Ausgabe / des Vertragsabschlusses einholen',
+        'Freigeben muss eine zweite Person auf gleicher Freigabe-Ebene (Vier-Augen-Prinzip). Ersatzweise darf eine höhere Instanz freigeben: Kostenstellen-Verantwortliche*r, zwei HoCs oder ein Mitglied des Ringvorstands.'));
+    } else if(b === 3){
+      var d3 = 'Die*der zuständige Kostenstellen-Verantwortliche*r muss freigeben. ';
+      d3 += state.hoc
+        ? 'Da die Ausgabe durch eine*n HoC erfolgt, darf ersatzweise die*der Head of Finance oder ein Mitglied des Ringvorstands freigeben.'
+        : 'Ersatzweise darf die*der zuständige (e)HoC oder ein Mitglied des Ringvorstands freigeben.';
+      steps.push(step('req','Freigabe durch Kostenstellen-Verantwortliche*r einholen', d3));
+    } else if(b === 4){
+      var d4 = 'Zwei HoCs müssen vorab freigeben – zusätzlich das Finance Team. ';
+      d4 += state.hoc
+        ? 'Da die Ausgabe durch eine*n HoC erfolgt, kann ersatzweise durch eine*n anderen HoC und die*den Head of Finance freigegeben werden.'
+        : 'Ersatzweise kann ein Mitglied des Ringvorstands (anstelle eines HoC) freigeben.';
+      steps.push(step('req','Freigabe durch zwei HoCs einholen', d4));
+    } else { // b === 5
+      steps.push(step('req','Freigabe durch ein Mitglied des Ringvorstands einholen',
+        'Muss vorab freigeben – zusätzlich das Finance Team.'));
+    }
+
+    // Timing note for >=2000
+    if(b >= 3){
+      steps.push(step('req','Erst nach allen Freigaben handeln',
+        'Alle erforderlichen Freigaben müssen vorliegen, bevor die Ausgabe getätigt / der Vertrag abgeschlossen wird.'));
+    }
+
+    // 5. Finance Team info
+    var finInfo = (b >= 3) || isV || state.special;
+    if(finInfo){
+      var why = [];
+      if(state.special) why.push('Gästehaus/Herberge/Zeltplatz bzw. Druckerei/Agentur');
+      if(b >= 3) why.push('Wert ≥ 2.000 €');
+      else if(isV) why.push('Vertrag');
+      steps.push(step('req','Finance Team vorab informieren',
+        'Auslöser: ' + why.join(' · ') + '.'));
+    } else {
+      steps.push(step('no','Keine Vorab-Info ans Finance Team nötig',
+        'Wäre nur bei Verträgen oder Sonderlieferanten erforderlich.', 'no'));
+    }
+
+    // 6. Additional FIN approval
+    var finApproval = (b >= 4) || (b === 3 && isV);
+    if(finApproval){
+      steps.push(step('req','Zusätzliche Freigabe durch das Finance Team',
+        b === 3 ? 'Der Vertragsabschluss muss zusätzlich vom Finance Team vorab freigegeben werden.'
+                : 'Zusätzlich zum übrigen Freigabeweg muss das Finance Team vorab freigeben.'));
+    }
+
+    // 7. Invest / inventory
+    if(b >= 2){
+      steps.push(step('req','Prüfen, ob ein Invest / eine Anlage vorliegt',
+        'Falls ja: Eintrag ins Inventar vornehmen.'));
+    }
+
+    return steps;
+  }
+
+  // ---- Render ----
+  var BADGE = {
+    req:{cls:'b-req', sym:'✓', tcls:'t-req', txt:'Erforderlich'},
+    rec:{cls:'b-rec', sym:'☆', tcls:'t-rec', txt:'Empfohlen'},
+    info:{cls:'b-info', sym:'i', tcls:'t-info', txt:'Info'},
+    no:{cls:'b-no', sym:'–', tcls:'t-no', txt:'Entfällt'}
+  };
+
+  function esc(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+  function linkify(s){ // turn „Formulare“ mention into nothing special; keep plain. Hook for future links.
+    return s;
+  }
+
+  function render(){
+    var ladder = document.getElementById('ladder');
+    var result = document.getElementById('result');
+    var g = gross();
+
+    // Ladder
+    var active = isNaN(g) ? -1 : bandOf(g);
+    var lh = '';
+    for(var i=0;i<BANDS.length;i++){
+      var c = i===active ? 'active' : (active>-1 && i<active ? 'passed' : '');
+      lh += '<div class="rung '+c+'"><span class="lvl">'+BANDS[i].label+'</span>'+
+            '<span class="tg">'+BANDS[i].tag+'</span><span class="dot"></span></div>';
+    }
+    ladder.innerHTML = lh;
+    ladder.setAttribute('aria-hidden', active===-1 ? 'true':'false');
+
+    // Result
+    if(isNaN(g)){
+      result.innerHTML = '<div class="result-body" style="border-radius:14px;border-top:1px solid var(--line)">'+
+        '<div class="empty"><div class="big">€</div>Gib oben einen Betrag ein – hier erscheint deine konkrete To-do-Liste.</div></div>';
+      return;
+    }
+
+    var b = bandOf(g);
+    var html = '';
+
+    // Head
+    html += '<div class="result-head">';
+    html += '<span class="gross">'+eur.format(g)+'</span>';
+    html += '<span class="band-pill">Wertgrenze '+BANDS[b].label+'</span>';
+    if(state.mode==='netto'){
+      html += '<span class="net-note">Aus Netto '+eur.format(parseNum(state.raw)||0)+' + '+(parseNum(state.vat)||0)+'% MwSt. berechnet.</span>';
+    }
+    html += '</div>';
+
+    html += '<div class="result-body">';
+
+    // Banners
+    if(!state.budget){
+      html += '<div class="banner stop"><span class="ic">!</span><div><b>Stopp – Haushalt prüfen.</b> Dieser Aufwand ist nicht vom Haushalt abgedeckt. Erst eine Anpassung des Haushaltes erwirken, dann gelten die Wertgrenzen.</div></div>';
+    }
+    html += '<div class="banner note"><span class="ic">∑</span><div>Es zählt der <b>Bruttowert</b> (inkl. MwSt.) der <b>Gesamthöhe des Auftrags</b> – nicht eine Einzelrechnung. Niemand darf sich eine Freigabe selbst erteilen (<b>Vier-Augen-Prinzip</b>); ersatzweise gilt eine höhere Freigabe-Instanz.</div></div>';
+    if(state.special){
+      html += '<div class="banner special"><span class="ic">▲</span><div><b>Sonderfall:</b> Vertrag mit Gästehaus/Herberge/Zeltplatz bzw. Leistungsvergabe an Druckerei/Agentur. Das Finance Team muss hier <b>immer vorab</b> informiert werden.</div></div>';
+    }
+
+    // Steps
+    html += '<div class="sect-label">Konkret zu erledigen</div>';
+    var steps = buildSteps(g, b);
+    html += '<ol class="steps">';
+    for(var s=0;s<steps.length;s++){
+      var st = steps[s];
+      var bd = BADGE[st.badge] || BADGE.req;
+      var tg = BADGE[st.tag] || bd;
+      var muted = st.badge==='no' ? ' class="muted"' : '';
+      html += '<li'+muted+'>';
+      html += '<span class="badge '+bd.cls+'" aria-hidden="true">'+bd.sym+'</span>';
+      html += '<div><div class="step-t">'+esc(st.title)+'<span class="tag '+tg.tcls+'">'+tg.txt+'</span></div>';
+      if(st.detail) html += '<div class="step-d">'+linkify(esc(st.detail))+'</div>';
+      html += '</div></li>';
+    }
+    html += '</ol>';
+
+    // Actions
+    html += '<div class="actions">';
+    html += '<button class="btn primary" id="printBtn">Als Notiz drucken / PDF</button>';
+    html += '<button class="btn" id="resetBtn">Zurücksetzen</button>';
+    html += '</div>';
+
+    html += '</div>';
+
+    result.innerHTML = html;
+
+    var pb = document.getElementById('printBtn');
+    if(pb) pb.addEventListener('click', function(){ window.print(); });
+    var rb = document.getElementById('resetBtn');
+    if(rb) rb.addEventListener('click', resetAll);
+  }
+
+  function resetAll(){
+    state.raw=""; state.mode="brutto"; state.vat=19; state.kind="ausgabe";
+    state.budget=true; state.special=false; state.hoc=false;
+    document.getElementById('amount').value="";
+    document.getElementById('vat').value="19";
+    document.getElementById('budget').checked=true;
+    document.getElementById('special').checked=false;
+    document.getElementById('hoc').checked=false;
+    setMode('brutto'); setKind('ausgabe');
+    document.getElementById('amount').focus();
+    render();
+  }
+
+  // ---- Wiring ----
+  function setMode(m){
+    state.mode = m;
+    document.getElementById('btnBrutto').setAttribute('aria-pressed', m==='brutto');
+    document.getElementById('btnNetto').setAttribute('aria-pressed', m==='netto');
+    document.getElementById('vatline').hidden = (m!=='netto');
+  }
+  function setKind(k){
+    state.kind = k;
+    document.getElementById('btnAusgabe').setAttribute('aria-pressed', k==='ausgabe');
+    document.getElementById('btnVertrag').setAttribute('aria-pressed', k==='vertrag');
+  }
+
+  document.getElementById('amount').addEventListener('input', function(e){ state.raw = e.target.value; render(); });
+  document.getElementById('vat').addEventListener('input', function(e){ state.vat = e.target.value; render(); });
+  document.getElementById('btnBrutto').addEventListener('click', function(){ setMode('brutto'); render(); });
+  document.getElementById('btnNetto').addEventListener('click', function(){ setMode('netto'); render(); });
+  document.getElementById('btnAusgabe').addEventListener('click', function(){ setKind('ausgabe'); render(); });
+  document.getElementById('btnVertrag').addEventListener('click', function(){ setKind('vertrag'); render(); });
+  document.getElementById('budget').addEventListener('change', function(e){ state.budget = e.target.checked; render(); });
+  document.getElementById('special').addEventListener('change', function(e){ state.special = e.target.checked; render(); });
+  document.getElementById('hoc').addEventListener('change', function(e){ state.hoc = e.target.checked; render(); });
+
+  render();
+})();
+</script>
+</body>
+</html>
