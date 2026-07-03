@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wie digital sind die Pfadfinder:innen? · DPSG Digitalisierungs-Umfrage 2020</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EEF1E7;
+    --card: #FBFBF5;
+    --pine: #1E3A2F;
+    --moss: #4E7A5A;
+    --moss-soft: #A9C3A6;
+    --red: #B93A28;
+    --ochre: #D9A441;
+    --ink: #22301F;
+    --faint: #6C7A66;
+    --line: #CAD1BC;
+    --track: #E4E7D8;
+    --font-head: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+    --font-body: 'Source Sans 3', 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0 0 40px; min-height: 100vh; background: var(--paper); color: var(--ink); font-family: var(--font-body); }
+  button { font: inherit; }
+  button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+  .site-header { background: var(--pine); color: #FBFBF5; padding-top: 26px; }
+  .container { max-width: 1060px; margin: 0 auto; padding: 0 22px; }
+  .kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--moss-soft); }
+  h1 { font-family: var(--font-head); font-weight: 700; font-size: clamp(30px, 5vw, 46px); margin: 4px 0 6px; line-height: 1.02; }
+  .lede { font-size: 14px; color: #D8DFC9; max-width: 720px; line-height: 1.5; }
+  main { max-width: 1060px; margin: 0 auto; padding: 20px 22px 0; }
+
+  /* Trail-Marker-Navigation: dunkles Band am Fuß des Kopfes */
+  .tabs-band { margin-top: 22px; background: rgba(10, 22, 16, 0.35); }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; max-width: 1060px; margin: 0 auto; padding: 12px 22px; }
+  .tab {
+    cursor: pointer; border: none; border-radius: 6px;
+    font-family: var(--font-head); font-weight: 600; font-size: 15.5px; letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 9px 16px;
+    color: #C8D3BC; background: rgba(251, 251, 245, 0.10);
+    transition: background .15s, color .15s, transform .15s;
+  }
+  .tab:hover { background: rgba(251, 251, 245, 0.22); color: #FBFBF5; }
+  .tab:active { transform: scale(0.97); }
+  .tab.active { color: #FBFBF5; background: var(--red); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35); }
+  .tab.active:hover { background: #C64431; }
+  .tab:focus-visible { outline: 2px solid var(--ochre); outline-offset: 2px; }
+
+  .stack { display: grid; gap: 14px; }
+  .grid { display: grid; gap: 14px; }
+  .grid-150 { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .grid-160 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+  .grid-280 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .grid-300 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .grid-320 { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
+  .card.accent-red { border-left: 5px solid var(--red); }
+  .card.accent-pine { border-left: 5px solid var(--pine); }
+  .card-head { margin-bottom: 12px; }
+  .eyebrow { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--moss); }
+  .card-title { font-family: var(--font-head); font-weight: 600; font-size: 21px; color: var(--pine); line-height: 1.1; }
+  .card-sub { font-size: 12.5px; color: var(--faint); margin-top: 3px; }
+  .stat { font-family: var(--font-head); font-weight: 700; color: var(--pine); white-space: nowrap; }
+  .stat-l { font-size: 12px; color: var(--faint); line-height: 1.35; }
+
+  /* ein Grid pro Karte: Label-Spalte passt sich dem längsten Label an, Zeilen bleiben ausgerichtet */
+  .hbars { display: grid; grid-template-columns: fit-content(150px) 1fr max-content; align-items: center; gap: 7px 10px; }
+  .hbars .lbl { font-size: 13px; color: var(--ink); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .track { background: var(--track); border-radius: 4px; height: 18px; position: relative; }
+  .fill { height: 100%; border-radius: 4px; transition: width .5s; }
+  .fill.pine { background: var(--pine); }
+  .fill.moss { background: var(--moss); }
+  .fill.ochre { background: var(--ochre); }
+  .fill.red { background: var(--red); }
+  .num { font-family: var(--font-mono); font-size: 12px; color: var(--pine); white-space: nowrap; }
+  .dim { color: var(--faint); }
+
+  .pennant { display: inline-block; background: var(--red); color: #FBFBF5; font-family: var(--font-head); font-weight: 600; font-size: 13px; letter-spacing: 0.6px; text-transform: uppercase; padding: 3px 18px 3px 10px; clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 50%, 100% 100%, 0 100%); }
+  .pennant.pine { background: var(--pine); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { cursor: pointer; border-radius: 999px; padding: 5px 14px; font-size: 13px; font-family: var(--font-body); border: 1.5px solid var(--line); background: transparent; color: var(--ink); }
+  .chip.active { border-color: var(--pine); background: var(--pine); color: #FBFBF5; font-weight: 600; }
+  .chips.moss .chip.active { border-color: var(--moss); background: var(--moss); }
+
+  .toggle { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .toggle button { border: none; cursor: pointer; padding: 4px 12px; font-family: var(--font-mono); font-size: 11.5px; background: transparent; color: var(--faint); }
+  .toggle button.active { background: var(--pine); color: #FBFBF5; }
+
+  .sel-row { cursor: pointer; border-radius: 6px; padding: 5px 6px; margin-bottom: 2px; }
+  .sel-row.active { background: #E7EBDB; outline: 1.5px solid var(--moss); }
+  .rank-row { display: grid; grid-template-columns: 170px 1fr 52px; align-items: center; gap: 10px; }
+  .host-row { display: grid; grid-template-columns: 1fr 34px; align-items: center; gap: 10px; padding: 6px 8px; }
+  .host-row.active { outline-color: var(--pine); }
+
+  .adopt-row { display: grid; grid-template-columns: 220px 1fr 110px; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .adopt-row .lbl { font-size: 13px; text-align: right; color: var(--ink); }
+
+  .div-track { position: relative; background: var(--track); border-radius: 4px; height: 16px; }
+  .div-mid { position: absolute; left: 50%; top: 0; bottom: 0; width: 1.5px; background: var(--faint); }
+  .div-fill { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+
+  .chart-wrap { position: relative; height: 190px; }
+  .chart-tip { position: absolute; display: none; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 8px; font-size: 12px; padding: 5px 10px; white-space: nowrap; }
+
+  .footnote { margin-top: 22px; font-size: 11.5px; color: var(--faint); line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <div class="kicker">DPSG · Umfrage Digitalisierung · Herbst 2020</div>
+    <h1>Wie digital sind die Pfadfinder:innen?</h1>
+    <div class="lede">
+      1.795 Rückmeldungen aus Stämmen, Bezirken, Diözesen und Bundesebene — erhoben im Oktober/November 2020,
+      mitten in der zweiten Corona-Welle. Ergebnisse erkunden: aggregiert, nach Ebene und im Detail.
+    </div>
+  </div>
+  <nav class="tabs-band" aria-label="Bereiche">
+    <div class="tabs">
+      <button class="tab" data-action="tab" data-value="Überblick">Überblick</button>
+      <button class="tab active" data-action="tab" data-value="Kernbefunde">Kernbefunde</button>
+      <button class="tab" data-action="tab" data-value="Tool-Nutzung">Tool-Nutzung</button>
+      <button class="tab" data-action="tab" data-value="Unterstützungswünsche">Unterstützungswünsche</button>
+      <button class="tab" data-action="tab" data-value="Freitext-Analyse">Freitext-Analyse</button>
+      <button class="tab" data-action="tab" data-value="Techies vs. Rest">Techies vs. Rest</button>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <div id="view"></div>
+  <noscript>Dieses Dashboard benötigt JavaScript.</noscript>
+
+  <div class="footnote">
+    Datengrundlage: LimeSurvey-Export (Umfrage 942722, PII-maskiert) · 1.795 Datensätze, davon 1.132 vollständig.
+    Prozentwerte beziehen sich jeweils auf die Zahl der Antwortenden der einzelnen Frage (n variiert durch Filterführung und Abbrüche).
+    Mehrfachauswahl-Fragen summieren sich nicht auf 100 %.
+  </div>
+</main>
+
+<script>
+/* ------------------------------------------------------------------ */
+/*  DPSG Digitalisierungs-Umfrage 2020 · aggregierte Daten (Python)    */
+/* ------------------------------------------------------------------ */
+
+const TIMELINE = [
+  ["08.10.", 259], ["09.10.", 366], ["10.10.", 89], ["11.10.", 74], ["12.10.", 79],
+  ["13.10.", 46], ["14.10.", 29], ["15.10.", 23], ["16.10.", 19], ["17.10.", 13],
+  ["18.10.", 14], ["19.10.", 16], ["20.10.", 10], ["21.10.", 11], ["22.10.", 11],
+  ["23.10.", 6], ["24.10.", 5], ["25.10.", 3], ["26.10.", 5], ["27.10.", 5],
+  ["28.10.", 4], ["29.10.", 4], ["30.10.", 4], ["31.10.", 2], ["01.11.", 5],
+  ["02.11.", 4], ["03.11.", 6], ["04.11.", 3], ["05.11.", 4], ["06.11.", 1],
+  ["07.11.", 1], ["08.11.", 3], ["09.11.", 5], ["10.11.", 3],
+].map(([d, n]) => ({ d, n }));
+
+const LEVELS = [
+  { name: "Stamm", n: 1280 },
+  { name: "Diözese", n: 156 },
+  { name: "Bezirk", n: 119 },
+  { name: "Bundesebene", n: 36 },
+  { name: "keine Angabe", n: 204 },
+];
+
+const AGES = [
+  { g: "10–19", n: 51 }, { g: "20–29", n: 610 }, { g: "30–39", n: 279 },
+  { g: "40–49", n: 97 }, { g: "50–59", n: 47 }, { g: "60+", n: 15 },
+];
+
+const ROLES = [
+  { r: "StaVo (Stammesvorstand)", n: 388 },
+  { r: "Öffentlichkeitsarbeit", n: 276 },
+  { r: "NaMi-Verwalter:in", n: 221 },
+  { r: "Kassenwart:in", n: 131 },
+  { r: "Materialwart:in", n: 124 },
+];
+
+/* Tool-Nutzung je Ebene: adoption = Ja-Quote der Filterfrage,
+   tools = Nennungen unter den Ja-Antworten (Mehrfachauswahl) */
+const USAGE = {
+  Stamm: {
+    n: 1280,
+    adoption: [
+      { k: "Eigene Website", yes: 901, base: 1079 },
+      { k: "Social-Media-Kanäle", yes: 863, base: 1046 },
+      { k: "Videokonferenzen", yes: 818, base: 1038 },
+      { k: "Terminfindungs-Tool", yes: 726, base: 1038 },
+      { k: "Cloud-Speicher", yes: 677, base: 1003 },
+      { k: "Digitale Finanz-Tools", yes: 266, base: 721 },
+      { k: "Mitgliederverwaltung (außer NaMi)", yes: 174, base: 952 },
+      { k: "Anmeldetool für Aktionen", yes: 124, base: 991 },
+      { k: "Materialverwaltung", yes: 89, base: 943 },
+    ],
+    cats: {
+      "Social Media": { base: 863, note: "von 863 Stämmen mit Social Media", items: [["Facebook", 723], ["Instagram", 621], ["YouTube", 58], ["Twitter", 49], ["Vimeo", 7], ["Snapchat", 6], ["TikTok", 3], ["Flickr", 2], ["LinkedIn", 1]] },
+      "Kommunikation": { base: 1046, note: "von ~1.046 antwortenden Stämmen (Mehrfachauswahl)", items: [["E-Mail", 956], ["WhatsApp", 944], ["Mailinglisten", 497], ["Kontaktformular", 242], ["Telegram", 112], ["Newsletter", 109], ["Slack", 65], ["Threema", 62], ["Facebook-Messenger", 62], ["Signal", 47], ["Wire", 1]] },
+      "Videokonferenz": { base: 818, note: "von 818 Stämmen mit Videokonferenzen", items: [["Zoom", 476], ["Skype", 226], ["Jitsi", 162], ["Microsoft Teams", 115], ["Cisco Webex", 45], ["BigBlueButton", 21], ["GoToMeeting", 18]] },
+      "Cloud": { base: 677, note: "von 677 Stämmen mit Cloud", items: [["Dropbox", 197], ["Nextcloud", 170], ["Sonstige", 95], ["Google Drive", 79], ["OneDrive", 60], ["ownCloud", 35], ["pCloud", 6], ["Apple iCloud", 1], ["Mega", 1]] },
+      "Terminfindung": { base: 726, note: "von 726 Stämmen mit Terminfindungs-Tool", items: [["Doodle", 668], ["DFN Terminplaner", 17], ["LamaPoll", 2]] },
+      "Website: CMS": { base: 528, note: "von 528 Stämmen mit CMS-Angabe", items: [["WordPress", 359], ["Sonstige", 129], ["Joomla!", 24], ["TYPO3", 7], ["Drupal", 4], ["Wix", 2], ["Blogger", 1], ["FrontPage", 1], ["Dreamweaver", 1]] },
+      "Website: Funktionen": { base: 901, note: "von 901 Stämmen mit Website", items: [["Blog / Berichte", 716], ["Termine / Kalender", 633], ["Kontaktformular", 575], ["Fotogalerie", 508], ["Anmeldung Aktionen/Lager", 164], ["DPSG-Anmeldung", 156], ["Shop", 29]] },
+    },
+  },
+  Bezirk: {
+    n: 119,
+    adoption: [
+      { k: "Videokonferenzen", yes: 83, base: 99 },
+      { k: "Terminfindungs-Tool", yes: 80, base: 97 },
+      { k: "Social-Media-Kanäle", yes: 72, base: 93 },
+      { k: "Eigene Website", yes: 71, base: 93 },
+      { k: "Cloud-Speicher", yes: 70, base: 96 },
+      { k: "Digitale Wahlen / Abstimmungen", yes: 10, base: 88 },
+    ],
+    cats: {
+      "Social Media": { base: 72, note: "von 72 Bezirken mit Social Media", items: [["Facebook", 63], ["Instagram", 35], ["Twitter", 7], ["YouTube", 4]] },
+      "Kommunikation": { base: 99, note: "von ~99 antwortenden Bezirken (Mehrfachauswahl)", items: [["E-Mail", 95], ["WhatsApp", 86], ["Mailinglisten", 49], ["Kontaktformular", 20], ["Telegram", 14], ["Newsletter", 8], ["Threema", 5], ["Signal", 4], ["Facebook-Messenger", 4], ["Slack", 2]] },
+      "Videokonferenz": { base: 83, note: "von 83 Bezirken mit Videokonferenzen", items: [["Zoom", 55], ["Microsoft Teams", 25], ["Skype", 21], ["Jitsi", 16], ["BigBlueButton", 7], ["Cisco Webex", 6], ["GoToMeeting", 1]] },
+      "Cloud": { base: 70, note: "von 70 Bezirken mit Cloud", items: [["Dropbox", 24], ["Nextcloud", 16], ["Sonstige", 15], ["ownCloud", 6], ["OneDrive", 4], ["Google Drive", 4]] },
+      "Terminfindung": { base: 80, note: "von 80 Bezirken mit Terminfindungs-Tool", items: [["Doodle", 74], ["DFN Terminplaner", 4]] },
+      "Website: CMS": { base: 42, note: "von 42 Bezirken mit CMS-Angabe", items: [["WordPress", 34], ["Sonstige", 4], ["TYPO3", 3], ["Dreamweaver", 1]] },
+    },
+  },
+  Diözese: {
+    n: 156,
+    adoption: [
+      { k: "Eigene Website", yes: 107, base: 107 },
+      { k: "Videokonferenzen", yes: 101, base: 102 },
+      { k: "Cloud-Speicher", yes: 101, base: 102 },
+      { k: "Social-Media-Kanäle", yes: 104, base: 107 },
+      { k: "Terminfindungs-Tool", yes: 96, base: 102 },
+      { k: "Digitale Wahlen / Abstimmungen", yes: 27, base: 73 },
+    ],
+    cats: {
+      "Social Media": { base: 104, note: "von 104 Diözesan-Antworten mit Social Media", items: [["Facebook", 98], ["Instagram", 88], ["YouTube", 20], ["Twitter", 14]] },
+      "Kommunikation": { base: 107, note: "von ~107 Diözesan-Antworten (Mehrfachauswahl)", items: [["E-Mail", 104], ["Mailinglisten", 72], ["Newsletter", 66], ["WhatsApp", 45], ["Kontaktformular", 40], ["Telegram", 32], ["Threema", 19], ["Slack", 16], ["Signal", 6], ["Facebook-Messenger", 6]] },
+      "Videokonferenz": { base: 101, note: "von 101 Antworten mit Videokonferenzen", items: [["Zoom", 73], ["Microsoft Teams", 35], ["Skype", 30], ["BigBlueButton", 13], ["Jitsi", 12], ["Cisco Webex", 10], ["GoToMeeting", 3]] },
+      "Cloud": { base: 101, note: "von 101 Antworten mit Cloud", items: [["Nextcloud", 35], ["ownCloud", 29], ["Sonstige", 13], ["OneDrive", 12], ["Dropbox", 4], ["Google Drive", 2]] },
+      "Terminfindung": { base: 96, note: "von 96 Antworten mit Terminfindungs-Tool", items: [["Doodle", 87], ["DFN Terminplaner", 8]] },
+      "Website: CMS": { base: 58, note: "von 58 Antworten mit CMS-Angabe", items: [["WordPress", 36], ["Joomla!", 11], ["TYPO3", 10], ["Sonstige", 1]] },
+      "Digitale Wahlen": { base: 27, note: "von 27 Antworten mit Wahl-Tool", items: [["Mentimeter", 12], ["VOXR", 1]] },
+    },
+  },
+};
+
+/* Unterstützungswünsche (Skala 1 = keine … 5 = erwünscht) */
+const SUPPORT = {
+  Stamm: [
+    { area: "Mitgliederverwaltung", mean: 3.52, n: 842, top2: 58.2, dist: [143, 79, 130, 176, 314] },
+    { area: "Fördergelder", mean: 3.34, n: 747, top2: 52.7, dist: [148, 83, 122, 155, 239] },
+    { area: "Kassenverwaltung", mean: 3.17, n: 734, top2: 46.2, dist: [161, 96, 138, 138, 201] },
+    { area: "Mitgliedsbeiträge", mean: 3.13, n: 729, top2: 45.8, dist: [177, 88, 130, 131, 203] },
+    { area: "Cloud-Speicher", mean: 3.09, n: 842, top2: 43.7, dist: [208, 109, 157, 133, 235] },
+    { area: "Kommunikations-Tool", mean: 2.79, n: 855, top2: 33.7, dist: [233, 154, 180, 133, 155] },
+    { area: "Videokonferenz-Tool", mean: 2.58, n: 837, top2: 30.5, dist: [316, 115, 151, 114, 141] },
+    { area: "Stammes-Website", mean: 2.52, n: 868, top2: 26.7, dist: [291, 177, 168, 122, 110] },
+    { area: "Andere Bereiche", mean: 2.4, n: 418, top2: 24.4, dist: [195, 42, 79, 23, 79] },
+    { area: "Social-Media-Kanäle", mean: 2.24, n: 861, top2: 18.4, dist: [334, 204, 165, 96, 62] },
+    { area: "Terminfindung", mean: 2.21, n: 825, top2: 20.0, dist: [388, 141, 131, 68, 97] },
+  ],
+  Bezirk: [
+    { area: "Digitale Wahlen / Abstimmungen", mean: 4.02, n: 82, top2: 74.4, dist: [8, 6, 7, 16, 45] },
+    { area: "Cloud-Speicher", mean: 3.42, n: 84, top2: 56.0, dist: [18, 10, 9, 13, 34] },
+    { area: "Fördergelder", mean: 3.41, n: 68, top2: 54.4, dist: [11, 10, 10, 14, 23] },
+    { area: "Mitgliederverwaltung", mean: 3.35, n: 81, top2: 54.3, dist: [20, 8, 9, 12, 32] },
+    { area: "Videokonferenz-Tool", mean: 3.13, n: 86, top2: 50.0, dist: [25, 8, 10, 17, 26] },
+    { area: "Kommunikations-Tool", mean: 2.88, n: 84, top2: 36.9, dist: [27, 8, 18, 10, 21] },
+    { area: "Andere Bereiche", mean: 2.87, n: 31, top2: 32.3, dist: [9, 3, 9, 3, 7] },
+    { area: "Kassenverwaltung", mean: 2.84, n: 70, top2: 34.3, dist: [14, 19, 13, 12, 12] },
+    { area: "Mitgliedsbeiträge", mean: 2.8, n: 66, top2: 31.8, dist: [16, 16, 13, 7, 14] },
+    { area: "Bezirks-Website", mean: 2.57, n: 83, top2: 28.9, dist: [26, 19, 14, 13, 11] },
+    { area: "Terminfindung", mean: 2.38, n: 84, top2: 26.2, dist: [38, 10, 14, 10, 12] },
+    { area: "Social-Media-Kanäle", mean: 2.25, n: 84, top2: 16.7, dist: [32, 19, 19, 8, 6] },
+  ],
+  Diözese: [
+    { area: "Mitgliederverwaltung", mean: 3.92, n: 61, top2: 68.9, dist: [7, 4, 8, 10, 32] },
+    { area: "Digitale Wahlen / Abstimmungen", mean: 3.88, n: 73, top2: 67.1, dist: [9, 4, 11, 12, 37] },
+    { area: "Cloud-Speicher", mean: 3.08, n: 72, top2: 47.2, dist: [20, 8, 10, 14, 20] },
+    { area: "Kommunikations-Tool", mean: 3.04, n: 73, top2: 39.7, dist: [16, 11, 17, 12, 17] },
+    { area: "Videokonferenz-Tool", mean: 2.94, n: 77, top2: 40.3, dist: [23, 11, 12, 10, 21] },
+    { area: "Mitgliedsbeiträge", mean: 2.8, n: 40, top2: 30.0, dist: [9, 7, 12, 7, 5] },
+    { area: "Fördergelder", mean: 2.61, n: 41, top2: 29.3, dist: [12, 6, 11, 10, 2] },
+    { area: "Kassenverwaltung", mean: 2.57, n: 44, top2: 25.0, dist: [14, 4, 15, 9, 2] },
+    { area: "Andere Bereiche", mean: 2.52, n: 21, top2: 19.0, dist: [8, 1, 8, 1, 3] },
+    { area: "Terminfindung", mean: 2.49, n: 75, top2: 24.0, dist: [25, 17, 15, 7, 11] },
+    { area: "Social-Media-Kanäle", mean: 2.36, n: 74, top2: 18.9, dist: [24, 19, 17, 8, 6] },
+    { area: "Diözesan-Website", mean: 2.19, n: 73, top2: 19.2, dist: [30, 16, 13, 11, 3] },
+  ],
+  Bundesebene: [
+    { area: "Digitale Wahlen / Abstimmungen", mean: 4.35, n: 17, top2: 82.4, dist: [2, 1, 0, 0, 14] },
+    { area: "Cloud-Speicher", mean: 4.19, n: 16, top2: 81.2, dist: [2, 0, 1, 3, 10] },
+    { area: "Videokonferenz-Tool", mean: 4.0, n: 16, top2: 75.0, dist: [3, 0, 1, 2, 10] },
+    { area: "Mitgliederverwaltung", mean: 3.75, n: 12, top2: 66.7, dist: [2, 1, 1, 2, 6] },
+    { area: "Terminfindung", mean: 3.56, n: 16, top2: 62.5, dist: [3, 2, 1, 3, 7] },
+    { area: "Kommunikations-Tool", mean: 3.5, n: 18, top2: 55.6, dist: [5, 0, 3, 1, 9] },
+    { area: "Fördergelder", mean: 3.31, n: 13, top2: 53.8, dist: [4, 0, 2, 2, 5] },
+    { area: "Bundes-Website", mean: 3.24, n: 17, top2: 47.1, dist: [3, 3, 3, 3, 5] },
+    { area: "Social-Media-Kanäle", mean: 3.22, n: 18, top2: 55.6, dist: [5, 1, 2, 5, 5] },
+    { area: "Andere Bereiche", mean: 3.0, n: 5, top2: 40.0, dist: [2, 0, 1, 0, 2] },
+    { area: "Kassenverwaltung", mean: 2.5, n: 10, top2: 30.0, dist: [4, 2, 1, 1, 2] },
+    { area: "Mitgliedsbeiträge", mean: 2.33, n: 9, top2: 33.3, dist: [5, 1, 0, 1, 2] },
+  ],
+};
+
+const FINDINGS = [
+  {
+    tag: "Messenger", title: "WhatsApp ist der De-facto-Standard",
+    stat: "90 %", statLabel: "der antwortenden Stämme nutzen WhatsApp",
+    text: "944 von ~1.046 Stämmen kommunizieren über WhatsApp — trotz laufender Datenschutzdebatte. Die datensparsamen Alternativen Threema (62) und Signal (47) kommen zusammen auf gerade einmal ein Zehntel davon. E-Mail bleibt mit 956 Nennungen gleichauf unverzichtbar.",
+  },
+  {
+    tag: "Corona-Effekt", title: "Videokonferenzen sind 2020 Alltag geworden",
+    stat: "79 %", statLabel: "der Stämme nutzen Videokonferenz-Tools",
+    text: "Die Umfrage lief im Oktober/November 2020, mitten im „Lockdown light“. 818 von 1.038 Stämmen halten Leiterrunden & Co. digital ab — Zoom führt klar (58 % der Nutzer), gefolgt von Skype (28 %) und dem Open-Source-Tool Jitsi (20 %). Auf Diözesanebene sind es sogar 99 %.",
+  },
+  {
+    tag: "Monokultur", title: "Terminfindung heißt Doodle",
+    stat: "92 %", statLabel: "der terminfindenden Stämme nutzen Doodle",
+    text: "668 von 726 Stämmen mit Terminfindungs-Tool setzen auf Doodle; der datenschutzfreundliche DFN-Terminplaner kommt auf 17 Nennungen. Gleichzeitig ist der Unterstützungswunsch hier am geringsten (Ø 2,2) — das Problem gilt als gelöst.",
+  },
+  {
+    tag: "Websites", title: "WordPress dominiert die Stammes-Websites",
+    stat: "68 %", statLabel: "der CMS-Angaben entfallen auf WordPress",
+    text: "84 % der Stämme haben eine eigene Website — meist als Schaufenster: Blog (79 %), Termine (70 %) und Kontaktformular (64 %) sind Standard, echte Online-Anmeldung zu Lagern bieten nur 18 %. Ein zentraler Ansatzpunkt für Digitalisierung.",
+  },
+  {
+    tag: "Top-Wunsch Stämme", title: "Verwaltung nervt — hier soll der Bund helfen",
+    stat: "Ø 3,5", statLabel: "Unterstützungswunsch Mitgliederverwaltung (Skala 1–5)",
+    text: "Nicht Social Media, sondern die Verwaltung führt die Wunschliste der Stämme an: Mitgliederverwaltung (Ø 3,5), Fördergelder (3,3), Kasse (3,2). Passend dazu: nur 18 % nutzen neben NaMi ein Verwaltungstool — und das ist dann meist eine Excel-Liste.",
+  },
+  {
+    tag: "Top-Wunsch Ebenen", title: "Digitale Wahlen: großer Bedarf, kaum Tools",
+    stat: "Ø 4,0–4,4", statLabel: "Wunsch nach Wahl-Tools bei Bezirken & Bundesebene",
+    text: "Bezirke (Ø 4,0), Diözesen (3,9) und Bundesebene (4,4) wünschen sich am dringendsten Unterstützung bei digitalen Wahlen und Abstimmungen — 2020 mussten Versammlungen plötzlich online stattfinden. Tatsächlich im Einsatz: nur bei 11 % der Bezirke und 37 % der Diözesen.",
+  },
+  {
+    tag: "Cloud-Kulturen", title: "Dropbox unten, Nextcloud oben",
+    stat: "63 %", statLabel: "der Cloud-Diözesen nutzen Nextcloud / ownCloud",
+    text: "Stämme greifen pragmatisch zu Dropbox (29 %) und Nextcloud (25 %); auf Diözesanebene dominieren mit Nextcloud (35 %) und ownCloud (29 %) klar die selbst betreibbaren, datenschutzkonformen Lösungen. Je höher die Ebene, desto professioneller die Infrastruktur.",
+  },
+  {
+    tag: "Lücke", title: "Material, Anmeldung, Kasse: noch weitgehend analog",
+    stat: "9–37 %", statLabel: "Nutzung digitaler Tools in der Stammesverwaltung",
+    text: "Digitale Materialverwaltung (9 %), Anmeldetools für Fahrten (13 %), Mitgliederverwaltung jenseits von NaMi (18 %) und Finanz-Tools (37 %) sind die Ausnahme. Wo Tools fehlen, ist der Unterstützungswunsch am höchsten — die Lücke ist zugleich die Chance.",
+  },
+];
+
+/* Freitext-Analyse (Schlagwort-Zuordnung der offenen Antworten) */
+const FT_THEMES = [
+  { t: "NaMi erwähnt", info: "Die Antwort bezieht sich auf NaMi, die zentrale Mitgliederverwaltung der DPSG — fast immer als Verbesserungswunsch am bestehenden System." },
+  { t: "Datenschutz / DSGVO", info: "Datenschutz wird als Anforderung oder Sorge genannt: DSGVO-konforme Tools, sichere Datenhaltung, rechtliche Unsicherheit im Ehrenamt." },
+  { t: "Hosting / Bereitstellung durch Bund", info: "Der Bundesverband soll die Lösung selbst betreiben oder fertig bereitstellen — eigener Server, gehostete Instanz, „wie NaMi“." },
+  { t: "Zentrale / einheitliche Lösung", info: "Wunsch nach einer verbandsweit einheitlichen Lösung für alle Stämme und Ebenen, statt dass jeder sein eigenes Süppchen kocht." },
+  { t: "Kosten / Lizenzen", info: "Es geht ums Geld: kostenlose Nutzung, vergünstigte Lizenzen, Rahmenverträge oder Kostenübernahme durch den Verband." },
+  { t: "Vorlagen / Baukasten", info: "Fertige Vorlagen, Templates oder ein Baukastensystem, das Stämme nur noch mit eigenen Inhalten befüllen müssen." },
+  { t: "Schulung / Anleitung", info: "Wissensvermittlung statt Technik: Anleitungen, Tutorials, Workshops oder Leitfäden zum Umgang mit den Tools." },
+  { t: "Empfehlung / Übersicht", info: "Orientierungshilfe: Der Bund soll geeignete Tools sichten, vergleichen und eine klare Empfehlung aussprechen." },
+];
+
+/* Werte = Anzahl Antworten mit Schlagwort-Treffer, Reihenfolge wie FT_THEMES */
+const FT_AREAS = [
+  { area: "Mitgliederverwaltung", n: 277, hits: [182, 11, 12, 9, 6, 2, 16, 31] },
+  { area: "Cloud", n: 225, hits: [7, 77, 51, 29, 40, 5, 10, 14] },
+  { area: "Fördergelder", n: 186, hits: [5, 1, 7, 11, 5, 8, 18, 33] },
+  { area: "Kasse", n: 173, hits: [13, 6, 15, 14, 27, 6, 16, 19] },
+  { area: "Website", n: 160, hits: [1, 23, 35, 21, 9, 55, 23, 2] },
+  { area: "Videokonferenz", n: 158, hits: [3, 43, 42, 17, 38, 0, 5, 16] },
+  { area: "Kommunikation", n: 155, hits: [11, 50, 21, 23, 14, 1, 6, 13] },
+  { area: "Mitgliedsbeiträge", n: 148, hits: [36, 3, 6, 11, 14, 1, 4, 9] },
+  { area: "Social Media", n: 90, hits: [0, 18, 5, 3, 0, 11, 25, 4] },
+  { area: "Terminfindung", n: 76, hits: [2, 15, 8, 6, 3, 0, 2, 3] },
+];
+
+const FT_HIDDEN = [
+  { tool: "Discord", n: 66, where: "Videokonferenz „Sonstiges“", note: "Stand nirgends zur Auswahl — wäre real das Videotool Nr. 4 der Stämme, noch vor MS Teams. Weitere Nennungen bei Kommunikation (9) und sonstigen Tools (13)." },
+  { tool: "Trello", n: 61, where: "„Weitere digitale Tools“ (243 Antworten)", note: "Meistgenanntes Zusatz-Tool: Aufgabenverwaltung in Leiterrunden ist ein echtes, im Fragebogen nicht erfasstes Bedürfnis." },
+  { tool: "Excel", n: 88, where: "Kassenführung (204 Angaben)", note: "Dazu 29 Nennungen als Mitgliederverwaltung. Die Verbands-Verwaltung ist eine Excel-Landschaft — nichts Pfadfinder-Spezifisches im Einsatz." },
+  { tool: "Google Forms & Co.", n: 29, where: "weitere Tools + Anmeldungen", note: "Google-Dienste sind Standard-Behelf, gerade bei Lager-Anmeldungen — im Widerspruch zum Datenschutz-Anspruch aus denselben Freitexten." },
+  { tool: "Jimdo", n: 15, where: "Website-CMS „Sonstiges“ (127 Antworten)", note: "Häufigster verdeckter Website-Baukasten hinter den 129 „Sonstiges“-CMS-Angaben." },
+  { tool: "Minecraft & Gaming", n: 13, where: "„Weitere digitale Tools“", note: "Lockdown-Fund: Gruppenstunden auf dem Minecraft-Server. Dazu Telefon (11), Briefe und Papier — die analoge Gegenwelt existiert auch noch." },
+];
+
+const FT_WISHES = [
+  { title: "NaMi 2.0", desc: "Schnellere Suche, einfacher Export/Import, API & Schnittstellen, SEPA-Ausgabe, mobile Nutzbarkeit, eigene Felder pro Stamm, Zahlungsstatus-Anzeige — plus Self-Service für Eltern." },
+  { title: "Rechtssichere Online-Lageranmeldung", desc: "Mehrfach unabhängig beschrieben: Anmeldung zu Fahrten digital, mit Unterschrift und Bezahlung. Heute: PDF ausdrucken lassen oder Google Forms." },
+  { title: "Verbands-Cloud", desc: "Eine vom Bund gehostete, DSGVO-konforme Cloud (Nextcloud/ownCloud wird oft genannt) — „auf höherer Ebene eins anschaffen, wie NaMi“." },
+  { title: "Zentrale Videokonferenz-Lizenzen", desc: "2020 liefen Leiterrunden über private Accounts mit 40-Minuten-Limit. Gewünscht: vom Verband finanzierte oder gehostete Lösung (BBB/Jitsi)." },
+  { title: "Gepflegtes Website-Template", desc: "Das WordPress-Template des Bundes wird gelobt, aber als ausbaufähig und schlecht supportet beschrieben — Support-Mails blieben unbeantwortet." },
+  { title: "Satzungskonformes Wahl-Tool", desc: "Aus den Ebenen-Antworten (35 Freitexte): rechtssichere digitale Wahlen nach Wahlordnung; OpenSlides wird vorgeschlagen, Polyas gilt als zu teuer." },
+];
+
+/* Deep-Dive: „Der Bund soll das hosten“ — 281 von 1.979 Wunsch-Antworten (alle Ebenen) */
+const HOST_AREAS = [
+  { area: "Cloud", n: 77, detail: "Der größte Block, und der konkreteste: eine „DPSG-Cloud“ auf Nextcloud-/ownCloud-Basis mit eigenen Bereichen pro Stamm. Die Antworten denken Betriebsmodelle gleich mit — 20 GB pro Stamm, Verwaltung über die Bezirksebene, Speicher-Budget pro Leiter:in mit zubuchbaren Kontingenten, Anbindung an NaMi als Login. Treiber: Dropbox & Google gelten wegen Servern außerhalb der EU als heikel für Mitglieder- und Gesundheitsdaten (Lageranmeldungen), aber vielen Stämmen fehlt das Know-how für Alternativen." },
+  { area: "Videokonferenz", n: 56, detail: "Zwei Lager: zentral finanzierte Zoom-Lizenzen oder eine verbandseigene Open-Source-Instanz (Jitsi, BigBlueButton). Die Ambivalenz zieht sich durch: Zoom gilt als stabil und flüssig, ist aber mancherorts per Bistums-Richtlinie untersagt; wer BBB/Jitsi selbst gehostet hat, berichtet von schlechter Sprachqualität. Wunschbild: „so stabil wie Zoom, aber auf deutschen DPSG-Servern“ — plus Aufklärung, warum man Daten nicht zu US-Anbietern trägt." },
+  { area: "Website", n: 41, detail: "Zentrale Hosting-Plattform mit Baukasten und CI-Templates. Mehrfach unabhängig gefordert: Subdomains nach dem Muster stammname.dpsg.de auf einem zentralen Server, dazu zentrale Mailadressen (vorstand@…). Die DLRG wird explizit als Vorbild genannt — sie betreibt genau so eine zentrale Weblösung für ihre Ortsgruppen." },
+  { area: "Kommunikation", n: 33, detail: "Vom Matrix-Chatserver für den ganzen Verband über sicher gehostete Mailinglisten bis zum DSGVO-konformen Messenger. Das Dilemma in einem O-Ton: WhatsApp sei „datenschutzrechtlich eine Katastrophe, aber oft der kleinste gemeinsame Nenner“." },
+  { area: "Kasse", n: 16, detail: "Weniger Hosting im engeren Sinn, eher Bereitstellung: ein Kassenprogramm mit Lastschrift-/SEPA-Funktion — bevorzugt als Erweiterung von NaMi statt als separates System." },
+  { area: "Digitale Wahlen", n: 15, detail: "OpenSlides-Instanzen zum Buchen. Das Modell existiert bereits im Kleinen: Manche nutzen OpenSlides über den BDKJ, das Abstimmungsmodul kostet dort extra. Kommerzielle Anbieter wie Polyas gelten als zu teuer; wichtig ist Satzungs- und Wahlordnungskonformität." },
+  { area: "Mitgliederverwaltung", n: 13, detail: "Hosting-Wünsche münden hier fast immer in NaMi: Schnittstellen, Beitragseinzug, „Serverkapazitäten für Stämme“. Die Logik: Der Bund betreibt ja schon eine zentrale Anwendung — er soll sie ausbauen, nicht ersetzen." },
+  { area: "Terminfindung", n: 11, detail: "Eine datenschutzfreundliche Doodle-Alternative auf Verbandsservern. Vorbilder werden schon genutzt: Nextcloud Polls und Dudle tauchen in den „Sonstiges“-Feldern auf." },
+  { area: "Fördergelder", n: 9, detail: "Hier geht es weniger um Technik als um Inhalte: eine zentrale Plattform mit Übersicht über Fördertöpfe, Fristen und Antragshilfen." },
+  { area: "Social Media / Beiträge", n: 10, detail: "Kleinere Nennungen: bereitgestellte Grafik-/Bildpools und Vorlagen für Social Media; bei den Mitgliedsbeiträgen ein bereitgestelltes Einzugs-Tool." },
+];
+
+const HOST_WHY = [
+  { m: "Datenschutz / DSGVO", n: 89, info: "Das dominierende Motiv: Server in Deutschland/EU, DSGVO-Konformität, Rechtssicherheit — besonders bei Mitglieder- und Gesundheitsdaten." },
+  { m: "Kosten / Lizenzen", n: 51, info: "Der Bund soll finanzieren oder Rahmenverträge schließen — 2020 liefen viele Leiterrunden über private Gratis-Accounts mit 40-Minuten-Limit." },
+  { m: "Einheitlichkeit über alle Ebenen", n: 44, info: "„Auf jeder Ebene unterschiedliche Tools“ — gewünscht ist eine Lösung, die Stamm, Bezirk, Diözese und Bund verbindet." },
+  { m: "„Wie NaMi“ als Vorbild", n: 9, info: "NaMi dient als Beweis, dass der Verband zentrale Anwendungen betreiben kann: „auf höherer Ebene eins anschaffen, wie NaMi“." },
+  { m: "Fehlendes IT-Know-how (explizit)", n: 8, info: "Selten ausgesprochen, oft mitgemeint: „Nicht jeder Stamm hat einen Informatiker in der Leiterrunde.“ Implizit steckt das Motiv in weit mehr Antworten." },
+];
+
+const HOST_NOTES = [
+  { t: "NaMi als Login für alles", d: "10 Antworten skizzieren eine Plattform-Vision: NaMi als Single-Sign-On — Cloud-Rechte direkt aus der Mitgliederstruktur, ein WordPress-Rundmail-Plugin mit NaMi-Anmeldung (das jemand nach eigener Aussage gerade selbst baut). Die Basis denkt NaMi als Identitätsdienst, nicht nur als Datenbank." },
+  { t: "Die Bistums-Realität als Treiber", d: "54 Antworten referenzieren Diözese oder Bistum — teils nutzt man deren Infrastruktur, teils leidet man darunter („veraltete Bistums-Cloud“, Zoom-Verbot per Bistums-Richtlinie). Der Ruf nach dem Bund ist oft ein Ruf nach ebenenübergreifender Konsistenz." },
+  { t: "Digitale Kluft zwischen Stämmen", d: "In den „Sonstiges“-Feldern tauchen eigene Server, Synology-NAS und FTP-Lösungen auf: IT-affine Stämme hosten längst selbst. Eine Antwort benennt die Lücke direkt: „Nicht jeder Stamm ist digital fit. Hier könnte ein echter Mehrwert entstehen.“" },
+  { t: "Kaum Widerstand — aber eine Vertrauensfrage", d: "Nur 7 von 1.979 Antworten gehen in Richtung „nicht nötig“ oder „dezentral lassen“. Das Risiko ist nicht Ablehnung, sondern Betrieb: Die Erfahrung mit dem WordPress-Template (unbeantwortete Support-Mails) zeigt — wer hostet, muss auch pflegen." },
+];
+
+/* Segment-Analyse: IT-Enthusiasten vs. Rest (nur Stammesebene).
+   Tech-Signal = mind. eines von: Nextcloud/ownCloud, Jitsi/BBB, eigener
+   Server/NAS, selbstgebaute Website / technisches CMS, Tech-Vokabular im
+   Freitext (API, Schnittstelle, Open Source, SSO, …).
+   Basis: 1.046 Stammes-Antworten, die die Tool-Fragen erreicht haben. */
+
+const SEG_USAGE = [
+  { k: "Cloud-Speicher", a: 83, b: 58, circ: true },
+  { k: "Videokonferenzen", a: 90, b: 72, circ: true },
+  { k: "Finanz-Tools", a: 41, b: 34, circ: false },
+  { k: "Mitgliederverwaltungs-Tool", a: 25, b: 14, circ: false },
+  { k: "Anmeldetool für Aktionen", a: 18, b: 9, circ: false },
+  { k: "Materialverwaltung", a: 12, b: 8, circ: false },
+];
+
+const SEG_STICKY = [
+  { k: "WhatsApp", a: 85, b: 90 },
+  { k: "Doodle (unter Terminfindern)", a: 89, b: 94 },
+  { k: "Zoom (unter VK-Nutzern)", a: 52, b: 63 },
+  { k: "Signal + Threema", a: 13, b: 8 },
+  { k: "Telegram", a: 16, b: 7 },
+  { k: "Slack", a: 9, b: 4 },
+];
+
+const SEG_WISH_DIFF = [
+  { k: "Mitgliedsbeiträge", d: 0.28, ma: 3.29, mb: 3.02 },
+  { k: "Videokonferenz-Tool", d: 0.26, ma: 2.73, mb: 2.47 },
+  { k: "Kassenverwaltung", d: 0.23, ma: 3.31, mb: 3.08 },
+  { k: "Mitgliederverwaltung", d: 0.17, ma: 3.63, mb: 3.46 },
+  { k: "Kommunikations-Tool", d: 0.16, ma: 2.89, mb: 2.73 },
+  { k: "Fördergelder", d: 0.03, ma: 3.36, mb: 3.33 },
+  { k: "Cloud-Speicher", d: 0.03, ma: 3.1, mb: 3.07 },
+  { k: "Terminfindung", d: 0.01, ma: 2.21, mb: 2.2 },
+  { k: "Stammes-Website", d: -0.12, ma: 2.46, mb: 2.58 },
+  { k: "Social-Media-Kanäle", d: -0.13, ma: 2.17, mb: 2.3 },
+];
+
+const SEG_FACTS = [
+  { t: "Die Freitexte sind ihr Sprachrohr", d: "Techies schreiben häufiger überhaupt etwas (85 vs. 80 %), deutlich länger (Ø ~450 vs. ~300 Zeichen), nennen doppelt so oft das Hosting-Motiv (22–24 vs. 11–13 %) und öfter NaMi (30 vs. 20 %). Der Hosting-Deep-Dive ist überproportional ihre Stimme — die Skalen zeigen aber: Die Bedürfnisse dahinter teilen beide Gruppen." },
+  { t: "Es sind oft die Vorstände selbst", d: "Die Tech-Gruppe ist minimal jünger (Ø 24,5 vs. 25,5 Jahre) und häufiger in der Öffentlichkeitsarbeit (32 vs. 23 %) — aber auch häufiger StaVo (43 vs. 33 %). Es sind also nicht nur „die Website-Leute“, sondern oft die Stammesleitung. Und sie füllen die Umfrage disziplinierter aus (92 vs. 83 % komplett)." },
+  { t: "Kein „Wir brauchen nichts“-Reflex", d: "Die Selbermacher wollen nicht weniger vom Bund — sie wollen gezielter: mehr Unterstützung bei Verwaltung und Videokonferenz, weniger bei Website und Social Media (das können sie selbst). Die Prioritäten-Rangfolge ist in beiden Gruppen fast identisch." },
+  { t: "Grenzen der Analyse", d: "Die Gruppen sind ein Proxy: Wer Nextcloud von der Diözese gestellt bekommt, landet fälschlich im Tech-Lager; Cloud- und VK-Nutzung sind teils definitionsbedingt erhöht (im Chart markiert). Und die Umfrage hat Selbstselektions-Bias — die wahre Kluft im Verband dürfte eher größer sein als die hier gemessene." },
+];
+
+const LIKERT = ["#8A9B84", "#B7C4A9", "#E3DDC4", "#E0B25C", "#B93A28"];
+
+/* ------------------------------------------------------------------ */
+/*  Bausteine                                                          */
+/* ------------------------------------------------------------------ */
+
+const fmtDec = (x) => x.toFixed(2).replace(".", ",");
+
+function cardHead(eyebrow, title, sub) {
+  return `<div class="card-head">
+    ${eyebrow ? `<div class="eyebrow">${eyebrow}</div>` : ""}
+    <div class="card-title">${title}</div>
+    ${sub ? `<div class="card-sub">${sub}</div>` : ""}
+  </div>`;
+}
+
+function hbar({ label, value, max, base, pct, color = "moss", height = 18 }) {
+  const w = max > 0 ? Math.max(1.2, (value / max) * 100) : 0;
+  const p = base > 0 ? Math.round((value / base) * 100) : null;
+  const num = pct && p !== null ? `${p} % <span class="dim">· ${value}</span>` : value;
+  return `<div class="lbl">${label}</div>
+    <div class="track" style="height:${height}px"><div class="fill ${color}" style="width:${w}%"></div></div>
+    <div class="num">${num}</div>`;
+}
+
+function pennant(text, variant = "") {
+  return `<span class="pennant ${variant}">${text}</span>`;
+}
+
+function chips(options, value, action, variant = "") {
+  return `<div class="chips ${variant}">${options.map((o) =>
+    `<button class="chip${o === value ? " active" : ""}" data-action="${action}" data-value="${o}">${o}</button>`
+  ).join("")}</div>`;
+}
+
+function toggle(on, action, labels = ["%", "Anzahl"]) {
+  return `<div class="toggle">${[true, false].map((v, i) =>
+    `<button class="${on === v ? "active" : ""}" data-action="${action}" data-value="${v ? "1" : "0"}">${labels[i]}</button>`
+  ).join("")}</div>`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Tabs                                                               */
+/* ------------------------------------------------------------------ */
+
+function viewUeberblick() {
+  const maxL = Math.max(...LEVELS.map((l) => l.n));
+  const maxA = Math.max(...AGES.map((a) => a.n));
+  const maxR = Math.max(...ROLES.map((r) => r.n));
+  const kpi = [
+    { v: "1.795", l: "Teilnahmen gesamt" },
+    { v: "1.132", l: "vollständig (63 %)" },
+    { v: "34 Tage", l: "8. Okt – 10. Nov 2020" },
+    { v: "1.280", l: "Antworten von Stämmen" },
+  ];
+  return `<div class="stack">
+    <div class="grid grid-150">
+      ${kpi.map((k) => `<div class="card" style="padding:14px 16px">
+        <div class="stat" style="font-size:30px">${k.v}</div>
+        <div class="stat-l" style="font-size:12.5px">${k.l}</div>
+      </div>`).join("")}
+    </div>
+
+    <div class="card">
+      ${cardHead("Rücklauf", "Wann wurde geantwortet?", "Eingänge pro Tag — der Aufruf zündete sofort: 625 Antworten in den ersten 48 Stunden. Mitten in der zweiten Corona-Welle.")}
+      <div class="chart-wrap" id="timeline"></div>
+    </div>
+
+    <div class="grid grid-280">
+      <div class="card">
+        ${cardHead("Wer hat geantwortet?", "Nach DPSG-Ebene", "Die Basis dominiert: 71 % der Antworten kommen aus den Stämmen.")}
+        <div class="hbars">${LEVELS.map((l) => hbar({ label: l.name, value: l.n, max: maxL, base: 1795, pct: true, color: l.name === "Stamm" ? "pine" : "moss" })).join("")}</div>
+      </div>
+      <div class="card">
+        ${cardHead("Wer hat geantwortet?", "Altersgruppen", "Junges Leitungs-Ehrenamt: über die Hälfte ist zwischen 20 und 29. (n = 1.099, gerundete Angaben)")}
+        <div class="hbars">${AGES.map((a) => hbar({ label: a.g, value: a.n, max: maxA, base: 1099, pct: true, color: a.g === "20–29" ? "ochre" : "moss" })).join("")}</div>
+      </div>
+      <div class="card">
+        ${cardHead("Wer hat geantwortet?", "Rollen im Stamm", "Mehrfachnennung möglich — vor allem Vorstände und Öffentlichkeitsarbeit.")}
+        <div class="hbars">${ROLES.map((r) => hbar({ label: r.r, value: r.n, max: maxR, base: 1280, pct: true })).join("")}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function viewKernbefunde() {
+  return `<div class="grid grid-300">
+    ${FINDINGS.map((f, i) => `<div class="card" style="display:flex;flex-direction:column;gap:8px">
+      <div>${pennant(f.tag, i % 2 ? "pine" : "")}</div>
+      <div style="font-family:var(--font-head);font-weight:600;font-size:20px;color:var(--pine);line-height:1.15">${f.title}</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="stat" style="font-size:34px;color:var(--red)">${f.stat}</span>
+        <span style="font-size:12px;color:var(--faint);line-height:1.3">${f.statLabel}</span>
+      </div>
+      <div style="font-size:13.5px;color:var(--ink);line-height:1.5">${f.text}</div>
+    </div>`).join("")}
+  </div>`;
+}
+
+function viewToolNutzung() {
+  const { ebene, pct } = state.usage;
+  const data = USAGE[ebene];
+  const catNames = Object.keys(data.cats);
+  const activeCat = data.cats[state.usage.cat] ? state.usage.cat : catNames[0];
+  const catData = data.cats[activeCat];
+  const maxT = Math.max(...catData.items.map(([, v]) => v));
+
+  return `<div class="stack">
+    <div class="card">
+      <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Ebene wählen</div>
+          ${chips(["Stamm", "Bezirk", "Diözese"], ebene, "usage-ebene")}
+        </div>
+        <div style="text-align:right">
+          <div class="stat" style="font-size:26px">${data.n}</div>
+          <div class="stat-l">Antworten dieser Ebene</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      ${cardHead("Verbreitung", `Was ist auf ${ebene}-Ebene im Einsatz?`, "Ja-Anteil unter denen, die die jeweilige Frage beantwortet haben.")}
+      ${data.adoption.map((a) => {
+        const p = Math.round((a.yes / a.base) * 100);
+        const color = p >= 60 ? "pine" : p >= 30 ? "ochre" : "red";
+        return `<div class="adopt-row">
+          <div class="lbl">${a.k}</div>
+          <div class="track" style="height:20px"><div class="fill ${color}" style="width:${p}%"></div></div>
+          <div class="num">${p} % <span class="dim">(${a.yes}/${a.base})</span></div>
+        </div>`;
+      }).join("")}
+      <div style="font-size:11.5px;color:var(--faint);margin-top:6px">
+        Farbcode: <span style="color:var(--pine);font-weight:600">etabliert (≥60 %)</span> · <span style="color:var(--ochre);font-weight:600">teilweise</span> · <span style="color:var(--red);font-weight:600">Nische (&lt;30 %)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Kategorie</div>
+          ${chips(catNames, activeCat, "usage-cat", "moss")}
+        </div>
+        ${toggle(pct, "usage-pct")}
+      </div>
+      ${cardHead(null, `${activeCat} · ${ebene}`, `${catData.note} — Mehrfachauswahl möglich.`)}
+      <div class="hbars">${catData.items.map(([label, v]) => hbar({ label, value: v, max: maxT, base: catData.base, pct, color: v === maxT ? "red" : "moss" })).join("")}</div>
+    </div>
+  </div>`;
+}
+
+function viewUnterstuetzung() {
+  const { ebene } = state.support;
+  const rows = SUPPORT[ebene];
+  const sel = rows.find((r) => r.area === state.support.sel) || rows[0];
+  const distMax = Math.max(...sel.dist);
+  const total = sel.dist.reduce((a, b) => a + b, 0);
+
+  return `<div class="stack">
+    <div class="card">
+      <div class="eyebrow" style="margin-bottom:6px">Perspektive</div>
+      ${chips(["Stamm", "Bezirk", "Diözese", "Bundesebene"], ebene, "support-ebene")}
+      <div style="font-size:12.5px;color:var(--faint);margin-top:8px">
+        Frage: „In welchem Bereich würdest du dir Unterstützung durch die Bundesebene wünschen?" — Skala 1 (keine nötig) bis 5 (erwünscht). Zeile antippen für die Detailverteilung.
+      </div>
+    </div>
+
+    <div class="grid grid-320">
+      <div class="card">
+        ${cardHead("Rangliste", `Wo drückt der Schuh? (${ebene})`, "Mittelwert der Skala 1–5, absteigend sortiert.")}
+        ${rows.map((r) => {
+          const active = sel.area === r.area;
+          const color = r.mean >= 3.5 ? "red" : r.mean >= 3 ? "ochre" : "moss";
+          return `<div class="sel-row rank-row${active ? " active" : ""}" role="button" tabindex="0" data-action="support-sel" data-value="${r.area}">
+            <div style="font-size:13px;text-align:right;color:var(--ink);font-weight:${active ? 600 : 400}">${r.area}</div>
+            <div class="track" style="height:16px"><div class="fill ${color}" style="width:${((r.mean - 1) / 4) * 100}%;transition:none"></div></div>
+            <div class="num" style="font-size:12.5px;font-weight:600">${fmtDec(r.mean)}</div>
+          </div>`;
+        }).join("")}
+      </div>
+
+      <div class="card">
+        ${cardHead("Detail", sel.area, `${ebene} · n = ${sel.n} Antworten`)}
+        <div style="display:flex;gap:18px;margin-bottom:14px">
+          <div>
+            <div class="stat" style="font-size:32px">${fmtDec(sel.mean)}</div>
+            <div style="font-size:11.5px;color:var(--faint)">Mittelwert (1–5)</div>
+          </div>
+          <div>
+            <div class="stat" style="font-size:32px;color:var(--red)">${String(sel.top2).replace(".", ",")} %</div>
+            <div style="font-size:11.5px;color:var(--faint)">antworten 4 oder 5 („Unterstützung erwünscht“)</div>
+          </div>
+        </div>
+        <div style="display:flex;height:34px;border-radius:6px;overflow:hidden;border:1px solid var(--line)">
+          ${sel.dist.map((v, i) => {
+            const w = (v / total) * 100;
+            return w > 0 ? `<div title="Stufe ${i + 1}: ${v}" style="width:${w}%;background:${LIKERT[i]};display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:${i >= 3 ? "#FBFBF5" : "var(--ink)"}">${w > 7 ? Math.round(w) + "%" : ""}</div>` : "";
+          }).join("")}
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--faint);margin-top:5px">
+          <span>1 · keine Unterstützung nötig</span><span>5 · Unterstützung erwünscht</span>
+        </div>
+        <div style="margin-top:14px;display:grid;gap:5px">
+          ${sel.dist.map((v, i) => `<div style="display:grid;grid-template-columns:56px 1fr 44px;gap:8px;align-items:center">
+            <div style="font-family:var(--font-mono);font-size:11.5px;color:var(--faint)">Stufe ${i + 1}</div>
+            <div class="track" style="height:12px;border-radius:3px"><div class="fill" style="width:${(v / distMax) * 100}%;background:${LIKERT[i]};border-radius:3px;transition:none"></div></div>
+            <div style="font-family:var(--font-mono);font-size:11.5px;color:var(--pine)">${v}</div>
+          </div>`).join("")}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function hostDive() {
+  const sel = HOST_AREAS.find((a) => a.area === state.hostSel) || HOST_AREAS[0];
+  const max = HOST_AREAS[0].n;
+  return `<div class="grid grid-300" style="gap:16px">
+    <div>
+      <div class="eyebrow" style="margin-bottom:8px">Was gehostet werden soll · Nennungen</div>
+      ${HOST_AREAS.map((a) => {
+        const active = sel.area === a.area;
+        return `<div class="sel-row host-row${active ? " active" : ""}" role="button" tabindex="0" data-action="host-sel" data-value="${a.area}">
+          <div>
+            <div style="font-size:13px;color:var(--ink);font-weight:${active ? 600 : 400};margin-bottom:3px">${a.area}</div>
+            <div class="track" style="height:12px"><div class="fill ${active ? "red" : "moss"}" style="width:${(a.n / max) * 100}%;transition:background .2s"></div></div>
+          </div>
+          <div class="num" style="font-size:12.5px;font-weight:${active ? 600 : 400}">${a.n}</div>
+        </div>`;
+      }).join("")}
+    </div>
+    <div style="background:#F2F4E9;border:1px solid var(--line);border-radius:8px;padding:14px 16px;align-self:start">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:6px">
+        <div style="font-family:var(--font-head);font-weight:600;font-size:19px;color:var(--pine)">${sel.area}</div>
+        <div style="font-family:var(--font-mono);font-size:12px;color:var(--faint);white-space:nowrap">${sel.n} Nennungen</div>
+      </div>
+      <div style="font-size:13px;color:var(--ink);line-height:1.55">${sel.detail}</div>
+    </div>
+  </div>`;
+}
+
+function viewFreitext() {
+  const area = FT_AREAS.find((a) => a.area === state.ft.area) || FT_AREAS[0];
+  const maxHit = Math.max(...area.hits, 1);
+  const themed = FT_THEMES.map((th, i) => ({ ...th, v: area.hits[i] })).filter((x) => x.v > 0).sort((a, b) => b.v - a.v);
+  const maxHidden = Math.max(...FT_HIDDEN.map((h) => h.n));
+
+  return `<div class="stack">
+    <div class="card">
+      ${cardHead("Offene Antworten", "5.277 Freitextantworten — was zwischen den Skalen steht",
+        "Schlagwort-Zuordnung der offenen Felder („Wie sollte die Unterstützung aussehen?“, „Sonstiges“, „weitere Tools“). Mehrfachzuordnung möglich; Zahlen sind Näherungswerte der Stichwortsuche.")}
+      <div class="grid grid-150">
+        ${[["5.277", "Freitext-Angaben gesamt"], ["1.711", "Antworten „Wie sollte die Unterstützung aussehen?“ (Stammesebene)"], ["182", "NaMi-Nennungen allein bei Mitgliederverwaltung"], ["66", "Discord-Nennungen unter „Sonstiges“"]].map(([v, l]) =>
+          `<div><div class="stat" style="font-size:28px">${v}</div><div class="stat-l">${l}</div></div>`).join("")}
+      </div>
+    </div>
+
+    <div class="card accent-red">
+      <div style="margin-bottom:8px">${pennant("Befund Nr. 1")}</div>
+      <div style="font-family:var(--font-head);font-weight:600;font-size:22px;color:var(--pine);margin-bottom:6px">
+        Der Top-Unterstützungswunsch heißt in Wahrheit: „Macht NaMi besser“
+      </div>
+      <div style="font-size:13.5px;line-height:1.55;color:var(--ink);max-width:820px">
+        182 von 277 Freitexten zur Mitgliederverwaltung nennen explizit NaMi. Gewünscht wird kein neues Tool,
+        sondern die Modernisierung des bestehenden: <b>74 Antworten</b> kritisieren die Bedienung
+        („unübersichtlich“, „klobig“, nicht mobil nutzbar), <b>70 Antworten</b> fordern konkrete Funktionen —
+        schnellere Suche, einfacher Excel-Export, Schnittstellen/API, SEPA-Ausgabe, eigene Felder pro Stamm,
+        Anzeige des Zahlungsstatus. Auch bei den Mitgliedsbeiträgen drehen sich 36 von 148 Antworten um NaMi.
+        Zusammengenommen ist das eine fertige Produkt-Roadmap aus der Basis.
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+        <div>
+          <div class="eyebrow" style="margin-bottom:6px">Themen-Explorer · Wünsche der Stämme</div>
+          ${chips(FT_AREAS.map((a) => a.area), area.area, "ft-area", "moss")}
+        </div>
+        <div style="text-align:right">
+          <div class="stat" style="font-size:26px">${area.n}</div>
+          <div class="stat-l">Freitextantworten</div>
+        </div>
+      </div>
+      ${cardHead(null, `Worum geht es bei „${area.area}“?`, "Anteil der Antworten, in denen das jeweilige Motiv vorkommt.")}
+      <div style="display:grid;gap:14px">
+        ${themed.map(({ t, info, v }) => {
+          const p = Math.round((v / area.n) * 100);
+          const color = t === "NaMi erwähnt" ? "red" : t === "Datenschutz / DSGVO" ? "ochre" : "moss";
+          return `<div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:4px">
+              <div style="font-size:14px;font-weight:600;color:var(--pine)">${t}</div>
+              <div class="num" style="font-size:12.5px">${p} % <span class="dim">· ${v} von ${area.n}</span></div>
+            </div>
+            <div class="track" style="height:16px"><div class="fill ${color}" style="width:${Math.max(1.5, (v / maxHit) * 100)}%"></div></div>
+            <div style="font-size:12px;color:var(--faint);line-height:1.45;margin-top:4px">${info}</div>
+          </div>`;
+        }).join("")}
+      </div>
+      <div style="font-size:12.5px;color:var(--faint);margin-top:8px;line-height:1.5">
+        Muster über alle Bereiche: <b style="color:var(--ink)">Datenschutz/DSGVO</b> ist das häufigste Querschnittsmotiv
+        (dominant bei Cloud, Kommunikation, Videokonferenz), gefolgt vom Wunsch, dass der <b style="color:var(--ink)">Bund
+        Lösungen zentral hostet oder bereitstellt</b>. Nur bei Website (Vorlagen), Social Media (Schulungen) und
+        Fördergeldern (Übersicht über Töpfe) liegt der Fokus woanders.
+      </div>
+    </div>
+
+    <div class="card accent-pine">
+      <div style="margin-bottom:8px">${pennant("Deep-Dive", "pine")}</div>
+      <div style="font-family:var(--font-head);font-weight:600;font-size:22px;color:var(--pine);margin-bottom:6px">
+        „Der Bund soll das hosten“ — was genau, und warum?
+      </div>
+      <div style="font-size:13.5px;line-height:1.55;color:var(--ink);max-width:820px;margin-bottom:14px">
+        <b>281 von 1.979</b> Wunsch-Antworten (alle Ebenen, 14 %) fordern, dass der Bundesverband Lösungen selbst
+        betreibt oder fertig bereitstellt — nach Datenschutz das zweithäufigste Motiv überhaupt. Bereich antippen
+        für die Details.
+      </div>
+      ${hostDive()}
+    </div>
+
+    <div class="grid grid-300">
+      <div class="card">
+        ${cardHead("Deep-Dive · Motive", "Warum soll es der Bund machen?", "Anteil an den 281 Hosting-Antworten (Stichwort-Treffer, Mehrfachzuordnung möglich).")}
+        <div style="display:grid;gap:12px">
+          ${HOST_WHY.map((w) => `<div>
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:4px">
+              <div style="font-size:13.5px;font-weight:600;color:var(--pine)">${w.m}</div>
+              <div class="num">${Math.round((w.n / 281) * 100)} % <span class="dim">· ${w.n}</span></div>
+            </div>
+            <div class="track" style="height:14px"><div class="fill ${w.m.startsWith("Datenschutz") ? "ochre" : "moss"}" style="width:${(w.n / 89) * 100}%;transition:none"></div></div>
+            <div style="font-size:11.5px;color:var(--faint);line-height:1.45;margin-top:3px">${w.info}</div>
+          </div>`).join("")}
+        </div>
+      </div>
+
+      <div class="card">
+        ${cardHead("Deep-Dive · Randnotizen", "Was sonst noch drinsteckt", "Vier Beobachtungen aus den Hosting-Antworten und den angrenzenden Feldern.")}
+        <div style="display:grid;gap:12px">
+          ${HOST_NOTES.map((x) => `<div>
+            <div style="font-size:13.5px;font-weight:600;color:var(--pine);margin-bottom:2px">${x.t}</div>
+            <div style="font-size:12.5px;color:var(--ink);line-height:1.5">${x.d}</div>
+          </div>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-320">
+      <div class="card">
+        ${cardHead("Zwischen den Zeilen", "Versteckte Tools", "Was in „Sonstiges“ und den offenen Feldern steckt — und im Fragebogen fehlte.")}
+        ${FT_HIDDEN.map((h) => `<div style="margin-bottom:13px">
+          <div style="display:grid;grid-template-columns:130px 1fr 40px;gap:10px;align-items:center">
+            <div style="font-size:13.5px;font-weight:600;color:var(--pine);text-align:right">${h.tool}</div>
+            <div class="track" style="height:15px"><div class="fill ochre" style="width:${(h.n / maxHidden) * 100}%;transition:none"></div></div>
+            <div class="num">${h.n}</div>
+          </div>
+          <div style="font-size:11.5px;color:var(--faint);margin-left:140px;line-height:1.4;margin-top:2px">
+            <span style="font-family:var(--font-mono)">${h.where}</span> — ${h.note}
+          </div>
+        </div>`).join("")}
+      </div>
+
+      <div class="card">
+        ${cardHead("Konkrete Produktwünsche", "Was die Basis dem Bund aufschreibt", "Verdichtet aus den offenen Antworten — je öfter unabhängig genannt, desto weiter oben.")}
+        <div style="display:grid;gap:10px">
+          ${FT_WISHES.map((w, i) => `<div style="display:grid;grid-template-columns:26px 1fr;gap:10px">
+            <div style="font-family:var(--font-head);font-weight:700;font-size:18px;color:${i < 2 ? "var(--red)" : "var(--moss)"}">${i + 1}</div>
+            <div>
+              <div style="font-size:14px;font-weight:600;color:var(--pine)">${w.title}</div>
+              <div style="font-size:12.5px;color:var(--ink);line-height:1.45">${w.desc}</div>
+            </div>
+          </div>`).join("")}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function pairRow({ k, a, b, circ }) {
+  return `<div style="margin-bottom:12px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:4px">
+      <div style="font-size:13.5px;font-weight:600;color:var(--pine)">${k}${circ ? '<span title="teils definitionsbedingt" style="font-family:var(--font-mono);font-size:10px;color:var(--faint);font-weight:400"> *</span>' : ""}</div>
+      <div style="font-family:var(--font-mono);font-size:12px;white-space:nowrap">
+        <span style="color:var(--pine);font-weight:600">${a} %</span>
+        <span class="dim"> vs. </span>
+        <span style="color:#8A6210;font-weight:600">${b} %</span>
+      </div>
+    </div>
+    <div style="display:grid;gap:3px">
+      <div class="track" style="height:11px;border-radius:3px"><div class="fill pine" style="width:${a}%;border-radius:3px;transition:none"></div></div>
+      <div class="track" style="height:11px;border-radius:3px"><div class="fill ochre" style="width:${b}%;border-radius:3px;transition:none"></div></div>
+    </div>
+  </div>`;
+}
+
+function segLegend() {
+  return `<div style="display:flex;gap:16px;font-size:12px;color:var(--ink);margin-bottom:12px">
+    <span><span style="display:inline-block;width:11px;height:11px;background:var(--pine);border-radius:2px;margin-right:5px"></span>IT-Enthusiasten (399)</span>
+    <span><span style="display:inline-block;width:11px;height:11px;background:var(--ochre);border-radius:2px;margin-right:5px"></span>Übrige Stämme (647)</span>
+  </div>`;
+}
+
+function viewSegment() {
+  const maxD = 0.3;
+  return `<div class="stack">
+    <div class="card">
+      ${cardHead("Segment-Analyse · Stammesebene", "IT-Enthusiasten vs. der Rest — zwei Gruppen, ein Wunschzettel",
+        "Da die Umfrage keine IT-Kompetenz abfragt, wurden die Gruppen über Verhaltens-Signale gebildet.")}
+      <div class="grid grid-160" style="margin-bottom:12px">
+        ${[["38 %", "der Stämme zeigen mind. ein Tech-Signal (399 von 1.046)"], ["±0,3", "max. Unterschied bei den Unterstützungswünschen — die Prioritäten sind fast identisch"], ["85 %", "WhatsApp-Quote sogar bei den Techies"], ["2×", "so oft fordern Techies im Freitext, dass der Bund hostet"]].map(([v, l]) =>
+          `<div><div class="stat" style="font-size:28px">${v}</div><div class="stat-l">${l}</div></div>`).join("")}
+      </div>
+      <div style="font-size:12.5px;color:var(--faint);line-height:1.5">
+        <b style="color:var(--ink)">Tech-Signal</b> = mindestens eines von: Nextcloud/ownCloud statt Dropbox, Jitsi oder BigBlueButton,
+        eigener Server/NAS, selbstgebaute Website bzw. technisches CMS, oder Tech-Vokabular im Freitext (API, Schnittstelle,
+        Open Source, SSO …). Ein Robustheitscheck nur mit dem Tool-Stack (ohne Freitext-Vokabular) liefert nahezu identische Muster.
+      </div>
+    </div>
+
+    <div class="grid grid-300">
+      <div class="card">
+        ${cardHead("Befund 1", "Die digitale Kluft ist messbar", "Nutzungsquoten im Vergleich. Techies liegen überall vorn — auch in Kategorien, die nichts mit der Gruppendefinition zu tun haben.")}
+        ${segLegend()}
+        ${SEG_USAGE.map(pairRow).join("")}
+        <div style="font-size:11px;color:var(--faint)">* teils definitionsbedingt erhöht (Nextcloud/Jitsi zählen als Tech-Signal). Die übrigen Kategorien sind unabhängig vom Score — die Lücke dort ist echt.</div>
+      </div>
+
+      <div class="card">
+        ${cardHead("Befund 2", "WhatsApp &amp; Doodle kriegen auch Techies nicht weg", "Netzwerkeffekt schlägt Überzeugung: Wo Eltern und ganze Leiterrunden mitmüssen, nutzen auch die Enthusiasten den Standard.")}
+        ${segLegend()}
+        ${SEG_STICKY.map(pairRow).join("")}
+        <div style="font-size:11.5px;color:var(--faint);line-height:1.45">
+          Nur bei frei wählbaren Tools trennt es sich: Techies weichen von Zoom auf Jitsi/BBB aus und nutzen mehr
+          Telegram, Slack, Signal &amp; Threema — aber selbst dort bleiben die Alternativen Minderheitenprogramm.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      ${cardHead("Befund 3", "Wo sich die Wünsche unterscheiden — und wo nicht",
+        "Differenz der Mittelwerte (Techies minus Rest) auf der 1–5-Wunschskala. Rechts: Techies wollen mehr Unterstützung, links: weniger.")}
+      <div style="display:grid;gap:7px">
+        ${SEG_WISH_DIFF.map((r) => {
+          const pos = r.d >= 0;
+          const w = (Math.abs(r.d) / maxD) * 50;
+          return `<div style="display:grid;grid-template-columns:180px 1fr 118px;gap:10px;align-items:center">
+            <div style="font-size:13px;text-align:right;color:var(--ink)">${r.k}</div>
+            <div class="div-track">
+              <div class="div-mid"></div>
+              <div class="div-fill" style="background:var(${pos ? "--pine" : "--ochre"});left:${pos ? "50%" : (50 - w) + "%"};width:${Math.max(w, 0.8)}%"></div>
+            </div>
+            <div class="num" style="font-size:11.5px">${(r.d >= 0 ? "+" : "−") + fmtDec(Math.abs(r.d))} <span class="dim">(${fmtDec(r.ma)} vs. ${fmtDec(r.mb)})</span></div>
+          </div>`;
+        }).join("")}
+      </div>
+      <div style="font-size:12.5px;color:var(--faint);margin-top:10px;line-height:1.5">
+        Lesart: Wer tiefer im System steckt, sieht die <b style="color:var(--ink)">Verwaltungs-Baustellen</b> (Beiträge, Kasse,
+        Mitgliederverwaltung — sprich: NaMi) umso deutlicher. Website und Social Media können die Techies selbst — dort sinkt
+        der Wunsch. Alle Unterschiede sind klein: kein Lagerkampf, sondern dieselbe Liste mit anderer Schärfe.
+      </div>
+    </div>
+
+    <div class="grid grid-300">
+      ${SEG_FACTS.map((x) => `<div class="card">
+        <div style="font-size:14px;font-weight:600;color:var(--pine);margin-bottom:4px">${x.t}</div>
+        <div style="font-size:12.5px;color:var(--ink);line-height:1.5">${x.d}</div>
+      </div>`).join("")}
+    </div>
+  </div>`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Rücklauf-Chart (SVG, Ersatz für recharts)                          */
+/* ------------------------------------------------------------------ */
+
+function smoothPath(pts, yMin, yMax) {
+  const cl = (v) => Math.max(yMin, Math.min(yMax, v));
+  const r1 = (v) => Math.round(v * 10) / 10;
+  let d = `M${r1(pts[0][0])},${r1(pts[0][1])}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+    d += ` C${r1(p1[0] + (p2[0] - p0[0]) / 6)},${r1(cl(p1[1] + (p2[1] - p0[1]) / 6))} ${r1(p2[0] - (p3[0] - p1[0]) / 6)},${r1(cl(p2[1] - (p3[1] - p1[1]) / 6))} ${r1(p2[0])},${r1(p2[1])}`;
+  }
+  return d;
+}
+
+function drawTimeline() {
+  const wrap = document.getElementById("timeline");
+  if (!wrap) return;
+  const W = wrap.clientWidth, H = wrap.clientHeight;
+  const m = { top: 5, right: 10, bottom: 20, left: 34 };
+  const iw = W - m.left - m.right, ih = H - m.top - m.bottom;
+  const maxY = 400;
+  const px = (i) => m.left + (i / (TIMELINE.length - 1)) * iw;
+  const py = (v) => m.top + ih - (v / maxY) * ih;
+  const pts = TIMELINE.map((t, i) => [px(i), py(t.n)]);
+
+  const grid = [100, 200, 300, 400].map((v) =>
+    `<line x1="${m.left}" x2="${W - m.right}" y1="${py(v)}" y2="${py(v)}" stroke="var(--line)" stroke-dasharray="2 4"/>`).join("");
+  const yLabels = [0, 100, 200, 300, 400].map((v) =>
+    `<text x="${m.left - 6}" y="${py(v) + 3}" text-anchor="end" font-size="10" fill="var(--faint)">${v}</text>`).join("");
+  const xLabels = TIMELINE.map((t, i) => i % 5 === 0 ?
+    `<text x="${px(i)}" y="${H - 4}" text-anchor="middle" font-size="10" fill="var(--faint)">${t.d}</text>` : "").join("");
+  const line = smoothPath(pts, m.top, m.top + ih);
+  const area = `${line} L${pts[pts.length - 1][0]},${py(0)} L${pts[0][0]},${py(0)} Z`;
+
+  wrap.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Eingänge pro Tag, 8. Oktober bis 10. November 2020">
+    <defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4E7A5A" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#4E7A5A" stop-opacity="0.05"/>
+    </linearGradient></defs>
+    ${grid}
+    <line x1="${m.left}" x2="${W - m.right}" y1="${py(0)}" y2="${py(0)}" stroke="var(--line)"/>
+    ${yLabels}${xLabels}
+    <path d="${area}" fill="url(#areaGrad)"/>
+    <path d="${line}" fill="none" stroke="#1E3A2F" stroke-width="2"/>
+    <line data-hover-line y1="${m.top}" y2="${m.top + ih}" stroke="var(--faint)" stroke-dasharray="3 3" visibility="hidden"/>
+    <circle data-hover-dot r="3.5" fill="#1E3A2F" visibility="hidden"/>
+  </svg><div class="chart-tip"></div>`;
+
+  const svg = wrap.querySelector("svg");
+  const tip = wrap.querySelector(".chart-tip");
+  const dot = svg.querySelector("[data-hover-dot]");
+  const hov = svg.querySelector("[data-hover-line]");
+  svg.addEventListener("mousemove", (e) => {
+    const r = svg.getBoundingClientRect();
+    let i = Math.round((e.clientX - r.left - m.left) / (iw / (TIMELINE.length - 1)));
+    i = Math.max(0, Math.min(TIMELINE.length - 1, i));
+    const [cx, cy] = pts[i];
+    dot.setAttribute("cx", cx); dot.setAttribute("cy", cy);
+    hov.setAttribute("x1", cx); hov.setAttribute("x2", cx);
+    dot.setAttribute("visibility", "visible"); hov.setAttribute("visibility", "visible");
+    tip.innerHTML = `<b>${TIMELINE[i].d}</b> ${TIMELINE[i].n} Antworten`;
+    tip.style.display = "block";
+    tip.style.left = Math.min(cx + 10, W - tip.offsetWidth - 4) + "px";
+    tip.style.top = Math.max(0, cy - 34) + "px";
+  });
+  svg.addEventListener("mouseleave", () => {
+    tip.style.display = "none";
+    dot.setAttribute("visibility", "hidden"); hov.setAttribute("visibility", "hidden");
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/*  App-State & Rendering                                              */
+/* ------------------------------------------------------------------ */
+
+const state = {
+  tab: "Kernbefunde",
+  usage: { ebene: "Stamm", pct: true, cat: null },
+  support: { ebene: "Stamm", sel: null },
+  ft: { area: "Mitgliederverwaltung" },
+  hostSel: "Cloud",
+};
+
+const VIEWS = {
+  "Überblick": viewUeberblick,
+  "Kernbefunde": viewKernbefunde,
+  "Tool-Nutzung": viewToolNutzung,
+  "Unterstützungswünsche": viewUnterstuetzung,
+  "Freitext-Analyse": viewFreitext,
+  "Techies vs. Rest": viewSegment,
+};
+
+function render() {
+  document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("active", b.dataset.value === state.tab));
+  document.getElementById("view").innerHTML = VIEWS[state.tab]();
+  if (state.tab === "Überblick") drawTimeline();
+}
+
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-action]");
+  if (!el) return;
+  const v = el.dataset.value;
+  switch (el.dataset.action) {
+    case "tab": state.tab = v; break;
+    case "usage-ebene": state.usage.ebene = v; break;
+    case "usage-cat": state.usage.cat = v; break;
+    case "usage-pct": state.usage.pct = v === "1"; break;
+    case "support-ebene": state.support.ebene = v; state.support.sel = null; break;
+    case "support-sel": state.support.sel = v; break;
+    case "ft-area": state.ft.area = v; break;
+    case "host-sel": state.hostSel = v; break;
+    default: return;
+  }
+  render();
+});
+document.addEventListener("keydown", (e) => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.matches('[data-action][role="button"]')) {
+    e.preventDefault();
+    e.target.click();
+  }
+});
+
+let resizeRaf;
+window.addEventListener("resize", () => {
+  cancelAnimationFrame(resizeRaf);
+  resizeRaf = requestAnimationFrame(() => { if (state.tab === "Überblick") drawTimeline(); });
+});
+
+render();
+</script>
+</body>
+</html>
