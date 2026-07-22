@@ -1098,7 +1098,6 @@
       { title: 'Gesundheit', highlightOn: ['Erläuterung Gesundheitsinfos'], fields: [
         ['Gesundheitsinfos', 'Gesundheitsinfos', { highlight: true, highlightIf: v => !isNoneEntry(v) && !isFalse(v) }],
         ['Erläuterung', 'Erläuterung Gesundheitsinfos', { highlight: true, highlightIf: v => !isNoneEntry(v) }],
-        ['Erfassung erlaubt', 'Erfassung gesundheitsbezogener Daten', { bool: true }],
       ]},
       { title: 'Medikamente', highlightOn: ['Einzunehmende Medikamente'], fields: [
         ['Einzunehmende Medikamente', 'Einzunehmende Medikamente', { highlight: true, highlightIf: v => !isNoneEntry(v) }],
@@ -1246,7 +1245,7 @@
     function cell(text, className) {
       const s = (text || '').toString().trim();
       if (!s) return `<td${className ? ` class="${className}"` : ''}><span class="empty">—</span></td>`;
-      return `<td${className ? ` class="${className}"` : ''}>${escapeHtml(s)}</td>`;
+      return `<td${className ? ` class="${className}"` : ''}>${escapeHtml(s).replace(/\n/g, '<br>')}</td>`;
     }
 
     function consentCell(value) {
@@ -1320,9 +1319,20 @@
       const rows = filtered.map(p => {
         // Blank out "-"/"keine" placeholders so cells render as empty.
         const clean = c => { const v = val(p, c); return isNoneEntry(v) ? '' : v; };
-        const health = clean('Erläuterung Gesundheitsinfos');
-        const meds = clean('Einzunehmende Medikamente');
+        // Skip a bare Ja/Nein in Gesundheitsinfos — no info beyond the Erläuterung.
+        const info = clean('Gesundheitsinfos');
+        const health = [
+          isTrue(info) || isFalse(info) ? '' : info,
+          clean('Erläuterung Gesundheitsinfos'),
+        ].filter(Boolean).join('\n');
         const medsRelevant = hasMedication(p);
+        const medsLines = [clean('Einzunehmende Medikamente')];
+        if (medsRelevant) {
+          const selbst = val(p, 'Mein/Unser Kind darf diese Medikamente selbstständig einnehmen');
+          if (selbst) medsLines.push(`Selbstständige Einnahme: ${boolLabel(selbst)}`);
+          if (isTrue(val(p, 'Medikamente BTM'))) medsLines.push('BTM: Ja');
+        }
+        const meds = medsLines.filter(Boolean).join('\n');
         const swim = swimmerLabel(p);
         const nonSwim = isNonSwimmer(p);
         return `<tr>
