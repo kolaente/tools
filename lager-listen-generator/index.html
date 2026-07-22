@@ -1090,9 +1090,9 @@
         ['Unverträglichkeiten', 'Unverträglichkeiten', { highlight: true }],
       ]},
       { title: 'Gesundheit', highlightOn: ['Erläuterung Gesundheitsinfos'], fields: [
-        ['Gesundheitsinfos vorhanden', 'Gesundheitsinfos', { bool: true }],
-        ['Erfassung erlaubt', 'Erfassung gesundheitsbezogener Daten', { bool: true }],
+        ['Gesundheitsinfos', 'Gesundheitsinfos', { bool: true, highlight: true, highlightIf: isTrue }],
         ['Erläuterung', 'Erläuterung Gesundheitsinfos', { highlight: true }],
+        ['Erfassung erlaubt', 'Erfassung gesundheitsbezogener Daten', { bool: true }],
       ]},
       { title: 'Medikamente', highlightOn: ['Einzunehmende Medikamente'], fields: [
         ['Einzunehmende Medikamente', 'Einzunehmende Medikamente', { highlight: true, highlightIf: v => v && !/^keine\.?$/i.test(v) }],
@@ -1110,10 +1110,7 @@
         ['Zeckenziehen', 'Einwilligung Zeckenziehen', { bool: true }],
       ]},
       { title: 'Zahlung & Lager-Infos', fields: [
-        ['Zahlungsart', 'Zahlungsart'],
         ['Zuschuss', 'Zuschuss'],
-        ['Begründung Sozialermäßigung', 'Bei Sozialermäßigung einmal eine kurze Begründung'],
-        ['Interesse Infoabend', 'Interesse Infoabend', { bool: true }],
         ['Deutschlandticket', 'Deutschlandticket', { bool: true }],
         ['Notizen', 'Notizen'],
       ]},
