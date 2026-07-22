@@ -1088,8 +1088,8 @@
         ['Telefon', 'Telefonnummer des Hausarztes'],
       ]},
       { title: 'Impfungen', fields: [
-        ['Tetanus (zuletzt)', 'Tetanus Impfung'],
-        ['FSME / Zecken (zuletzt)', 'FSME Impfung (Zecken)'],
+        ['Tetanus (zuletzt)', 'Tetanus Impfung', { zeroIsNever: true, highlight: true, highlightIf: v => /^0+$/.test(v) }],
+        ['FSME / Zecken (zuletzt)', 'FSME Impfung (Zecken)', { zeroIsNever: true, highlight: true, highlightIf: v => /^0+$/.test(v) }],
       ]},
       { title: 'Ernährung & Unverträglichkeiten', highlightOn: ['Unverträglichkeiten'], fields: [
         ['Ernährung', 'Ernährung'],
@@ -1127,6 +1127,7 @@
     function renderValue(value, opts) {
       const s = (value == null ? '' : String(value)).trim();
       if (!s) return '<span class="empty">—</span>';
+      if (opts && opts.zeroIsNever && /^0+$/.test(s)) return '<em>Keine</em>';
       if (opts && opts.bool) {
         if (isTrue(s)) return 'Ja';
         if (isFalse(s)) return 'Nein';
