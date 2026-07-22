@@ -1096,8 +1096,10 @@
       ]},
       { title: 'Medikamente', highlightOn: ['Einzunehmende Medikamente'], fields: [
         ['Einzunehmende Medikamente', 'Einzunehmende Medikamente', { highlight: true, highlightIf: v => v && !/^keine\.?$/i.test(v) }],
-        ['Selbstständige Einnahme', 'Mein/Unser Kind darf diese Medikamente selbstständig einnehmen', { bool: true }],
-        ['BTM', 'Medikamente BTM', { bool: true }],
+        // Ja/Nein here is meaningless without meds — show only then, or on a
+        // contradictory TRUE.
+        ['Selbstständige Einnahme', 'Mein/Unser Kind darf diese Medikamente selbstständig einnehmen', { bool: true, showIf: (v, p) => hasMedication(p) || isTrue(v) }],
+        ['BTM', 'Medikamente BTM', { bool: true, showIf: (v, p) => hasMedication(p) || isTrue(v) }],
         ['Frei verkäuflich / homöopath. erlaubt', 'Verabreichung von frei verkäuflichen und homöopathischen Medikamenten', { bool: true }],
       ]},
       { title: 'Schwimmen', fields: [
@@ -1167,6 +1169,7 @@
       for (const section of SECTIONS) {
         const rows = section.fields
           .filter(([, col]) => val(p, col))
+          .filter(([, col, opts]) => !opts || !opts.showIf || opts.showIf(val(p, col), p))
           .map(([label, col, opts]) => {
             const raw = val(p, col);
             const shouldHighlight = opts && opts.highlight && (
