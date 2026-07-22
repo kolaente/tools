@@ -998,7 +998,8 @@
     }
 
     function hasHealthInfo(r) {
-      if (isTrue(val(r, 'Gesundheitsinfos'))) return true;
+      const info = val(r, 'Gesundheitsinfos');
+      if (!isNoneEntry(info) && !isFalse(info)) return true;
       return !isNoneEntry(val(r, 'Erläuterung Gesundheitsinfos'));
     }
 
@@ -1095,7 +1096,7 @@
         ['Unverträglichkeiten', 'Unverträglichkeiten', { highlight: true }],
       ]},
       { title: 'Gesundheit', highlightOn: ['Erläuterung Gesundheitsinfos'], fields: [
-        ['Gesundheitsinfos', 'Gesundheitsinfos', { bool: true, highlight: true, highlightIf: isTrue }],
+        ['Gesundheitsinfos', 'Gesundheitsinfos', { highlight: true, highlightIf: v => !isNoneEntry(v) && !isFalse(v) }],
         ['Erläuterung', 'Erläuterung Gesundheitsinfos', { highlight: true, highlightIf: v => !isNoneEntry(v) }],
         ['Erfassung erlaubt', 'Erfassung gesundheitsbezogener Daten', { bool: true }],
       ]},
