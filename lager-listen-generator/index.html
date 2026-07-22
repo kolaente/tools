@@ -982,19 +982,24 @@
     }
 
     function hasAllergies(r) {
-      return val(r, 'Unverträglichkeiten').length > 0;
+      return !isNoneEntry(val(r, 'Unverträglichkeiten'));
+    }
+
+    // People write "Keine", "-", "/", "\", "_", … — all meaning "empty".
+    function isNoneEntry(s) {
+      const v = (s || '').toString().trim();
+      if (!v) return true;
+      if (/^[-_/\\.~–—]+$/.test(v)) return true;
+      return /^kein(e|s)?\.?$/i.test(v);
     }
 
     function hasMedication(r) {
-      const m = val(r, 'Einzunehmende Medikamente');
-      if (!m) return false;
-      // The form often pre-fills "Keine" — don't count that.
-      return !/^keine\.?$/i.test(m);
+      return !isNoneEntry(val(r, 'Einzunehmende Medikamente'));
     }
 
     function hasHealthInfo(r) {
       if (isTrue(val(r, 'Gesundheitsinfos'))) return true;
-      return val(r, 'Erläuterung Gesundheitsinfos').length > 0;
+      return !isNoneEntry(val(r, 'Erläuterung Gesundheitsinfos'));
     }
 
     function isNonSwimmer(r) {
@@ -1091,11 +1096,11 @@
       ]},
       { title: 'Gesundheit', highlightOn: ['Erläuterung Gesundheitsinfos'], fields: [
         ['Gesundheitsinfos', 'Gesundheitsinfos', { bool: true, highlight: true, highlightIf: isTrue }],
-        ['Erläuterung', 'Erläuterung Gesundheitsinfos', { highlight: true }],
+        ['Erläuterung', 'Erläuterung Gesundheitsinfos', { highlight: true, highlightIf: v => !isNoneEntry(v) }],
         ['Erfassung erlaubt', 'Erfassung gesundheitsbezogener Daten', { bool: true }],
       ]},
       { title: 'Medikamente', highlightOn: ['Einzunehmende Medikamente'], fields: [
-        ['Einzunehmende Medikamente', 'Einzunehmende Medikamente', { highlight: true, highlightIf: v => v && !/^keine\.?$/i.test(v) }],
+        ['Einzunehmende Medikamente', 'Einzunehmende Medikamente', { highlight: true, highlightIf: v => !isNoneEntry(v) }],
         // Ja/Nein here is meaningless without meds — show only then, or on a
         // contradictory TRUE.
         ['Selbstständige Einnahme', 'Mein/Unser Kind darf diese Medikamente selbstständig einnehmen', { bool: true, showIf: (v, p) => hasMedication(p) || isTrue(v) }],
@@ -1157,7 +1162,7 @@
 
       const sectionHTML = (section, rows) => {
         if (!rows.length) return '';
-        const highlight = section.highlightOn && section.highlightOn.some(c => val(p, c));
+        const highlight = section.highlightOn && section.highlightOn.some(c => !isNoneEntry(val(p, c)));
         return `<section class="${highlight ? 'highlight' : ''}"><h3>${escapeHtml(section.title)}</h3><dl>` +
           rows.map(r => `<dt>${escapeHtml(r.label)}</dt><dd${r.highlight ? ' class="highlight"' : ''}>${r.value}</dd>`).join('') +
           `</dl></section>`;
@@ -1168,7 +1173,7 @@
       let inLeft = true;
       for (const section of SECTIONS) {
         const rows = section.fields
-          .filter(([, col]) => val(p, col))
+          .filter(([, col]) => !isNoneEntry(val(p, col)))
           .filter(([, col, opts]) => !opts || !opts.showIf || opts.showIf(val(p, col), p))
           .map(([label, col, opts]) => {
             const raw = val(p, col);
@@ -1257,8 +1262,8 @@
         { label: 'Unverträglichkeiten', width: '34%' },
       ];
       const rows = participants.map(p => {
-        const allergy = val(p, 'Unverträglichkeiten');
-        const diet = val(p, 'Ernährung');
+        const allergy = isNoneEntry(val(p, 'Unverträglichkeiten')) ? '' : val(p, 'Unverträglichkeiten');
+        const diet = isNoneEntry(val(p, 'Ernährung')) ? '' : val(p, 'Ernährung');
         const dietSpecial = diet && !/^mit fleisch$/i.test(diet);
         return `<tr>
           ${cell(fullName(p))}
@@ -1308,11 +1313,13 @@
       ];
       // Show only participants with at least one entry that matters here.
       const filtered = participants.filter(p =>
-        hasHealthInfo(p) || hasMedication(p) || isNonSwimmer(p) || val(p, 'Notizen')
+        hasHealthInfo(p) || hasMedication(p) || isNonSwimmer(p) || !isNoneEntry(val(p, 'Notizen'))
       );
       const rows = filtered.map(p => {
-        const health = val(p, 'Erläuterung Gesundheitsinfos');
-        const meds = val(p, 'Einzunehmende Medikamente');
+        // Blank out "-"/"keine" placeholders so cells render as empty.
+        const clean = c => { const v = val(p, c); return isNoneEntry(v) ? '' : v; };
+        const health = clean('Erläuterung Gesundheitsinfos');
+        const meds = clean('Einzunehmende Medikamente');
         const medsRelevant = hasMedication(p);
         const swim = swimmerLabel(p);
         const nonSwim = isNonSwimmer(p);
@@ -1322,7 +1329,7 @@
           ${cell(health, health ? 'warn' : '')}
           ${cell(meds, medsRelevant ? 'danger' : '')}
           ${cell(swim, nonSwim ? 'danger' : '')}
-          ${cell(val(p, 'Notizen'))}
+          ${cell(clean('Notizen'))}
         </tr>`;
       });
       return tablePage('Gesundheit · Medikamente · Schwimmer', campName, cols, rows,
