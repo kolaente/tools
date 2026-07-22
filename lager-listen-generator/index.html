@@ -863,9 +863,8 @@
 
     function handleFile(file) {
       errorBox.classList.add('hidden');
-      // header:false because the export contains duplicate column names (e.g.
-      // 'Vorname' for participant + Versicherungsnehmer); header:true would
-      // silently merge them.
+      // header:false because the export can contain duplicate or empty column
+      // names; header:true would silently merge/drop them.
       Papa.parse(file, {
         header: false,
         skipEmptyLines: 'greedy',
@@ -1000,39 +999,32 @@
 
     function isNonSwimmer(r) {
       // Two columns can express this: 'Schwimmen' (TRUE/FALSE, "darf schwimmen")
-      // and 'Schwimmen 2' (text like "den Schwimmer-Bereich" / "Nichtschwimmer").
+      // and 'Schwimmbereich' (text like "den Schwimmer-Bereich" / "Nichtschwimmer").
       const allowed = val(r, 'Schwimmen');
       if (isFalse(allowed)) return true;
-      const area = val(r, 'Schwimmen 2').toLowerCase();
+      const area = val(r, 'Schwimmbereich').toLowerCase();
       if (area.includes('nichtschwimmer')) return true;
       return false;
     }
 
     function swimmerLabel(r) {
       const allowed = val(r, 'Schwimmen');
-      const area = val(r, 'Schwimmen 2');
+      const area = val(r, 'Schwimmbereich');
       if (isFalse(allowed)) return 'darf nicht';
       if (!isTrue(allowed) && !area) return '';
       if (area) return area;
       return 'darf schwimmen';
     }
 
-    // Parse "Telefonnummern" field like
-    // "+49 179 12344 (Mutter), +49 1523 1333333 (Sonstige)"
-    // into [{number, relation}, ...]
-    function parsePhones(s) {
-      if (!s) return [];
-      return s.split(/\s*,\s*/).filter(Boolean).map(part => {
-        const m = part.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
-        if (m) return { number: m[1].trim(), relation: m[2].trim() };
-        return { number: part.trim(), relation: '' };
-      });
-    }
-
     function emergencyContact(r) {
+      const fn = val(r, 'Notfallkontakt Vorname');
+      const ln = val(r, 'Notfallkontakt Name');
       return {
-        name: val(r, 'Name des Erziehungsberechtigten des/r Teilnehmenden'),
-        phones: parsePhones(val(r, 'Telefonnummern')),
+        name: [fn, ln].filter(Boolean).join(' '),
+        phones: [
+          { number: val(r, 'Notfallkontakt Telefon 1'), relation: '' },
+          { number: val(r, 'Notfallkontakt Telefon 2'), relation: '' },
+        ].filter(ph => ph.number),
         email: val(r, 'E-Mail'),
         emailCc: val(r, 'Zweite E-Mail (CC)'),
       };
@@ -1078,13 +1070,12 @@
       { title: 'Kontakt (Teilnehmer/in)', fields: [
         ['E-Mail', 'E-Mail'],
         ['E-Mail (CC)', 'Zweite E-Mail (CC)'],
-        ['Telefon 1', 'Telefon 1'],
-        ['Telefon 2', 'Telefon 2'],
+        ['Telefon', 'Telefonnummern'],
+        ['Erziehungsberechtigte/r', 'Name des Erziehungsberechtigten des/r Teilnehmenden'],
       ]},
       { title: 'Krankenversicherung', fields: [
         ['Versicherung', 'Krankenversicherung'],
         ['Versicherungsnehmer', 'Versicherungsnehmer'],
-        ['Vorname Versicherungsnehmer', 'Vorname (2)'],
       ]},
       { title: 'Hausarzt', fields: [
         ['Name', 'Name des Hausarztes'],
@@ -1111,7 +1102,7 @@
       ]},
       { title: 'Schwimmen', fields: [
         ['Darf schwimmen', 'Schwimmen', { bool: true }],
-        ['Schwimm-Bereich', 'Schwimmen 2'],
+        ['Schwimm-Bereich', 'Schwimmbereich'],
       ]},
       { title: 'Einwilligungen', fields: [
         ['Aufsichtspflicht', 'Einwilligung Aufsichtspflicht', { bool: true }],
