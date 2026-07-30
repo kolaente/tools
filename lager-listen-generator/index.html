@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Lager-Listen-Generator</title>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -286,6 +287,38 @@
       border-radius: 4px;
       background: white;
       padding: 2px;
+    }
+
+    .lh-share {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .lh-share-hint {
+      display: block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .lh-share-box {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .lh-share-box input {
+      flex: 1;
+      min-width: 0;
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 12px;
+      color: #374151;
+      background: white;
     }
 
     @media (max-width: 600px) {
@@ -677,7 +710,7 @@
       </div>
 
       <details class="letterhead-fields">
-        <summary>Briefkopf für Tabellen-Listen (Logo, Header, Footer) — optional</summary>
+        <summary>Briefkopf für die Unterschriftenliste (Logo, Header, Footer) — optional</summary>
         <div class="lh-grid">
           <div class="lh-col">
             <label for="headerText">Header (oben links)</label>
@@ -694,6 +727,15 @@
           <div class="lh-col lh-col-full">
             <label for="footerText">Footer (unten links)</label>
             <textarea id="footerText" rows="2" placeholder="z. B. Datum, Ort, Hinweise — Markdown unterstützt"></textarea>
+          </div>
+        </div>
+
+        <div class="lh-share">
+          <button type="button" class="btn btn-secondary" id="shareTemplateBtn">Template-Link erstellen</button>
+          <span class="lh-share-hint">Speichert Header, Footer und Logo in der URL — zum Wiederverwenden oder Weitergeben. Es werden keine Teilnehmerdaten übertragen.</span>
+          <div id="shareBox" class="lh-share-box hidden">
+            <input type="text" id="shareLink" readonly>
+            <button type="button" class="btn btn-secondary" id="copyShareBtn">Kopieren</button>
           </div>
         </div>
       </details>
@@ -749,7 +791,8 @@
       <ul>
         <li>Die Verarbeitung passiert komplett im Browser. Die CSV wird nicht hochgeladen.</li>
         <li>Notfallbögen werden im Hochformat gedruckt, alle Übersichtstabellen im Querformat — auch im „Alles drucken"-Modus.</li>
-        <li>Briefkopf mit Logo, Header und Footer (Markdown: <code>**fett**</code>, <code>*kursiv*</code>, <code>_unterstrichen_</code>) wird auf alle Tabellen-Listen angewendet.</li>
+        <li>Briefkopf mit Logo, Header und Footer (Markdown: <code>**fett**</code>, <code>*kursiv*</code>, <code>_unterstrichen_</code>) erscheint auf jeder Seite der Unterschriftenliste.</li>
+        <li>Mit „Template-Link erstellen" landet der Briefkopf in der URL — Lesezeichen setzen oder weitergeben, dann ist er beim nächsten Mal schon ausgefüllt.</li>
         <li>Im Druckdialog Hintergrundgrafiken aktivieren, damit Markierungen sichtbar bleiben.</li>
         <li>Leere Felder werden mit „—" dargestellt, damit handschriftliche Ergänzungen möglich sind.</li>
       </ul>
@@ -777,11 +820,17 @@
     const logoPreview = document.getElementById('logoPreview');
     const logoPreviewBox = document.getElementById('logoPreviewBox');
     const clearLogoBtn = document.getElementById('clearLogoBtn');
+    const letterheadFields = document.querySelector('.letterhead-fields');
+    const shareTemplateBtn = document.getElementById('shareTemplateBtn');
+    const shareBox = document.getElementById('shareBox');
+    const shareLinkInput = document.getElementById('shareLink');
+    const copyShareBtn = document.getElementById('copyShareBtn');
     const printArea = document.getElementById('printArea');
 
     let participants = [];
     let headers = [];
     let logoDataURL = null;
+    let logoDimensions = null;
 
     // ---- Logo upload ----
     // Re-encode as WebP at 0.75 to keep the resulting HTML small even with
@@ -797,7 +846,7 @@
           canvas.width = w;
           canvas.height = h;
           canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-          resolve(canvas.toDataURL('image/webp', 0.75));
+          resolve({ dataURL: canvas.toDataURL('image/webp', 0.75), width: w, height: h });
         };
         img.onerror = reject;
         img.src = dataURL;
@@ -814,9 +863,10 @@
       }
       const reader = new FileReader();
       reader.onload = (ev) => {
-        resizeLogo(ev.target.result, 300, 200).then(dataURL => {
-          logoDataURL = dataURL;
-          logoPreview.src = dataURL;
+        resizeLogo(ev.target.result, 300, 188).then(resized => {
+          logoDataURL = resized.dataURL;
+          logoDimensions = { width: resized.width, height: resized.height };
+          logoPreview.src = logoDataURL;
           logoPreviewBox.classList.remove('hidden');
         }).catch(() => alert('Logo konnte nicht verarbeitet werden.'));
       };
@@ -825,10 +875,130 @@
 
     clearLogoBtn.addEventListener('click', () => {
       logoDataURL = null;
+      logoDimensions = null;
       logoFileInput.value = '';
       logoPreview.src = '';
       logoPreviewBox.classList.add('hidden');
     });
+
+    // ---- Briefkopf-Template in der URL ----
+    // Format matches the standalone Unterschriftenlisten-Tool, so links work in
+    // both: gzip of [4-byte BE meta length][meta JSON][raw logo bytes], base64url.
+    // Logo bytes stay raw so gzip doesn't have to chew through base64 noise.
+    function encodeTemplateData(headerText, footerText, logoURL, logoW, logoH) {
+      const meta = {};
+      if (headerText.trim()) meta.h = headerText;
+      if (footerText.trim()) meta.f = footerText;
+
+      let logoBytes = null;
+      const match = logoURL ? logoURL.match(/^data:([^;]+);base64,(.+)$/) : null;
+      if (match) {
+        meta.m = match[1];
+        meta.lw = logoW;
+        meta.lh = logoH;
+        const bin = atob(match[2]);
+        logoBytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) logoBytes[i] = bin.charCodeAt(i);
+      }
+
+      const metaBytes = new TextEncoder().encode(JSON.stringify(meta));
+      const buffer = new Uint8Array(4 + metaBytes.length + (logoBytes ? logoBytes.length : 0));
+      new DataView(buffer.buffer).setUint32(0, metaBytes.length);
+      buffer.set(metaBytes, 4);
+      if (logoBytes) buffer.set(logoBytes, 4 + metaBytes.length);
+
+      const compressed = pako.gzip(buffer);
+      let bin = '';
+      for (let i = 0; i < compressed.length; i++) bin += String.fromCharCode(compressed[i]);
+      return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+
+    function decodeTemplateData(urlSafeBase64) {
+      const regular = urlSafeBase64.replace(/-/g, '+').replace(/_/g, '/');
+      const padded = regular + '='.repeat((4 - regular.length % 4) % 4);
+      const bin = atob(padded);
+      const compressed = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) compressed[i] = bin.charCodeAt(i);
+
+      const buffer = pako.ungzip(compressed);
+      const view = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+      const metaLen = view.getUint32(0);
+      const meta = JSON.parse(new TextDecoder().decode(buffer.slice(4, 4 + metaLen)));
+
+      const result = { header: meta.h || '', footer: meta.f || '' };
+      if (meta.m && buffer.length > 4 + metaLen) {
+        const logoBytes = buffer.slice(4 + metaLen);
+        let logoBin = '';
+        for (let i = 0; i < logoBytes.length; i++) logoBin += String.fromCharCode(logoBytes[i]);
+        result.logo = `data:${meta.m};base64,${btoa(logoBin)}`;
+        result.logoW = meta.lw;
+        result.logoH = meta.lh;
+      }
+      return result;
+    }
+
+    function loadTemplateFromURL() {
+      const hash = window.location.hash;
+      if (!hash.startsWith('#t=')) return;
+
+      try {
+        const template = decodeTemplateData(hash.substring(3));
+        headerTextInput.value = template.header;
+        footerTextInput.value = template.footer;
+        if (template.logo) {
+          logoDataURL = template.logo;
+          logoDimensions = { width: template.logoW, height: template.logoH };
+          logoPreview.src = logoDataURL;
+          logoPreviewBox.classList.remove('hidden');
+        }
+        letterheadFields.open = true;
+      } catch (e) {
+        console.error('Template konnte nicht geladen werden:', e);
+        alert('Der Template-Link ist ungültig oder beschädigt.');
+      }
+    }
+
+    shareTemplateBtn.addEventListener('click', () => {
+      const headerText = headerTextInput.value;
+      const footerText = footerTextInput.value;
+      const baseUrl = window.location.href.split('#')[0].split('?')[0];
+
+      if (!headerText.trim() && !footerText.trim() && !logoDataURL) {
+        alert('Bitte zuerst Header, Footer oder Logo ausfüllen.');
+        return;
+      }
+
+      let encoded;
+      try {
+        encoded = encodeTemplateData(
+          headerText,
+          footerText,
+          logoDataURL,
+          logoDimensions ? logoDimensions.width : null,
+          logoDimensions ? logoDimensions.height : null
+        );
+      } catch (e) {
+        console.error('Template-Link konnte nicht erstellt werden:', e);
+        alert('Der Template-Link konnte nicht erstellt werden.');
+        return;
+      }
+
+      shareLinkInput.value = `${baseUrl}#t=${encoded}`;
+      shareBox.classList.remove('hidden');
+      shareLinkInput.select();
+    });
+
+    copyShareBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(shareLinkInput.value).then(() => {
+        copyShareBtn.textContent = 'Kopiert!';
+        setTimeout(() => { copyShareBtn.textContent = 'Kopieren'; }, 2000);
+      }).catch(() => {
+        shareLinkInput.select();
+        alert('Kopieren nicht möglich — bitte manuell kopieren.');
+      });
+    });
+
+    loadTemplateFromURL();
 
     // ---- Minimal markdown: **bold**, *italic*, _underline_, line breaks. ----
     // Escapes first, then reintroduces the inline tags. Plain enough that we
