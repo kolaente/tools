@@ -1209,14 +1209,15 @@
     }
 
     // ---- Table renderers (landscape) ----
-    function tablePage(title, campName, headerRow, bodyRows, footnote, extraClass) {
+    // withLetterhead: only the Unterschriftenliste carries the letterhead.
+    function tablePage(title, campName, headerRow, bodyRows, footnote, extraClass, withLetterhead) {
       const body = bodyRows.length
         ? `<tbody>${bodyRows.join('')}</tbody>`
         : `<tbody><tr><td colspan="${headerRow.length}" class="empty-row">Keine Einträge.</td></tr></tbody>`;
 
-      const headerText = (headerTextInput.value || '').trim();
-      const footerText = (footerTextInput.value || '').trim();
-      const letterhead = (headerText || logoDataURL)
+      const headerText = withLetterhead ? (headerTextInput.value || '').trim() : '';
+      const footerText = withLetterhead ? (footerTextInput.value || '').trim() : '';
+      const letterhead = (headerText || (withLetterhead && logoDataURL))
         ? `<div class="letterhead">
             <div class="lh-text">${md(headerText)}</div>
             ${logoDataURL ? `<img class="lh-logo" src="${logoDataURL}" alt="">` : ''}
@@ -1408,7 +1409,7 @@
         const offset = pageIdx * perPage;
         const rows = chunk.map((p, i) => makeRow(p, offset + i + 1));
         const footnote = chunks.length > 1 ? `Seite ${pageIdx + 1} von ${chunks.length}` : null;
-        return tablePage('Unterschriftenliste', campName, cols, rows, footnote, 'signatures');
+        return tablePage('Unterschriftenliste', campName, cols, rows, footnote, 'signatures', true);
       }).join('');
     }
 
