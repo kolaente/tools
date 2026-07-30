@@ -1348,6 +1348,25 @@
         `Gelb = Gesundheitsinfo · Rot = Medikamente / Nichtschwimmer. ${filtered.length} von ${participants.length} Teilnehmenden mit Einträgen.`);
     }
 
+    // How many 28pt signature rows fit on one A4-landscape sheet, after
+    // subtracting everything that isn't a body row. Browsers would break the
+    // table themselves, but then letterhead/footer only appear on the first
+    // and last sheet — so the rows get chunked into one section per sheet.
+    function signatureRowsPerPage() {
+      const lines = s => (s || '').trim() ? s.trim().split('\n').length : 0;
+      const usable = (210 - 2 * 12) * 2.8346; // A4 landscape height minus @page margins, in pt
+      const headerLines = lines(headerTextInput.value);
+      const footerLines = lines(footerTextInput.value);
+
+      let taken = 30 /* page-header */ + 19 /* thead */ + 18 /* footnote */ + 10 /* slack */;
+      if (headerLines || logoDataURL) {
+        taken += Math.max(headerLines * 11.7, logoDataURL ? 42.5 : 0) + 5;
+      }
+      if (footerLines) taken += footerLines * 10.4 + 11;
+
+      return Math.max(1, Math.floor((usable - taken) / 29));
+    }
+
     function renderUnterschriftenHTML(campName) {
       const cols = [
         { label: 'Nr.', center: true, width: '4%' },
@@ -1359,14 +1378,15 @@
         { label: 'Alter', center: true, width: '6%' },
         { label: 'Unterschrift', width: '20%' },
       ];
-      const rows = participants.map((p, i) => {
+
+      function makeRow(p, idx) {
         const street = val(p, 'Straße');
         const plz = val(p, 'PLZ');
         const ort = val(p, 'Ort');
         const addr = [street, [plz, ort].filter(Boolean).join(' ')].filter(Boolean).join(', ');
         const age = val(p, 'Alter während Event') || val(p, 'Alter');
         return `<tr>
-          <td class="center">${i + 1}</td>
+          <td class="center">${idx}</td>
           ${cell(val(p, 'Nachname'))}
           ${cell(val(p, 'Vorname'))}
           ${cell(val(p, 'Stufe'))}
@@ -1375,8 +1395,21 @@
           <td class="center">${escapeHtml(age) || '<span class="empty">—</span>'}</td>
           <td></td>
         </tr>`;
-      });
-      return tablePage('Unterschriftenliste', campName, cols, rows, null, 'signatures');
+      }
+
+      const perPage = signatureRowsPerPage();
+      const chunks = [];
+      for (let i = 0; i < participants.length; i += perPage) {
+        chunks.push(participants.slice(i, i + perPage));
+      }
+      if (!chunks.length) chunks.push([]);
+
+      return chunks.map((chunk, pageIdx) => {
+        const offset = pageIdx * perPage;
+        const rows = chunk.map((p, i) => makeRow(p, offset + i + 1));
+        const footnote = chunks.length > 1 ? `Seite ${pageIdx + 1} von ${chunks.length}` : null;
+        return tablePage('Unterschriftenliste', campName, cols, rows, footnote, 'signatures');
+      }).join('');
     }
 
     // ---- Print orchestration ----
