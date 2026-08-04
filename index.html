@@ -6,20 +6,17 @@
   <title>Tools</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-deep: #0a0a0b;
-      --bg-card: #141416;
-      --bg-card-hover: #1a1a1e;
-      --border: #2a2a2f;
-      --text-primary: #f5f5f7;
-      --text-secondary: #8a8a8f;
-      --text-muted: #5a5a5f;
-      --accent-cyan: #00ffcc;
-      --accent-orange: #ff6b35;
-      --accent-violet: #a855f7;
-      --shadow-glow: rgba(0, 255, 204, 0.15);
+      --paper: #f7f5f1;
+      --paper-raised: #fdfcfa;
+      --ink: #1c1b18;
+      --ink-soft: #4c4a44;
+      --ink-faint: #8a867c;
+      --rule: #d9d5cc;
+      --rule-strong: #1c1b18;
+      --accent: #7d2f24;
     }
 
     * {
@@ -35,387 +32,266 @@
     }
 
     body {
-      font-family: 'Bricolage Grotesque', system-ui, sans-serif;
-      background: var(--bg-deep);
-      color: var(--text-primary);
+      font-family: 'Newsreader', Georgia, serif;
+      background: var(--paper);
+      color: var(--ink);
       min-height: 100vh;
-      overflow-x: hidden;
+      line-height: 1.5;
     }
 
-    /* Noise texture overlay */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-      opacity: 0.03;
-      pointer-events: none;
-      z-index: 1000;
-    }
-
-    /* Gradient mesh background */
-    .bg-mesh {
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 80% 50% at 20% -20%, rgba(0, 255, 204, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse 60% 40% at 80% 100%, rgba(168, 85, 247, 0.06) 0%, transparent 50%);
-      pointer-events: none;
+    ::selection {
+      background: var(--accent);
+      color: var(--paper);
     }
 
     .container {
-      position: relative;
-      max-width: 1000px;
+      max-width: 880px;
       margin: 0 auto;
-      padding: 0 24px;
+      padding: 0 28px;
     }
 
-    /* Header section */
+    /* Header */
     header {
-      padding: 80px 0 60px;
-      position: relative;
+      padding: 72px 0 0;
     }
 
-    .title-block {
-      position: relative;
-    }
-
-    .title-accent {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      font-weight: 500;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--accent-cyan);
-      margin-bottom: 16px;
+    .masthead {
       display: flex;
-      align-items: center;
-      gap: 12px;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      border-bottom: 2px solid var(--rule-strong);
+      padding-bottom: 10px;
     }
 
-    .title-accent::before {
-      content: '';
-      width: 32px;
-      height: 2px;
-      background: var(--accent-cyan);
+    .masthead-label,
+    .masthead-meta {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
     }
 
     h1 {
-      font-size: clamp(3.5rem, 10vw, 6rem);
-      font-weight: 800;
-      line-height: 0.95;
-      letter-spacing: -0.03em;
-      margin-bottom: 24px;
-      background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-size: clamp(3rem, 8vw, 4.5rem);
+      font-weight: 500;
+      letter-spacing: -0.015em;
+      line-height: 1.05;
+      margin: 40px 0 16px;
     }
 
     .subtitle {
-      font-size: 1.125rem;
-      color: var(--text-secondary);
-      max-width: 480px;
-      line-height: 1.6;
+      font-size: 1.2rem;
+      font-style: italic;
+      color: var(--ink-soft);
+      max-width: 34em;
+      margin-bottom: 56px;
     }
 
-    /* Decorative element */
-    .header-deco {
-      position: absolute;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 180px;
-      height: 180px;
-      border: 2px solid var(--border);
-      border-radius: 50%;
-      opacity: 0.4;
-    }
-
-    .header-deco::before {
-      content: '';
-      position: absolute;
-      inset: 20px;
-      border: 2px solid var(--accent-cyan);
-      border-radius: 50%;
-      opacity: 0.5;
-    }
-
-    /* Search section */
+    /* Search */
     .search-section {
-      margin-bottom: 64px;
+      margin-bottom: 48px;
     }
 
     .search-wrapper {
-      position: relative;
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      border-bottom: 1px solid var(--rule-strong);
+      padding-bottom: 10px;
       max-width: 560px;
     }
 
+    .search-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      flex-shrink: 0;
+    }
+
     .search-input {
-      width: 100%;
-      padding: 20px 24px 20px 60px;
-      font-family: 'Bricolage Grotesque', system-ui, sans-serif;
-      font-size: 1.125rem;
-      font-weight: 400;
-      color: var(--text-primary);
-      background: var(--bg-card);
-      border: 2px solid var(--border);
-      border-radius: 16px;
+      flex: 1;
+      min-width: 0;
+      font-family: 'Newsreader', Georgia, serif;
+      font-size: 1.15rem;
+      color: var(--ink);
+      background: transparent;
+      border: none;
       outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      padding: 0;
     }
 
     .search-input::placeholder {
-      color: var(--text-muted);
-    }
-
-    .search-input:focus {
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 0 4px var(--shadow-glow);
-      background: var(--bg-card-hover);
-    }
-
-    .search-icon {
-      position: absolute;
-      left: 22px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-muted);
-      pointer-events: none;
-      transition: color 0.2s;
-    }
-
-    .search-input:focus + .search-icon {
-      color: var(--accent-cyan);
+      color: var(--ink-faint);
+      font-style: italic;
     }
 
     .search-hint {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 12px;
-      padding-left: 4px;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--ink-faint);
+      flex-shrink: 0;
     }
 
     .search-hint kbd {
-      display: inline-block;
-      padding: 2px 8px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 4px;
       font-family: inherit;
-      margin: 0 2px;
+      border: 1px solid var(--rule);
+      border-radius: 3px;
+      padding: 1px 6px;
+      background: var(--paper-raised);
     }
 
-    /* Tools grid */
+    /* Index list */
     .tools-section {
-      padding-bottom: 100px;
+      padding-bottom: 96px;
     }
 
     .section-header {
       display: flex;
-      align-items: center;
+      align-items: baseline;
       justify-content: space-between;
-      margin-bottom: 32px;
+      border-bottom: 1px solid var(--rule-strong);
+      padding-bottom: 8px;
+      margin-bottom: 0;
     }
 
-    .section-title {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
-      font-weight: 500;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-    }
-
+    .section-title,
     .tool-count {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
-      color: var(--text-muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.7rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
     }
 
     .tools-grid {
-      display: grid;
-      gap: 20px;
+      counter-reset: tool;
     }
 
-    /* Tool card */
     .tool-card {
-      position: relative;
+      counter-increment: tool;
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: 2.5rem auto 1fr auto;
       align-items: center;
-      gap: 28px;
-      padding: 32px;
-      background: var(--bg-card);
-      border: 2px solid var(--border);
-      border-radius: 20px;
+      gap: 20px;
+      padding: 24px 8px;
+      border-bottom: 1px solid var(--rule);
       text-decoration: none;
       color: inherit;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      overflow: hidden;
+      transition: background 0.15s ease;
     }
 
     .tool-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, transparent 0%, rgba(0, 255, 204, 0.02) 100%);
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
-    .tool-card:hover {
-      border-color: var(--accent-cyan);
-      transform: translateY(-4px);
-      box-shadow:
-        0 20px 40px -20px rgba(0, 0, 0, 0.5),
-        0 0 0 1px rgba(0, 255, 204, 0.1);
-    }
-
-    .tool-card:hover::before {
-      opacity: 1;
+      content: counter(tool, decimal-leading-zero);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.8rem;
+      color: var(--ink-faint);
+      transition: color 0.15s ease;
     }
 
     .tool-icon {
-      width: 64px;
-      height: 64px;
+      width: 52px;
+      height: 52px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--bg-deep);
-      border: 2px solid var(--border);
-      border-radius: 16px;
-      color: var(--accent-cyan);
-      transition: all 0.3s;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      background: var(--paper-raised);
+      color: var(--ink-soft);
       flex-shrink: 0;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .tool-icon svg {
+      width: 24px;
+      height: 24px;
+      stroke-width: 1.5;
     }
 
     .tool-card:hover .tool-icon {
-      background: var(--accent-cyan);
-      border-color: var(--accent-cyan);
-      color: var(--bg-deep);
-      transform: scale(1.05);
+      color: var(--accent);
+      border-color: var(--accent);
     }
 
-    .tool-card:nth-child(2) .tool-icon {
-      color: var(--accent-orange);
+    .tool-card:hover,
+    .tool-card:focus-visible {
+      background: var(--paper-raised);
     }
 
-    .tool-card:nth-child(2):hover .tool-icon {
-      background: var(--accent-orange);
-      border-color: var(--accent-orange);
+    .tool-card:focus-visible {
+      outline: 1px solid var(--accent);
+      outline-offset: -1px;
     }
 
-    .tool-content {
-      min-width: 0;
+    .tool-card:hover::before {
+      color: var(--accent);
     }
 
     .tool-name {
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-bottom: 8px;
-      transition: color 0.2s;
+      font-size: 1.45rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+      margin-bottom: 6px;
+      transition: color 0.15s ease;
     }
 
     .tool-card:hover .tool-name {
-      color: var(--accent-cyan);
-    }
-
-    .tool-card:nth-child(2):hover .tool-name {
-      color: var(--accent-orange);
+      color: var(--accent);
     }
 
     .tool-description {
-      font-size: 1rem;
-      color: var(--text-secondary);
-      line-height: 1.5;
+      font-size: 1.05rem;
+      color: var(--ink-soft);
+      max-width: 40em;
     }
 
     .tool-arrow {
-      width: 48px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--text-muted);
-      border: 2px solid var(--border);
-      border-radius: 50%;
-      transition: all 0.3s;
-      flex-shrink: 0;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--ink-faint);
+      transition: color 0.15s ease, transform 0.15s ease;
     }
 
     .tool-card:hover .tool-arrow {
-      color: var(--accent-cyan);
-      border-color: var(--accent-cyan);
+      color: var(--accent);
       transform: translateX(4px);
-    }
-
-    .tool-card:nth-child(2):hover .tool-arrow {
-      color: var(--accent-orange);
-      border-color: var(--accent-orange);
     }
 
     /* Empty state */
     .empty-state {
       text-align: center;
-      padding: 80px 40px;
-      border: 2px dashed var(--border);
-      border-radius: 20px;
-    }
-
-    .empty-icon {
-      color: var(--text-muted);
-      margin-bottom: 20px;
+      padding: 72px 24px;
+      border-bottom: 1px solid var(--rule);
     }
 
     .empty-title {
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: var(--text-secondary);
-      margin-bottom: 8px;
+      font-size: 1.3rem;
+      font-weight: 500;
+      margin-bottom: 6px;
     }
 
     .empty-text {
-      color: var(--text-muted);
+      font-style: italic;
+      color: var(--ink-faint);
     }
 
     .hidden {
       display: none !important;
     }
 
-    /* Responsive */
-    @media (max-width: 700px) {
-      header {
-        padding: 60px 0 40px;
-      }
-
-      .header-deco {
-        display: none;
-      }
-
-      .tool-card {
-        grid-template-columns: 1fr;
-        gap: 20px;
-        padding: 24px;
-      }
-
-      .tool-icon {
-        width: 56px;
-        height: 56px;
-      }
-
-      .tool-arrow {
-        display: none;
-      }
-    }
-
-    /* Animation on load */
-    @keyframes fadeUp {
+    /* Load reveal */
+    @keyframes rise {
       from {
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(8px);
       }
       to {
         opacity: 1;
@@ -423,79 +299,89 @@
       }
     }
 
-    .title-block {
-      animation: fadeUp 0.6s ease-out;
-    }
-
-    .search-section {
-      animation: fadeUp 0.6s ease-out 0.1s both;
-    }
-
+    header,
+    .search-section,
     .tools-section {
-      animation: fadeUp 0.6s ease-out 0.2s both;
+      animation: rise 0.45s ease-out both;
     }
 
-    .tool-card {
-      animation: fadeUp 0.5s ease-out both;
+    .search-section { animation-delay: 0.08s; }
+    .tools-section { animation-delay: 0.16s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      header,
+      .search-section,
+      .tools-section {
+        animation: none;
+      }
     }
 
-    .tool-card:nth-child(1) { animation-delay: 0.25s; }
-    .tool-card:nth-child(2) { animation-delay: 0.35s; }
-    .tool-card:nth-child(3) { animation-delay: 0.45s; }
-    .tool-card:nth-child(4) { animation-delay: 0.55s; }
-    .tool-card:nth-child(5) { animation-delay: 0.65s; }
-    .tool-card:nth-child(6) { animation-delay: 0.75s; }
-    .tool-card:nth-child(7) { animation-delay: 0.85s; }
-    .tool-card:nth-child(8) { animation-delay: 0.95s; }
-    .tool-card:nth-child(9) { animation-delay: 1.05s; }
-    .tool-card:nth-child(10) { animation-delay: 1.15s; }
-    .tool-card:nth-child(11) { animation-delay: 1.25s; }
-    .tool-card:nth-child(12) { animation-delay: 1.35s; }
-    .tool-card:nth-child(13) { animation-delay: 1.45s; }
-    .tool-card:nth-child(14) { animation-delay: 1.55s; }
+    @media (max-width: 640px) {
+      header {
+        padding-top: 48px;
+      }
+
+      .tool-card {
+        grid-template-columns: auto 1fr;
+        gap: 8px 14px;
+        padding: 22px 4px;
+      }
+
+      .tool-card::before {
+        grid-column: 1 / -1;
+      }
+
+      .tool-icon {
+        width: 44px;
+        height: 44px;
+      }
+
+      .tool-arrow {
+        display: none;
+      }
+
+      .search-hint {
+        display: none;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="bg-mesh"></div>
-
   <div class="container">
     <header>
-      <div class="title-block">
-        <div class="title-accent">Collection</div>
-        <h1>Tools</h1>
-        <p class="subtitle">A curated set of browser-based utilities. No installs, no accounts, just tools that work.</p>
+      <div class="masthead">
+        <span class="masthead-label">Index of Utilities</span>
+        <span class="masthead-meta">Browser-based · No accounts</span>
       </div>
-      <div class="header-deco" aria-hidden="true"></div>
+      <h1>Tools</h1>
+      <p class="subtitle">A curated set of browser-based utilities. No installs, no accounts, just tools that work.</p>
     </header>
 
     <section class="search-section">
       <div class="search-wrapper">
+        <label class="search-label" for="searchInput">Search</label>
         <input
           type="text"
           class="search-input"
           id="searchInput"
-          placeholder="Search tools..."
+          placeholder="Type to filter…"
           autocomplete="off"
           spellcheck="false"
         >
-        <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
+        <span class="search-hint"><kbd>/</kbd></span>
       </div>
-      <p class="search-hint">Press <kbd>/</kbd> to focus</p>
     </section>
 
     <section class="tools-section">
       <div class="section-header">
-        <span class="section-title">Available Tools</span>
+        <span class="section-title">Contents</span>
         <span class="tool-count" id="toolCount">15 tools</span>
       </div>
 
       <div class="tools-grid" id="toolsGrid">
         <a href="/iframe-debugger/" class="tool-card" data-keywords="iframe embed debug test url headers x-frame-options csp content security policy">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
               <line x1="8" y1="21" x2="16" y2="21"/>
               <line x1="12" y1="17" x2="12" y2="21"/>
@@ -505,17 +391,12 @@
             <h2 class="tool-name">Iframe Debugger</h2>
             <p class="tool-description">Test if URLs can be embedded in iframes. Diagnose X-Frame-Options, CSP headers, and other embedding blockers.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
 
         <a href="/memory/" class="tool-card" data-keywords="memory game cards matching pairs pdf print generator images text">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="7" height="9" rx="1"/>
               <rect x="14" y="3" width="7" height="9" rx="1"/>
               <rect x="3" y="14" width="7" height="7" rx="1"/>
@@ -526,16 +407,12 @@
             <h2 class="tool-name">Memory Card Generator</h2>
             <p class="tool-description">Create printable memory game cards from images. Drag and drop photos, add matching text, and export as a ready-to-print PDF.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
+
         <a href="/lager-listen-generator/" class="tool-card" data-keywords="lager listen generator sola camp csv notfallbogen küche unverträglichkeiten fotorechte gesundheit medikamente schwimmer dpsg pfadfinder allergien teilnehmer anmeldung übersicht">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14 2 14 8 20 8"/>
               <line x1="8" y1="12" x2="16" y2="12"/>
@@ -547,16 +424,12 @@
             <h2 class="tool-name">Lager-Listen-Generator</h2>
             <p class="tool-description">Alle Lager-Listen aus einem CSV-Export auf einmal — Notfallbögen, Küche/Unverträglichkeiten, Fotorechte und Gesundheits-/Schwimmer-Übersicht in einem Druckauftrag.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
+
         <a href="/notfallbogen/" class="tool-card" data-keywords="notfallbogen emergency form pdf csv lager camp dpsg participant teilnehmer scout pfadfinder anmeldung">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 12h6"/>
               <path d="M12 9v6"/>
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
@@ -566,16 +439,12 @@
             <h2 class="tool-name">Notfallbogen Generator</h2>
             <p class="tool-description">Aus einem CSV-Anmeldungsexport druckbare Notfallbögen erzeugen — alphabetisch sortiert, eine Seite pro Teilnehmenden, drucken oder als PDF speichern.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
+
         <a href="/unterschriftenlistengenerator/" class="tool-card" data-keywords="unterschriftenliste signature list pdf csv teilnehmer participants header footer logo markdown druckbar print">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14 2 14 8 20 8"/>
               <line x1="8" y1="13" x2="14" y2="13"/>
@@ -586,16 +455,12 @@
             <h2 class="tool-name">Unterschriftenlistengenerator</h2>
             <p class="tool-description">Aus einer CSV-Datei druckbare Unterschriftenlisten erzeugen — mit eigenem Header, Logo und Footer. Markdown wird unterstützt, Export als PDF.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
+
         <a href="/nachweise-generator/" class="tool-card" data-keywords="nachweise prävention prävention praevention dpsg pfadfinder führungszeugnis fuehrungszeugnis efz auskunftserklärung präventionsschulung selbstverpflichtung verpflichtungserklärung dokumentation rahmenordnung bundeskinderschutzgesetz stamm stavo csv pdf liste einsichtnahme tätigkeitsausschluss">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 11l3 3L22 4"/>
               <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
             </svg>
@@ -604,16 +469,12 @@
             <h2 class="tool-name">Nachweise-Listen-Generator</h2>
             <p class="tool-description">Aus den CSV-Exporten (Auskunftserklärung, Präventionsschulung, Selbstverpflichtung, eFZ) eine druckbare DPSG-Präventionsdokumentation erzeugen — Personen automatisch zusammengeführt, A4 quer als PDF.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
+
         <a href="/steuern/" class="tool-card" data-keywords="steuern tax calculator einzelunternehmen gmbh gewerbe freiberufler einkommensteuer modellrechner 2026 deutschland germany">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="1" x2="12" y2="23"/>
               <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
             </svg>
@@ -622,16 +483,12 @@
             <h2 class="tool-name">Steuermodellrechner</h2>
             <p class="tool-description">Einzelunternehmen oder GmbH? Vier Szenarien im direkten Vergleich, Stand 2026 — Umsatz, Kosten und Brutto-Entnahme einstellen, sehen was unter dem Strich übrig bleibt.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
+
         <a href="/balkonkraftwerk/" class="tool-card" data-keywords="balkonkraftwerk mini pv solar photovoltaik ertrag rechner amortisation ersparnis strom kwh wp eigenverbrauch">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="4"/>
               <line x1="12" y1="2" x2="12" y2="5"/>
               <line x1="12" y1="19" x2="12" y2="22"/>
@@ -647,16 +504,12 @@
             <h2 class="tool-name">Balkonkraftwerk Ertragsrechner</h2>
             <p class="tool-description">Ertrag, Ersparnis und Amortisation einer Mini-PV-Anlage berechnen — Modulleistung, Strompreis, Eigenverbrauch und Ausrichtung einstellen, 25-Jahres-Verlauf als Diagramm.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
+
         <a href="/ballast-rechner/" class="tool-card" data-keywords="ballast rechner pv photovoltaik flachdach sturm wind beaufort sicherung kippmoment auflast solar modul">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <line x1="2" y1="20" x2="22" y2="20"/>
               <line x1="6" y1="20" x2="18" y2="9"/>
               <line x1="6" y1="20" x2="18" y2="20"/>
@@ -670,16 +523,12 @@
             <h2 class="tool-name">Ballast-Rechner</h2>
             <p class="tool-description">Wieviel Auflast braucht ein PV-Modul auf dem Flachdach, damit es Sturm und Orkan standhält? Auslegung nach Beaufort-Skala mit Kippmoment-Modell.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
+
         <a href="/stripe-paddle/" class="tool-card" data-keywords="stripe paddle payment fees comparison processing csv pricing merchant compare calculator volume transaction fee report gebührenaufstellung">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
               <line x1="1" y1="10" x2="23" y2="10"/>
             </svg>
@@ -688,17 +537,12 @@
             <h2 class="tool-name">Stripe vs. Paddle</h2>
             <p class="tool-description">Upload your Stripe dashboard CSV exports and see exactly what Paddle would have charged for the same volume. Configurable pricing, per-transaction breakdown, all in the browser.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
 
         <a href="/runpod-images/" class="tool-card" data-keywords="runpod serverless image generation stable diffusion ai prompt text to image gallery gpu endpoint api txt2img sdxl generate">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
               <circle cx="8.5" cy="8.5" r="1.5"/>
               <polyline points="21 15 16 10 5 21"/>
@@ -708,17 +552,12 @@
             <h2 class="tool-name">RunPod Image Studio</h2>
             <p class="tool-description">A Lightroom-style studio for your RunPod serverless endpoint. Compose prompts in the left panel, watch jobs move from queue to processing, and browse results in a full-width local library.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
 
         <a href="/claude-code-meme/" class="tool-card" data-keywords="claude code meme generator screenshot fake terminal canvas png anthropic ai chat mockup image">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="4 17 10 11 4 5"/>
               <line x1="12" y1="19" x2="20" y2="19"/>
             </svg>
@@ -727,17 +566,12 @@
             <h2 class="tool-name">Claude Code Meme Generator</h2>
             <p class="tool-description">Create fake Claude Code terminal screenshots. Edit the user message and model reply, toggle the banner and /model command, then download or copy as PNG.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
 
         <a href="/voxtral-live/" class="tool-card" data-keywords="voxtral live transcription speech to text audio microphone voice realtime stt whisper">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
               <line x1="12" y1="19" x2="12" y2="23"/>
@@ -748,17 +582,12 @@
             <h2 class="tool-name">Voxtral Live Transcription</h2>
             <p class="tool-description">Record audio from your microphone and get real-time transcription powered by Voxtral via a local vLLM server.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
 
         <a href="/etf-sparplan-rechner/" class="tool-card" data-keywords="etf sparplan rechner depot ansparphase entnahmephase rendite zinseszins kapital altersvorsorge investieren aktien fonds vermögensaufbau finanzen rente passiv einkommen">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
               <polyline points="16 7 22 7 22 13"/>
             </svg>
@@ -767,17 +596,12 @@
             <h2 class="tool-name">ETF-Sparplan-Rechner</h2>
             <p class="tool-description">Stell deine Parameter ein und sieh sofort, wie viel Kapital sich im Sparplan ansammelt — und wie lange du daraus entnehmen kannst, während der Rest weiter Rendite erwirtschaftet.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
 
         <a href="/waldbrandgefahr-sachsen-anhalt/" class="tool-card" data-keywords="waldbrand waldbrandgefahr gefahrenstufe sachsen-anhalt forst wald feuer brandgefahr melderegion landeszentrum wald arcgis karte mobil lager pfadfinder lagerfeuer">
           <div class="tool-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 2 6.5 11h3L5 18h14l-4.5-7h3z"/>
               <path d="M12 18v4"/>
             </svg>
@@ -786,23 +610,11 @@
             <h2 class="tool-name">Waldbrandgefahr Sachsen-Anhalt</h2>
             <p class="tool-description">Die aktuelle Waldbrandgefahrenstufe aller 19 Melderegionen auf einen Blick — mit Karte, 30-Tage-Verlauf und Saisonstatistik. Handytauglich und offlinefähig.</p>
           </div>
-          <div class="tool-arrow">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="5" y1="12" x2="19" y2="12"/>
-              <polyline points="12 5 19 12 12 19"/>
-            </svg>
-          </div>
+          <span class="tool-arrow" aria-hidden="true">&rarr;</span>
         </a>
       </div>
 
       <div class="empty-state hidden" id="emptyState">
-        <div class="empty-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            <line x1="8" y1="11" x2="14" y2="11"/>
-          </svg>
-        </div>
         <h3 class="empty-title">No tools found</h3>
         <p class="empty-text">Try a different search term</p>
       </div>
