@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Aktuelle Waldbrandgefahrenstufen für alle Melderegionen in Sachsen-Anhalt — mobiltauglich, mit 30-Tage-Verlauf und Saisonstatistik.">
+<meta name="theme-color" content="#1b2a20">
+<title>Waldbrandgefahr Sachsen-Anhalt</title>
+<style>
+:root{
+  --bg:#f3f1e9; --card:#fffdf7; --ink:#1b2a20; --ink2:#54614f; --ink3:#8a9384;
+  --line:#ddd8c8; --line2:#ebe6d8; --forest:#2f5d3a; --accent:#b1441e;
+  --s1:#ffffcf; --s2:#ffd77a; --s3:#ff8c3b; --s4:#e8171e; --s5:#7d0000;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#131711; --card:#1c211a; --ink:#eef1e8; --ink2:#a8b3a2; --ink3:#78836f;
+    --line:#2e362b; --line2:#242b22; --forest:#79b489; --accent:#e08a5e;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); line-height:1.45;
+  font-family:system-ui,-apple-system,'Segoe UI',sans-serif;
+  -webkit-font-smoothing:antialiased; -webkit-text-size-adjust:100%;
+  font-variant-numeric:tabular-nums;
+}
+.wrap{max-width:720px;margin:0 auto;padding:0 14px calc(40px + var(--safe-b))}
+button{font:inherit;color:inherit;cursor:pointer}
+
+/* header */
+header{padding:18px 0 4px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand svg{flex:none;color:var(--forest)}
+h1{font-size:clamp(21px,5.4vw,28px);margin:0;letter-spacing:-.02em;line-height:1.1;font-weight:700}
+.sub{font-size:12.5px;color:var(--ink2);margin:2px 0 0}
+.stand{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--ink3)}
+.stand .dot{width:6px;height:6px;border-radius:50%;background:var(--forest);flex:none}
+.stand button{background:none;border:1px solid var(--line);border-radius:20px;padding:3px 10px;font-size:11.5px;color:var(--ink2)}
+.stand button:disabled{opacity:.5;cursor:default}
+
+/* peak banner */
+.peak{display:flex;align-items:center;gap:12px;margin:14px 0 0;padding:13px 15px;border-radius:14px;border:1px solid var(--line)}
+.peak .num{font-size:34px;font-weight:800;line-height:1;letter-spacing:-.03em}
+.peak .txt{min-width:0}
+.peak .txt b{display:block;font-size:14.5px;line-height:1.25}
+.peak .txt span{display:block;font-size:12px;opacity:.85;margin-top:2px}
+
+/* tabs */
+nav{display:flex;gap:4px;background:var(--line2);border:1px solid var(--line);border-radius:11px;padding:3px;margin:16px 0 0}
+nav button{flex:1;border:none;background:none;font-size:13.5px;font-weight:600;color:var(--ink2);padding:8px;border-radius:8px}
+nav button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.13)}
+
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:16px 0 8px}
+.bar h2{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink3);margin:0;font-weight:700}
+.bar button{background:none;border:1px solid var(--line);border-radius:20px;padding:4px 11px;font-size:12px;color:var(--ink2)}
+
+/* region rows */
+.list{display:flex;flex-direction:column;gap:7px}
+.row{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.row.sel{border-color:var(--forest)}
+.head{display:flex;align-items:center;gap:12px;width:100%;border:none;background:none;padding:11px 13px;text-align:left}
+.badge{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:19px;font-weight:800;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.name{flex:1;min-width:0}
+.name b{display:block;font-size:14.5px;font-weight:600;line-height:1.25}
+.name span{display:block;font-size:12px;color:var(--ink2);margin-top:1px}
+.chev{flex:none;color:var(--ink3);transition:transform .15s}
+.row.open .chev{transform:rotate(90deg)}
+
+/* detail */
+.detail{display:none;padding:2px 13px 14px;border-top:1px solid var(--line2)}
+.row.open .detail{display:block}
+.dh{font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink3);font-weight:700;margin:13px 0 7px}
+.strip{display:flex;gap:2px;align-items:flex-end}
+.strip i{flex:1;height:26px;border-radius:3px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);min-width:0}
+.strip i.na{background:repeating-linear-gradient(45deg,var(--line2) 0 3px,transparent 3px 6px)}
+.striplab{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink3);margin-top:4px}
+.season{display:flex;height:22px;border-radius:6px;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
+.season i{min-width:0}
+.facts{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.fact{flex:1;min-width:110px;border:1px solid var(--line);border-radius:9px;padding:7px 9px}
+.fact .k{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3)}
+.fact .v{font-size:17px;font-weight:700;margin-top:1px;letter-spacing:-.01em}
+.fact .v small{font-size:11.5px;font-weight:500;color:var(--ink2)}
+
+/* map */
+#map{display:none}
+#map.on{display:block}
+#list.off{display:none}
+.mapcard{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:8px}
+.mapcard svg{width:100%;height:auto;display:block;touch-action:manipulation}
+.mapcard path{stroke:var(--card);stroke-width:1.1;cursor:pointer}
+.mapcard path.sel{stroke:var(--ink);stroke-width:2.4}
+
+/* legend */
+.legend{display:flex;flex-direction:column;gap:4px;margin-top:14px}
+.legend .li{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink2)}
+.legend .sw{width:15px;height:15px;border-radius:4px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.legend .n{font-weight:700;color:var(--ink);width:9px}
+
+footer{margin-top:24px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--ink3);line-height:1.6}
+footer a{color:var(--ink2)}
+.note{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-size:12.5px;color:var(--ink2);margin-top:14px}
+.err{border-color:var(--accent);color:var(--accent)}
+.skel{height:62px;border-radius:12px;background:var(--line2);animation:p 1.3s ease-in-out infinite}
+@keyframes p{50%{opacity:.5}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2 6.5 11h3L5 18h14l-4.5-7h3z"/><path d="M12 18v4"/>
+    </svg>
+    <div>
+      <h1>Waldbrandgefahr</h1>
+      <p class="sub">Sachsen-Anhalt · Landeszentrum Wald</p>
+    </div>
+  </div>
+  <div class="stand">
+    <span class="dot"></span><span id="stand">lade Daten …</span>
+    <button id="reload" type="button">Aktualisieren</button>
+  </div>
+</header>
+
+<div id="peak"></div>
+
+<nav>
+  <button id="tabList" class="on" type="button">Liste</button>
+  <button id="tabMap" type="button">Karte</button>
+</nav>
+
+<div class="bar">
+  <h2 id="barTitle">19 Melderegionen</h2>
+  <button id="sortBtn" type="button">nach Name</button>
+</div>
+
+<div id="list" class="list">
+  <div class="skel"></div><div class="skel"></div><div class="skel"></div>
+</div>
+
+<div id="map">
+  <div class="mapcard" id="mapCard"></div>
+  <p class="sub" style="margin-top:8px">Region antippen, um Details und Verlauf zu sehen.</p>
+</div>
+
+<div class="legend" id="legend"></div>
+
+<footer>
+  Daten: <a href="https://forst-lsa.maps.arcgis.com/apps/dashboards/0f1b1a23ebd04a3dbd14b76a981d8006" target="_blank" rel="noopener">Waldbrand-Dashboard</a>
+  des Landeszentrum Wald Sachsen-Anhalt, direkt aus dem offenen ArcGIS-FeatureService.
+  Keine Gewähr für Vollständigkeit oder Aktualität — im Zweifel gilt die amtliche Quelle.
+  Die Gefahrenstufe wird an Werktagen aktualisiert; am Wochenende gilt der Wert von Freitag.
+</footer>
+
+</div>
+
+<script>
+const SVC = 'https://services-eu1.arcgis.com/QfhFJO45CK0rDeLL/arcgis/rest/services';
+const LEVELS = {
+  1:{c:'#ffffcf',t:'#1b2a20',l:'sehr geringe Gefahr'},
+  2:{c:'#ffd77a',t:'#1b2a20',l:'geringe Gefahr'},
+  3:{c:'#ff8c3b',t:'#1b2a20',l:'mittlere Gefahr'},
+  4:{c:'#e8171e',t:'#fff',   l:'hohe Gefahr'},
+  5:{c:'#7d0000',t:'#fff',   l:'sehr hohe Gefahr'}
+};
+const HIST_DAYS = 30;
+const CACHE_KEY = 'waldbrand-cache-v1';
+const fmtDate = new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
+const fmtTime = new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+const fmtShort = new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit'});
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+let state = {regions:[], hist:{}, season:{}, geo:null, sort:'level', sel:null, view:'list'};
+
+/* ---------- data ---------- */
+async function q(service, params){
+  const u = new URL(`${SVC}/${service}/FeatureServer/0/query`);
+  Object.entries({f:'json', returnGeometry:false, ...params}).forEach(([k,v]) => u.searchParams.set(k,v));
+  const r = await fetch(u);
+  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  const j = await r.json();
+  if(j.error) throw new Error(j.error.message || 'ArcGIS-Fehler');
+  return j;
+}
+
+// ArcGIS SQL timestamps are naive local-to-service; date-only precision is enough here
+const ts = d => `timestamp '${d.toISOString().slice(0,10)} 00:00:00'`;
+
+function seasonStart(){
+  const now = new Date();
+  // Waldbrandsaison runs 1. März – 30. September; before March, show last year's season
+  const y = now.getMonth() < 2 ? now.getFullYear()-1 : now.getFullYear();
+  return new Date(Date.UTC(y,2,1));
+}
+
+async function loadCurrent(){
+  const j = await q('waldbrandgefahrenstufen_aktuell', {
+    where:'1=1',
+    outFields:'melderegion,gefahrenst,gefahrenst_prognose,gefahrenkl,knz,editdate',
+    orderByFields:'melderegion ASC'
+  });
+  return j.features.map(f => f.attributes);
+}
+
+async function loadHistory(){
+  const from = new Date(Date.now() - HIST_DAYS*864e5);
+  const j = await q('waldbrandgefahrenstufen_historisch', {
+    where:`date>=${ts(from)}`,
+    outFields:'melderegion,gefahrenst,date',
+    orderByFields:'date ASC',
+    resultRecordCount:2000
+  });
+  const by = {};
+  for(const {attributes:a} of j.features){
+    (by[a.melderegion] ||= {})[dayKey(a.date)] = a.gefahrenst;
+  }
+  return by;
+}
+
+async function loadSeason(){
+  const j = await q('waldbrandgefahrenstufen_historisch', {
+    where:`date>=${ts(seasonStart())}`,
+    groupByFieldsForStatistics:'melderegion,gefahrenst',
+    outStatistics:JSON.stringify([{statisticType:'count',onStatisticField:'gefahrenst',outStatisticFieldName:'n'}]),
+    outFields:'*',
+    resultRecordCount:2000
+  });
+  const by = {};
+  for(const {attributes:a} of j.features){
+    ((by[a.melderegion] ||= {})[a.gefahrenst] = a.n);
+  }
+  return by;
+}
+
+async function loadGeo(){
+  const u = new URL(`${SVC}/waldbrandgefahrenstufen_aktuell/FeatureServer/0/query`);
+  Object.entries({
+    where:'1=1', outFields:'melderegion', returnGeometry:true,
+    outSR:4326, maxAllowableOffset:0.004, f:'geojson'
+  }).forEach(([k,v]) => u.searchParams.set(k,v));
+  const r = await fetch(u);
+  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+const dayKey = ms => new Date(ms).toISOString().slice(0,10);
+
+/* ---------- render ---------- */
+function renderStand(){
+  const last = Math.max(...state.regions.map(r => r.editdate || 0));
+  $('stand').textContent = last > 0
+    ? `Stand ${fmtTime.format(new Date(last))} Uhr`
+    : `Stand unbekannt`;
+}
+
+function renderPeak(){
+  const max = Math.max(...state.regions.map(r => r.gefahrenst));
+  const n = state.regions.filter(r => r.gefahrenst === max).length;
+  const L = LEVELS[max];
+  $('peak').innerHTML = `<div class="peak" style="background:${L.c};color:${L.t};border-color:rgba(0,0,0,.14)">
+    <span class="num">${max}</span>
+    <span class="txt"><b>Höchste Stufe heute: ${esc(L.l)}</b>
+    <span>in ${n} von ${state.regions.length} Melderegionen</span></span></div>`;
+}
+
+function sortRegions(){
+  const rs = [...state.regions];
+  rs.sort(state.sort === 'level'
+    ? (a,b) => b.gefahrenst - a.gefahrenst || a.melderegion.localeCompare(b.melderegion,'de')
+    : (a,b) => a.melderegion.localeCompare(b.melderegion,'de'));
+  return rs;
+}
+
+function stripHTML(region, current){
+  const days = state.hist[region];
+  if(!days) return '<p class="sub">Keine Verlaufsdaten.</p>';
+  const cells = [], today = new Date();
+  // the historic service lags a few hours, so today comes from the live layer
+  days[dayKey(today)] ??= current;
+  for(let i = HIST_DAYS-1; i >= 0; i--){
+    const d = new Date(today - i*864e5), k = dayKey(d), lv = days[k];
+    cells.push(lv
+      ? `<i style="background:${LEVELS[lv].c}" title="${fmtDate.format(d)}: Stufe ${lv}"></i>`
+      : `<i class="na" title="${fmtDate.format(d)}: keine Daten"></i>`);
+  }
+  const first = new Date(today - (HIST_DAYS-1)*864e5);
+  return `<div class="strip">${cells.join('')}</div>
+    <div class="striplab"><span>${fmtShort.format(first)}</span><span>heute</span></div>`;
+}
+
+function seasonHTML(region){
+  const counts = state.season[region];
+  if(!counts) return '';
+  const total = Object.values(counts).reduce((a,b) => a+b, 0);
+  if(!total) return '';
+  const segs = [1,2,3,4,5].filter(l => counts[l]).map(l =>
+    `<i style="flex:${counts[l]};background:${LEVELS[l].c}" title="Stufe ${l}: ${counts[l]} Tage"></i>`).join('');
+  const high = (counts[4]||0) + (counts[5]||0);
+  return `<div class="dh">Saison seit 1. März — ${total} Tage</div>
+    <div class="season">${segs}</div>
+    <div class="facts">
+      <div class="fact"><div class="k">Stufe 4 oder 5</div><div class="v">${high} <small>Tage · ${Math.round(high/total*100)} %</small></div></div>
+      <div class="fact"><div class="k">Ø Stufe</div><div class="v">${(Object.entries(counts).reduce((s,[l,n]) => s+l*n, 0)/total).toFixed(1)}</div></div>
+    </div>`;
+}
+
+function renderList(){
+  const rows = sortRegions().map(r => {
+    const L = LEVELS[r.gefahrenst] || {c:'#ccc',t:'#000',l:'unbekannt'};
+    const open = state.sel === r.melderegion;
+    const prog = r.gefahrenst_prognose
+      ? `<div class="fact"><div class="k">Prognose morgen</div><div class="v">Stufe ${r.gefahrenst_prognose}</div></div>` : '';
+    return `<div class="row${open?' open sel':''}" data-r="${esc(r.melderegion)}">
+      <button class="head" type="button">
+        <span class="badge" style="background:${L.c};color:${L.t}">${r.gefahrenst}</span>
+        <span class="name"><b>${esc(r.melderegion)}</b><span>${esc(L.l)}</span></span>
+        <svg class="chev" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+      <div class="detail">
+        <div class="dh">Letzte ${HIST_DAYS} Tage</div>
+        ${open ? stripHTML(r.melderegion, r.gefahrenst) : ''}
+        ${open ? seasonHTML(r.melderegion) : ''}
+        ${open ? `<div class="facts"><div class="fact"><div class="k">Gefahrenklasse</div><div class="v">${esc(r.gefahrenkl||'—')}</div></div>
+          <div class="fact"><div class="k">Kreis</div><div class="v">${esc(r.knz||'—')}</div></div>${prog}</div>` : ''}
+      </div>
+    </div>`;
+  });
+  $('list').innerHTML = rows.join('');
+  $('barTitle').textContent = `${state.regions.length} Melderegionen`;
+  $('sortBtn').textContent = state.sort === 'level' ? 'nach Name' : 'nach Stufe';
+}
+
+function renderLegend(){
+  $('legend').innerHTML = [1,2,3,4,5].map(l =>
+    `<div class="li"><span class="sw" style="background:${LEVELS[l].c}"></span><span class="n">${l}</span>${LEVELS[l].l}</div>`
+  ).join('');
+}
+
+/* Equirectangular projection — fine for a single Bundesland */
+function renderMap(){
+  if(!state.geo) return;
+  const W = 600, PAD = 6;
+  const lv = Object.fromEntries(state.regions.map(r => [r.melderegion, r.gefahrenst]));
+  let minX=1/0, maxX=-1/0, minY=1/0, maxY=-1/0;
+  const rings = [];
+
+  for(const f of state.geo.features){
+    const g = f.geometry;
+    const polys = g.type === 'Polygon' ? [g.coordinates] : g.coordinates;
+    const rs = [];
+    for(const poly of polys) for(const ring of poly){
+      const pts = ring.map(([lon,lat]) => {
+        const x = lon*Math.cos(52*Math.PI/180), y = -lat;
+        if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y;
+        return [x,y];
+      });
+      rs.push(pts);
+    }
+    rings.push({name:f.properties.melderegion, rs});
+  }
+
+  const k = W/(maxX-minX), H = Math.round((maxY-minY)*k);
+  const path = rs => rs.map(pts =>
+    'M' + pts.map(([x,y]) => `${((x-minX)*k).toFixed(1)},${((y-minY)*k).toFixed(1)}`).join('L') + 'Z').join('');
+
+  $('mapCard').innerHTML = `<svg viewBox="${-PAD} ${-PAD} ${W+2*PAD} ${H+2*PAD}" role="img" aria-label="Karte der Waldbrandgefahrenstufen">
+    ${rings.map(r => {
+      const L = LEVELS[lv[r.name]] || {c:'#ccc'};
+      const sel = state.sel === r.name ? ' class="sel"' : '';
+      return `<path${sel} d="${path(r.rs)}" fill="${L.c}" data-r="${esc(r.name)}"><title>${esc(r.name)} — Stufe ${lv[r.name]}</title></path>`;
+    }).join('')}
+  </svg>`;
+}
+
+function render(){
+  renderStand(); renderPeak(); renderList(); renderMap(); renderLegend();
+}
+
+/* ---------- interaction ---------- */
+$('list').addEventListener('click', e => {
+  const row = e.target.closest('.row');
+  if(!row) return;
+  select(state.sel === row.dataset.r ? null : row.dataset.r);
+});
+
+$('mapCard').addEventListener('click', e => {
+  const p = e.target.closest('path');
+  if(!p) return;
+  select(p.dataset.r);
+  showView('list');
+  document.querySelector(`.row[data-r="${CSS.escape(p.dataset.r)}"]`)
+    ?.scrollIntoView({behavior:'smooth', block:'center'});
+});
+
+function select(name){
+  state.sel = name;
+  location.hash = name ? encodeURIComponent(name) : '';
+  renderList(); renderMap();
+}
+
+function showView(v){
+  state.view = v;
+  $('tabList').classList.toggle('on', v === 'list');
+  $('tabMap').classList.toggle('on', v === 'map');
+  $('list').classList.toggle('off', v !== 'list');
+  $('map').classList.toggle('on', v === 'map');
+  $('sortBtn').style.visibility = v === 'list' ? '' : 'hidden';
+}
+
+$('tabList').onclick = () => showView('list');
+$('tabMap').onclick = () => showView('map');
+$('sortBtn').onclick = () => { state.sort = state.sort === 'level' ? 'name' : 'level'; renderList(); };
+$('reload').onclick = () => load(true);
+
+/* ---------- boot ---------- */
+function cacheWrite(){
+  try{
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      at:Date.now(), regions:state.regions, hist:state.hist, season:state.season, geo:state.geo
+    }));
+  }catch{ /* quota — cache is optional */ }
+}
+
+function cacheRead(){
+  try{
+    const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+    if(!c?.regions?.length) return null;
+    return {...c, cachedAt:c.at};
+  }catch{ return null; }
+}
+
+function note(msg, isErr){
+  let n = $('note');
+  if(!n){ n = document.createElement('div'); n.id = 'note'; $('peak').after(n); }
+  n.className = 'note' + (isErr ? ' err' : '');
+  n.textContent = msg;
+}
+
+async function load(manual){
+  $('reload').disabled = true;
+  $('reload').textContent = 'lädt …';
+  try{
+    const [regions, hist, season, geo] = await Promise.all([
+      loadCurrent(), loadHistory(), loadSeason(),
+      state.geo ? Promise.resolve(state.geo) : loadGeo()
+    ]);
+    Object.assign(state, {regions, hist, season, geo, cachedAt:Date.now()});
+    render();
+    cacheWrite();
+    $('note')?.remove();
+  }catch(err){
+    if(!state.regions.length){
+      const cached = cacheRead();
+      if(cached){ Object.assign(state, cached); render(); }
+    }
+    if(state.regions.length){
+      note(`Keine Verbindung — angezeigt werden gespeicherte Daten vom ${fmtTime.format(new Date(state.cachedAt))} Uhr.`);
+    }else{
+      note(`Daten konnten nicht geladen werden: ${err.message}`, true);
+      $('list').innerHTML = '';
+    }
+  }finally{
+    $('reload').disabled = false;
+    $('reload').textContent = 'Aktualisieren';
+  }
+}
+
+const cached = cacheRead();
+if(cached){ Object.assign(state, cached); }
+state.sel = location.hash ? decodeURIComponent(location.hash.slice(1)) : null;
+if(state.regions.length) render();
+showView('list');
+load();
+</script>
+</body>
+</html>
