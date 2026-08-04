@@ -41,12 +41,20 @@ h1{font-size:clamp(21px,5.4vw,28px);margin:0;letter-spacing:-.02em;line-height:1
 .stand button{background:none;border:1px solid var(--line);border-radius:20px;padding:3px 10px;font-size:11.5px;color:var(--ink2)}
 .stand button:disabled{opacity:.5;cursor:default}
 
-/* peak banner */
-.peak{display:flex;align-items:center;gap:12px;margin:14px 0 0;padding:13px 15px;border-radius:14px;border:1px solid var(--line)}
-.peak .num{font-size:34px;font-weight:800;line-height:1;letter-spacing:-.03em}
-.peak .txt{min-width:0}
-.peak .txt b{display:block;font-size:14.5px;line-height:1.25}
-.peak .txt span{display:block;font-size:12px;opacity:.85;margin-top:2px}
+/* my region */
+.mine{display:flex;align-items:center;gap:14px;width:100%;text-align:left;margin:14px 0 0;padding:15px;border-radius:14px;border:1px solid rgba(0,0,0,.14)}
+.mine .num{font-size:44px;font-weight:800;line-height:1;letter-spacing:-.03em}
+.mine .txt{flex:1;min-width:0}
+.mine .txt small{display:block;font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;opacity:.72;font-weight:700}
+.mine .txt b{display:block;font-size:16px;line-height:1.2;margin-top:2px}
+.mine .txt span{display:block;font-size:13px;opacity:.85;margin-top:1px}
+.mine .edit{flex:none;border:1px solid currentColor;opacity:.65;background:none;border-radius:20px;padding:3px 9px;font-size:11px}
+.pick{margin:14px 0 0;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--card)}
+.pick p{margin:0 0 10px;font-size:13.5px;color:var(--ink2)}
+.pick select{width:100%;font:inherit;font-size:15px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:10px}
+.pick .geo{margin-top:8px;width:100%;background:var(--forest);color:#fff;border:none;border-radius:9px;padding:10px;font-size:14px;font-weight:600}
+.pick .geo:disabled{opacity:.6}
+.pick .msg{margin:8px 0 0;font-size:12px;color:var(--accent)}
 
 /* tabs */
 nav{display:flex;gap:4px;background:var(--line2);border:1px solid var(--line);border-radius:11px;padding:3px;margin:16px 0 0}
@@ -93,6 +101,11 @@ nav button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(
 .mapcard svg{width:100%;height:auto;display:block;touch-action:manipulation}
 .mapcard path{stroke:var(--card);stroke-width:1.1;cursor:pointer}
 .mapcard path.sel{stroke:var(--ink);stroke-width:2.4}
+.mapcard text{
+  pointer-events:none; text-anchor:middle; dominant-baseline:central;
+  font-weight:700; letter-spacing:-.01em;
+  paint-order:stroke; stroke-linejoin:round; /* halo behind the glyphs, not over them */
+}
 
 /* legend */
 .legend{display:flex;flex-direction:column;gap:4px;margin-top:14px}
@@ -127,7 +140,7 @@ footer a{color:var(--ink2)}
   </div>
 </header>
 
-<div id="peak"></div>
+<div id="mine"></div>
 
 <nav>
   <button id="tabList" class="on" type="button">Liste</button>
@@ -145,7 +158,7 @@ footer a{color:var(--ink2)}
 
 <div id="map">
   <div class="mapcard" id="mapCard"></div>
-  <p class="sub" style="margin-top:8px">Region antippen, um Details und Verlauf zu sehen.</p>
+  <p class="sub" id="mapHint" style="margin-top:8px">Region antippen, um Details und Verlauf zu sehen.</p>
 </div>
 
 <div class="legend" id="legend"></div>
@@ -170,6 +183,7 @@ const LEVELS = {
 };
 const HIST_DAYS = 30;
 const CACHE_KEY = 'waldbrand-cache-v1';
+const HOME_KEY = 'waldbrand-home';
 const fmtDate = new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});
 const fmtTime = new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
 const fmtShort = new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit'});
@@ -177,7 +191,8 @@ const fmtShort = new Intl.DateTimeFormat('de-DE',{day:'2-digit',month:'2-digit'}
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-let state = {regions:[], hist:{}, season:{}, geo:null, sort:'level', sel:null, view:'list'};
+let state = {regions:[], hist:{}, season:{}, geo:null, sort:'level', sel:null, view:'list',
+  home: localStorage.getItem(HOME_KEY)};
 
 /* ---------- data ---------- */
 async function q(service, params){
@@ -260,14 +275,71 @@ function renderStand(){
     : `Stand unbekannt`;
 }
 
-function renderPeak(){
-  const max = Math.max(...state.regions.map(r => r.gefahrenst));
-  const n = state.regions.filter(r => r.gefahrenst === max).length;
-  const L = LEVELS[max];
-  $('peak').innerHTML = `<div class="peak" style="background:${L.c};color:${L.t};border-color:rgba(0,0,0,.14)">
-    <span class="num">${max}</span>
-    <span class="txt"><b>Höchste Stufe heute: ${esc(L.l)}</b>
-    <span>in ${n} von ${state.regions.length} Melderegionen</span></span></div>`;
+function renderMine(){
+  const mine = state.regions.find(r => r.melderegion === state.home);
+  if(!mine){
+    $('mine').innerHTML = `<div class="pick">
+      <p>Welche Melderegion ist deine? Sie bleibt oben angeheftet.</p>
+      <select id="homeSel"><option value="">Region wählen …</option>${
+        sortByName().map(r => `<option value="${esc(r.melderegion)}">${esc(r.melderegion)}</option>`).join('')
+      }</select>
+      <button class="geo" id="geoBtn" type="button">Meinen Standort verwenden</button>
+      <p class="msg" id="geoMsg" hidden></p>
+    </div>`;
+    $('homeSel').onchange = e => setHome(e.target.value);
+    $('geoBtn').onclick = locate;
+    return;
+  }
+  const L = LEVELS[mine.gefahrenst];
+  $('mine').innerHTML = `<button class="mine" type="button" style="background:${L.c};color:${L.t}">
+    <span class="num">${mine.gefahrenst}</span>
+    <span class="txt"><small>Meine Region</small><b>${esc(mine.melderegion)}</b><span>${esc(L.l)}</span></span>
+    <span class="edit">ändern</span>
+  </button>`;
+  $('mine').firstElementChild.onclick = e => {
+    if(e.target.closest('.edit')) return setHome('');
+    select(mine.melderegion);
+    showView('list');
+    document.querySelector(`.row[data-r="${CSS.escape(mine.melderegion)}"]`)
+      ?.scrollIntoView({behavior:'smooth', block:'center'});
+  };
+}
+
+const sortByName = () => [...state.regions].sort((a,b) => a.melderegion.localeCompare(b.melderegion,'de'));
+
+function setHome(name){
+  state.home = name || null;
+  if(name) localStorage.setItem(HOME_KEY, name); else localStorage.removeItem(HOME_KEY);
+  renderMine();
+}
+
+function pointInFeature(f, lon, lat){
+  const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+  let inside = false;
+  for(const poly of polys) for(const ring of poly)
+    for(let i=0, j=ring.length-1; i<ring.length; j=i++){
+      const [xi,yi] = ring[i], [xj,yj] = ring[j];
+      if((yi>lat) !== (yj>lat) && lon < (xj-xi)*(lat-yi)/(yj-yi) + xi) inside = !inside;
+    }
+  return inside;
+}
+
+function locate(){
+  const btn = $('geoBtn'), msg = $('geoMsg');
+  if(!navigator.geolocation) return fail('Standort wird von diesem Browser nicht unterstützt.');
+  btn.disabled = true; btn.textContent = 'suche Standort …';
+  navigator.geolocation.getCurrentPosition(pos => {
+    const {longitude:lon, latitude:lat} = pos.coords;
+    if(!state.geo) return fail('Kartendaten fehlen — bitte Region wählen.');
+    const hit = state.geo.features.find(f => pointInFeature(f, lon, lat));
+    if(hit) return setHome(hit.properties.melderegion);
+    fail('Der Standort liegt außerhalb von Sachsen-Anhalt — bitte Region wählen.');
+  }, () => fail('Standort nicht verfügbar — bitte Region wählen.'), {timeout:10000, maximumAge:6e5});
+
+  function fail(text){
+    msg.hidden = false; msg.textContent = text;
+    btn.disabled = false; btn.textContent = 'Meinen Standort verwenden';
+  }
 }
 
 function sortRegions(){
@@ -343,13 +415,74 @@ function renderLegend(){
   ).join('');
 }
 
+/* names are too long to fit inside a county on a phone */
+const shortName = n => n
+  .replace(/^(Landeshauptstadt|Stadt) /, '')
+  .replace(/ \(Saale\)$/, '')
+  .replace(/^Wittenberg - /, '')
+  .replace(/^Nationalpark /, 'NLP ')
+  .replace(/, nördlich der .*/, ' Nord')
+  .replace(/, südlich der .*/, ' Süd');
+
+const ringArea = pts => {
+  let a = 0;
+  for(let i=0, n=pts.length; i<n; i++){
+    const [x1,y1] = pts[i], [x2,y2] = pts[(i+1)%n];
+    a += x1*y2 - x2*y1;
+  }
+  return a/2;
+};
+
+function ringCentroid(pts){
+  let a=0, cx=0, cy=0;
+  for(let i=0, n=pts.length; i<n; i++){
+    const [x1,y1] = pts[i], [x2,y2] = pts[(i+1)%n], f = x1*y2 - x2*y1;
+    a += f; cx += (x1+x2)*f; cy += (y1+y2)*f;
+  }
+  a *= 0.5;
+  return a ? [cx/(6*a), cy/(6*a)] : pts[0];
+}
+
+function crossings(pts, y){
+  const xs = [];
+  for(let i=0, j=pts.length-1; i<pts.length; j=i++){
+    const [xi,yi] = pts[i], [xj,yj] = pts[j];
+    if((yi>y) !== (yj>y)) xs.push((xj-xi)*(y-yi)/(yj-yi) + xi);
+  }
+  return xs.sort((a,b) => a-b);
+}
+
+// centroid escapes concave shapes, so fall back to the widest span at that height
+function labelSpot(pts){
+  const c = ringCentroid(pts), xs = crossings(pts, c[1]);
+  let best = null, bw = -1;
+  for(let i=0; i+1<xs.length; i+=2){
+    const w = xs[i+1]-xs[i];
+    if(w > bw){ bw = w; best = [(xs[i]+xs[i+1])/2, c[1]]; }
+  }
+  if(!best) return {p:c, w:0};
+  const inside = xs.some((x,i) => i%2===0 && c[0]>=x && c[0]<=xs[i+1]);
+  return {p: inside ? c : best, w: bw};
+}
+
+function wrap(name, maxChars){
+  const lines = [];
+  for(const tok of name.split(/(?<=-)|\s+/)){
+    const last = lines.length-1;
+    const joined = last<0 ? tok : lines[last] + (lines[last].endsWith('-') ? '' : ' ') + tok;
+    if(last<0 || joined.length > maxChars) lines.push(tok);
+    else lines[last] = joined;
+  }
+  return lines;
+}
+
 /* Equirectangular projection — fine for a single Bundesland */
 function renderMap(){
   if(!state.geo) return;
-  const W = 600, PAD = 6;
+  const W = 600, PAD = 14;
   const lv = Object.fromEntries(state.regions.map(r => [r.melderegion, r.gefahrenst]));
   let minX=1/0, maxX=-1/0, minY=1/0, maxY=-1/0;
-  const rings = [];
+  const regions = [];
 
   for(const f of state.geo.features){
     const g = f.geometry;
@@ -363,24 +496,53 @@ function renderMap(){
       });
       rs.push(pts);
     }
-    rings.push({name:f.properties.melderegion, rs});
+    regions.push({name:f.properties.melderegion, rs});
   }
 
   const k = W/(maxX-minX), H = Math.round((maxY-minY)*k);
+  for(const r of regions){
+    r.rs = r.rs.map(pts => pts.map(([x,y]) => [(x-minX)*k, (y-minY)*k]));
+    r.main = r.rs.reduce((a,b) => Math.abs(ringArea(b)) > Math.abs(ringArea(a)) ? b : a);
+  }
+
   const path = rs => rs.map(pts =>
-    'M' + pts.map(([x,y]) => `${((x-minX)*k).toFixed(1)},${((y-minY)*k).toFixed(1)}`).join('L') + 'Z').join('');
+    'M' + pts.map(([x,y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join('L') + 'Z').join('');
+
+  const labels = regions.map(r => {
+    const {p, w} = labelSpot(r.main);
+    const fs = Math.max(12, Math.min(21, w/4.2));
+    const lines = wrap(shortName(r.name), Math.max(7, Math.round(w/(fs*0.6))));
+    const wide = Math.max(...lines.map(t => t.length)) * fs * 0.6;
+    // keep labels of small or edge regions on the canvas
+    const x = Math.min(Math.max(p[0], wide/2), W - wide/2).toFixed(1);
+    const y = (p[1] - (lines.length-1)*fs*0.56).toFixed(1);
+    const L = LEVELS[lv[r.name]] || {c:'#ccc', t:'#000'};
+    const tspans = lines.map((t,i) =>
+      `<tspan x="${x}" dy="${i ? (fs*1.12).toFixed(1) : 0}">${esc(t)}</tspan>`).join('');
+    return {
+      halo: `<text x="${x}" y="${y}" font-size="${fs.toFixed(1)}" fill="none" stroke="${L.c}" stroke-width="${(fs*0.34).toFixed(1)}">${tspans}</text>`,
+      glyph:`<text x="${x}" y="${y}" font-size="${fs.toFixed(1)}" fill="${L.t}">${tspans}</text>`
+    };
+  });
 
   $('mapCard').innerHTML = `<svg viewBox="${-PAD} ${-PAD} ${W+2*PAD} ${H+2*PAD}" role="img" aria-label="Karte der Waldbrandgefahrenstufen">
-    ${rings.map(r => {
+    ${regions.map(r => {
       const L = LEVELS[lv[r.name]] || {c:'#ccc'};
       const sel = state.sel === r.name ? ' class="sel"' : '';
       return `<path${sel} d="${path(r.rs)}" fill="${L.c}" data-r="${esc(r.name)}"><title>${esc(r.name)} — Stufe ${lv[r.name]}</title></path>`;
     }).join('')}
+    <g>${labels.map(l => l.halo).join('')}</g>
+    <g>${labels.map(l => l.glyph).join('')}</g>
   </svg>`;
+
+  const sel = state.regions.find(r => r.melderegion === state.sel);
+  $('mapHint').textContent = sel
+    ? `${sel.melderegion} — Stufe ${sel.gefahrenst}, ${LEVELS[sel.gefahrenst].l}`
+    : 'Region antippen, um Details und Verlauf zu sehen.';
 }
 
 function render(){
-  renderStand(); renderPeak(); renderList(); renderMap(); renderLegend();
+  renderStand(); renderMine(); renderList(); renderMap(); renderLegend();
 }
 
 /* ---------- interaction ---------- */
@@ -438,7 +600,7 @@ function cacheRead(){
 
 function note(msg, isErr){
   let n = $('note');
-  if(!n){ n = document.createElement('div'); n.id = 'note'; $('peak').after(n); }
+  if(!n){ n = document.createElement('div'); n.id = 'note'; $('mine').after(n); }
   n.className = 'note' + (isErr ? ' err' : '');
   n.textContent = msg;
 }
