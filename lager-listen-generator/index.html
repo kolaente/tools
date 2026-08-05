@@ -582,6 +582,27 @@
       vertical-align: middle;
     }
 
+    .table-page .signature-block {
+      display: flex;
+      gap: 28pt;
+      margin-top: 22pt;
+    }
+
+    .table-page .signature-block .sig-field {
+      width: 62mm;
+    }
+
+    .table-page .signature-block .sig-line {
+      height: 18pt;
+      border-bottom: 1px solid #111827;
+    }
+
+    .table-page .signature-block .sig-label {
+      margin-top: 2pt;
+      font-size: 7.5pt;
+      color: #6b7280;
+    }
+
     .table-page .empty-row {
       padding: 12pt;
       text-align: center;
@@ -779,7 +800,7 @@
         <div class="list-row">
           <div>
             <div class="list-name">Unterschriftenliste</div>
-            <div class="list-desc">Teilnehmerliste mit Adresse, Alter und leerer Unterschriftenspalte (Querformat).</div>
+            <div class="list-desc">Teilnehmerliste mit Adresse, Alter und leerer Unterschriftenspalte, am Ende Datum/Unterschrift für Antragsteller:in bzw. Lagerleitung — z.&nbsp;B. für Zuschussanträge (Querformat).</div>
           </div>
           <button class="btn btn-secondary" data-list="unterschriften">Drucken</button>
         </div>
@@ -1380,7 +1401,7 @@
 
     // ---- Table renderers (landscape) ----
     // withLetterhead: only the Unterschriftenliste carries the letterhead.
-    function tablePage(title, campName, headerRow, bodyRows, footnote, extraClass, withLetterhead) {
+    function tablePage(title, campName, headerRow, bodyRows, footnote, extraClass, withLetterhead, afterTableHTML) {
       const body = bodyRows.length
         ? `<tbody>${bodyRows.join('')}</tbody>`
         : `<tbody><tr><td colspan="${headerRow.length}" class="empty-row">Keine Einträge.</td></tr></tbody>`;
@@ -1409,6 +1430,7 @@
           ${body}
         </table>
         ${footnote ? `<div class="footnote">${escapeHtml(footnote)}</div>` : ''}
+        ${afterTableHTML || ''}
         ${letterheadFooter}
       </section>`;
     }
@@ -1575,11 +1597,24 @@
       }
       if (!chunks.length) chunks.push([]);
 
+      // Signature block ≈ 2 rows tall; last page must leave room for it.
+      const lastChunk = chunks[chunks.length - 1];
+      if (lastChunk.length > Math.max(1, perPage - 2)) {
+        chunks.push(lastChunk.splice(Math.max(1, perPage - 2)));
+      }
+
+      const signatureBlock = `<div class="signature-block">
+        <div class="sig-field"><div class="sig-line"></div><div class="sig-label">Datum</div></div>
+        <div class="sig-field"><div class="sig-line"></div><div class="sig-label">Unterschrift Antragsteller:in / Lagerleitung</div></div>
+      </div>`;
+
+      let num = 0;
       return chunks.map((chunk, pageIdx) => {
-        const offset = pageIdx * perPage;
-        const rows = chunk.map((p, i) => makeRow(p, offset + i + 1));
+        const rows = chunk.map(p => makeRow(p, ++num));
         const footnote = chunks.length > 1 ? `Seite ${pageIdx + 1} von ${chunks.length}` : null;
-        return tablePage('Unterschriftenliste', campName, cols, rows, footnote, 'signatures', true);
+        const isLast = pageIdx === chunks.length - 1;
+        return tablePage('Unterschriftenliste', campName, cols, rows, footnote, 'signatures', true,
+          isLast ? signatureBlock : '');
       }).join('');
     }
 
