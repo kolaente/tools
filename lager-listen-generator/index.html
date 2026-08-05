@@ -1590,31 +1590,25 @@
         </tr>`;
       }
 
-      const perPage = signatureRowsPerPage();
+      // Signature block ≈ 2 rows tall, appears on every page.
+      const perPage = Math.max(1, signatureRowsPerPage() - 2);
       const chunks = [];
       for (let i = 0; i < participants.length; i += perPage) {
         chunks.push(participants.slice(i, i + perPage));
       }
       if (!chunks.length) chunks.push([]);
 
-      // Signature block ≈ 2 rows tall; last page must leave room for it.
-      const lastChunk = chunks[chunks.length - 1];
-      if (lastChunk.length > Math.max(1, perPage - 2)) {
-        chunks.push(lastChunk.splice(Math.max(1, perPage - 2)));
-      }
-
       const signatureBlock = `<div class="signature-block">
         <div class="sig-field"><div class="sig-line"></div><div class="sig-label">Datum</div></div>
         <div class="sig-field"><div class="sig-line"></div><div class="sig-label">Unterschrift Antragsteller:in / Lagerleitung</div></div>
       </div>`;
 
-      let num = 0;
       return chunks.map((chunk, pageIdx) => {
-        const rows = chunk.map(p => makeRow(p, ++num));
+        const offset = pageIdx * perPage;
+        const rows = chunk.map((p, i) => makeRow(p, offset + i + 1));
         const footnote = chunks.length > 1 ? `Seite ${pageIdx + 1} von ${chunks.length}` : null;
-        const isLast = pageIdx === chunks.length - 1;
         return tablePage('Unterschriftenliste', campName, cols, rows, footnote, 'signatures', true,
-          isLast ? signatureBlock : '');
+          signatureBlock);
       }).join('');
     }
 
