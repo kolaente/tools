@@ -370,6 +370,15 @@
 
       thead { display: table-header-group; }
       tr, td, th { page-break-inside: avoid; break-inside: avoid; }
+
+      /* Pin signature block (+ letterhead footer) to the bottom of each sheet.
+         1mm under the usable 186mm so rounding never spills onto a blank page. */
+      .table-page.signatures {
+        display: flex;
+        flex-direction: column;
+        height: 185mm;
+      }
+      .table-page.signatures .signature-block { margin-top: auto; }
     }
 
     /* ---- Notfallbogen page ---- */
@@ -585,7 +594,7 @@
     .table-page .signature-block {
       display: flex;
       gap: 28pt;
-      margin-top: 22pt;
+      margin-top: 12pt;
     }
 
     .table-page .signature-block .sig-field {
@@ -1551,7 +1560,8 @@
       const headerLines = lines(headerTextInput.value);
       const footerLines = lines(footerTextInput.value);
 
-      let taken = 30 /* page-header */ + 19 /* thead */ + 18 /* footnote */ + 10 /* slack */;
+      let taken = 30 /* page-header */ + 19 /* thead */ + 18 /* footnote */ + 10 /* slack */
+        + 42 /* signature block: 12 margin + 18 line + 2 + ~10 label */;
       if (headerLines || logoDataURL) {
         taken += Math.max(headerLines * 11.7, logoDataURL ? 42.5 : 0) + 5;
       }
@@ -1590,8 +1600,7 @@
         </tr>`;
       }
 
-      // Signature block ≈ 2 rows tall, appears on every page.
-      const perPage = Math.max(1, signatureRowsPerPage() - 2);
+      const perPage = signatureRowsPerPage();
       const chunks = [];
       for (let i = 0; i < participants.length; i += perPage) {
         chunks.push(participants.slice(i, i + perPage));
