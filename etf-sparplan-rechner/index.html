@@ -77,7 +77,7 @@
     width:5.2ch;text-align:right;padding:0;outline:none;
     font-variant-numeric:tabular-nums;
   }
-  .valbox.wide input{width:6.4ch}
+  .valbox.wide input{width:7.5ch}
   .valbox .unit{font-size:12px;font-weight:600;color:var(--ink-soft)}
 
   input[type=range]{
@@ -191,10 +191,10 @@
 
       <div class="field">
         <div class="top">
-          <label for="rate-r">Einzahlrate pro Monat</label>
-          <span class="valbox"><input id="rate" type="text" inputmode="numeric" value="250"><span class="unit">€</span></span>
+          <label for="rate-r">Einzahlrate pro Monat <span class="hint">höhere Werte eintippen</span></label>
+          <span class="valbox wide"><input id="rate" type="text" inputmode="numeric" value="250"><span class="unit">€</span></span>
         </div>
-        <input id="rate-r" type="range" min="0" max="2000" step="25" value="250">
+        <input id="rate-r" type="range" min="0" max="5000" step="25" value="250" data-expand="1">
       </div>
 
       <div class="field">
@@ -226,10 +226,10 @@
 
       <div class="field">
         <div class="top">
-          <label for="wd-r">Entnahme pro Monat</label>
+          <label for="wd-r">Entnahme pro Monat <span class="hint">höhere Werte eintippen</span></label>
           <span class="valbox wide"><input id="wd" type="text" inputmode="numeric" value="1500"><span class="unit">€</span></span>
         </div>
-        <input id="wd-r" type="range" class="amber" min="0" max="10000" step="50" value="1500">
+        <input id="wd-r" type="range" class="amber" min="0" max="10000" step="50" value="1500" data-expand="1">
       </div>
 
       <label class="check amber" style="margin-top:-6px;margin-bottom:12px">
@@ -346,20 +346,66 @@ const num  = new Intl.NumberFormat('de-DE',{maximumFractionDigits:0});
 
 // link each text input with its range slider
 const pairs = [['rate','rate-r'],['years','years-r'],['return','return-r'],['dyn','dyn-r'],['wd','wd-r'],['wdinc','wdinc-r'],['tax','tax-r'],['safe','safe-r'],['glide','glide-r'],['saferet','saferet-r']];
+const EXPAND_CAP = 1000000; // Obergrenze für frei eingetippte Beträge
+
+// accepts "2500", "2.500", "2 500", "1234,5" – deutsche Tausenderpunkte inklusive
+function parseNum(raw){
+  let t=String(raw).trim().replace(/[\s\u00a0€%]/g,'');
+  if(!t) return NaN;
+  if(t.includes(',')) t=t.replace(/\./g,'').replace(',','.');
+  else if(/^-?\d{1,3}(\.\d{3})+$/.test(t)) t=t.replace(/\./g,'');
+  return parseFloat(t);
+}
+function fieldVal(id){
+  const v=parseNum(document.getElementById(id).value);
+  return isNaN(v) ? 0 : v;
+}
+function fmtVal(v){
+  return Number.isInteger(v) ? num.format(v) : String(v).replace('.',',');
+}
+// nächstgrößere „runde" Obergrenze für den Slider (1 / 1,5 / 2 / 2,5 / 3 / 4 / 5 / 7,5 / 10)
+function niceCeil(v){
+  const pow=Math.pow(10,Math.floor(Math.log10(v)));
+  for(const m of [1,1.5,2,2.5,3,4,5,7.5,10]){
+    const c=m*pow;
+    if(c>=v) return c;
+  }
+  return 10*pow;
+}
 function sliderFill(r){
   const min=+r.min,max=+r.max,v=+r.value;
   r.style.setProperty('--fill', ((v-min)/(max-min)*100)+'%');
 }
 pairs.forEach(([t,rg])=>{
   const ti=document.getElementById(t), ri=document.getElementById(rg);
-  ri.addEventListener('input',()=>{ti.value=ri.value; sliderFill(ri); calc();});
+  const baseMax=+ri.max, expand=ri.dataset.expand==='1';
+  // Slider wächst mit, sobald ein größerer Wert eingetippt wird
+  function fitRange(v){
+    if(!expand) return;
+    const target = v>baseMax ? Math.min(EXPAND_CAP, niceCeil(v)) : baseMax;
+    if(+ri.max!==target) ri.max=target;
+  }
+  function applyText(v){
+    v=Math.max(+ri.min, expand ? Math.min(EXPAND_CAP,v) : Math.min(baseMax,v));
+    fitRange(v);
+    ri.value=v; sliderFill(ri);
+    return v;
+  }
+  ri.addEventListener('input',()=>{ti.value=fmtVal(+ri.value); sliderFill(ri); calc();});
   ti.addEventListener('input',()=>{
-    let v=parseFloat(ti.value.replace(',','.'));
-    if(!isNaN(v)){ v=Math.min(+ri.max,Math.max(+ri.min,v)); ri.value=v; sliderFill(ri);}
+    const v=parseNum(ti.value);
+    if(!isNaN(v)) applyText(v);
     calc();
   });
-  ti.addEventListener('blur',()=>{ti.value=ri.value;});
-  sliderFill(ri);
+  ti.addEventListener('blur',()=>{
+    let v=parseNum(ti.value);
+    if(isNaN(v)) v=+ri.value;
+    // getippter Wert bleibt exakt erhalten, auch zwischen zwei Slider-Schritten
+    ti.value=fmtVal(applyText(v));
+    calc();
+  });
+  const start=parseNum(ti.value);
+  ti.value=fmtVal(applyText(isNaN(start)?+ri.value:start));
 });
 
 document.getElementById('crash').addEventListener('change', calc);
@@ -474,9 +520,9 @@ function renderCompare(p, main){
 }
 
 function calc(){
-  const years = Math.max(1, Math.round(+document.getElementById('years').value)||1);
-  const wdInc  = +document.getElementById('wdinc').value || 0;
-  const wdInput = +document.getElementById('wd').value || 0;
+  const years = Math.max(1, Math.round(fieldVal('years'))||1);
+  const wdInc  = fieldVal('wdinc');
+  const wdInput = fieldVal('wd');
   const todayMoney = document.getElementById('todaymoney').checked;
   // project today's purchasing power onto the withdrawal start using the same
   // inflation rate that keeps it constant during the withdrawal phase (wdInc)
@@ -484,16 +530,16 @@ function calc(){
   const wdNominal = todayMoney ? wdInput*inflFactor : wdInput;
 
   const p={
-    rate:+document.getElementById('rate').value || 0,
+    rate:fieldVal('rate'),
     years,
-    ret:+document.getElementById('return').value || 0,
-    dyn:+document.getElementById('dyn').value || 0,
+    ret:fieldVal('return'),
+    dyn:fieldVal('dyn'),
     wd:wdNominal,
     wdInc,
-    tax:(+document.getElementById('tax').value || 0)/100,
-    safePct:(+document.getElementById('safe').value || 0)/100,
-    glideYears:Math.round(+document.getElementById('glide').value || 0),
-    safeRet:+document.getElementById('saferet').value || 0,
+    tax:fieldVal('tax')/100,
+    safePct:fieldVal('safe')/100,
+    glideYears:Math.round(fieldVal('glide')),
+    safeRet:fieldVal('saferet'),
     crash:document.getElementById('crash').checked ? 0.35 : 0,
   };
   const r=simulate(p);
