@@ -1181,6 +1181,11 @@
       return `${val(r, 'Vorname')} ${val(r, 'Nachname')}`.trim() || '(ohne Name)';
     }
 
+    function subsidyFunction(age) {
+      const numericAge = Number(String(age).trim().replace(',', '.'));
+      return Number.isFinite(numericAge) && numericAge > 27 ? 'Leitung' : '';
+    }
+
     function hasAllergies(r) {
       return !isNoneEntry(val(r, 'Unverträglichkeiten'));
     }
@@ -1573,13 +1578,14 @@
     function renderUnterschriftenHTML(campName) {
       const cols = [
         { label: 'Nr.', center: true, width: '4%' },
-        { label: 'Nachname', width: '14%' },
-        { label: 'Vorname', width: '12%' },
-        { label: 'Stufe', width: '12%' },
-        { label: 'Adresse', width: '22%' },
-        { label: 'Geb.-Datum', center: true, width: '10%' },
+        { label: 'Nachname', width: '13%' },
+        { label: 'Vorname', width: '11%' },
+        { label: 'Stufe', width: '9%' },
+        { label: 'Adresse', width: '19%' },
+        { label: 'Geb.-Datum', center: true, width: '9%' },
         { label: 'Alter', center: true, width: '6%' },
-        { label: 'Unterschrift', width: '20%' },
+        { label: 'Funktion (>27 Jahre)', center: true, width: '12%' },
+        { label: 'Unterschrift', width: '17%' },
       ];
 
       function makeRow(p, idx) {
@@ -1596,6 +1602,7 @@
           ${cell(addr)}
           <td class="center">${escapeHtml(val(p, 'Geburtsdatum')) || '<span class="empty">—</span>'}</td>
           <td class="center">${escapeHtml(age) || '<span class="empty">—</span>'}</td>
+          ${cell(subsidyFunction(age), 'center')}
           <td></td>
         </tr>`;
       }
