@@ -6,26 +6,74 @@
   <title>Partner Speed Dating</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Unbounded:wght@600;800&family=Karla:wght@400;500;700&display=swap" rel="stylesheet">
+  <script>
+    // applied before first paint so the saved theme doesn't flash
+    try {
+      const savedTheme = localStorage.getItem('partner-speed-dating-theme');
+      if (savedTheme === 'hell') document.documentElement.dataset.theme = 'hell';
+    } catch (error) {}
+  </script>
   <style>
     :root {
-      --white: #ffffff;
-      --mist: #f4f3f6;
-      --lavender: #e9e0ff;
+      --font-display: 'Plus Jakarta Sans', 'Inter', 'Helvetica Neue', sans-serif;
+      --font-body: 'Plus Jakarta Sans', 'Inter', 'Helvetica Neue', sans-serif;
+      --page: #ffffff;
+      --surface: #ffffff;
+      --surface-2: #f4f3f6;
+      --orb-pale: #e9e0ff;
       --ink: #0d0b12;
       --ink-soft: #423c53;
       --ink-faint: #8a8499;
       --line: #dedae6;
-      --violet: #502db2;
-      --violet-deep: #3d17a6;
-      --violet-light: #9875ff;
-      --pink: #e07ab8;
-      --teal: #17baba;
+      --accent: #502db2;
+      --accent-deep: #3d17a6;
+      --accent-light: #9875ff;
+      --accent-contrast: #ffffff;
+      --highlight: #e07ab8;
+      --ok: #17baba;
+      --ring: rgba(152, 117, 255, 0.28);
+      --glass: rgba(255, 255, 255, 0.55);
+      --hero-title: #ffffff;
+      --hero-title-shadow: none;
       --radius: 4px;
       --chamfer: 14px;
       --cut: polygon(0 0, 100% 0, 100% calc(100% - var(--chamfer)), calc(100% - var(--chamfer)) 100%, 0 100%);
       --orb: radial-gradient(circle at 30% 30%, #a3b2ff 0%, #b27cf2 28%, #d489c8 52%, #8a5cf0 78%, #6a3fd6 100%);
       --shadow: 0 10px 30px rgba(61, 23, 166, 0.10), 0 1px 2px rgba(13, 11, 18, 0.06);
+      --shadow-hover: 0 4px 14px rgba(80, 45, 178, 0.14);
+      --page-texture: none;
+    }
+
+    /* Meeting from Hell: dark office, ember glow, halftone dots, comic hard shadows */
+    :root[data-theme="hell"] {
+      --font-display: 'Unbounded', 'Karla', sans-serif;
+      --font-body: 'Karla', 'Helvetica Neue', sans-serif;
+      --page: #120b10;
+      --surface: #261823;
+      --surface-2: #1b1119;
+      --orb-pale: #2a1424;
+      --ink: #f6eadb;
+      --ink-soft: #bfae9f;
+      --ink-faint: #8f7d74;
+      --line: rgba(246, 234, 219, 0.18);
+      --accent: #ff5c2e;
+      --accent-deep: #ffcf5c;
+      --accent-light: #ff3d8a;
+      --accent-contrast: #120b10;
+      --highlight: #ff3d8a;
+      --ok: #6fd39a;
+      --ring: rgba(255, 207, 92, 0.3);
+      --glass: rgba(18, 11, 16, 0.55);
+      --hero-title: #f6eadb;
+      --hero-title-shadow: 4px 4px 0 #c93a16;
+      --orb: radial-gradient(circle at 30% 30%, #ffcf5c 0%, #ff5c2e 30%, #c9203f 58%, #5a1230 85%, #2a0a1c 100%);
+      --shadow: 6px 6px 0 #c93a16;
+      --shadow-hover: 8px 8px 0 #c93a16;
+      --page-texture:
+        radial-gradient(circle at 50% 120%, rgba(255, 92, 46, 0.35), transparent 55%),
+        radial-gradient(circle at 85% -10%, rgba(255, 61, 138, 0.22), transparent 45%),
+        radial-gradient(rgba(246, 234, 219, 0.07) 1px, transparent 1.2px);
     }
 
     * {
@@ -42,8 +90,11 @@
     }
 
     body {
-      font-family: 'Plus Jakarta Sans', 'Inter', 'Helvetica Neue', sans-serif;
-      background: var(--white);
+      font-family: var(--font-body);
+      background: var(--page);
+      background-image: var(--page-texture);
+      background-size: 100% 100%, 100% 100%, 14px 14px;
+      background-attachment: fixed;
       color: var(--ink);
       min-height: 100vh;
       line-height: 1.55;
@@ -51,11 +102,12 @@
     }
 
     ::selection {
-      background: var(--violet);
-      color: var(--white);
+      background: var(--accent);
+      color: var(--accent-contrast);
     }
 
     h1, h2, h3 {
+      font-family: var(--font-display);
       font-weight: 700;
       line-height: 1.08;
       letter-spacing: -0.025em;
@@ -106,7 +158,7 @@
         height: 620px;
         right: -220px;
         top: -360px;
-        background: var(--lavender);
+        background: var(--orb-pale);
       }
 
       & .eyebrow {
@@ -119,7 +171,8 @@
       & h1 {
         font-size: clamp(2.8rem, 7.5vw, 5.4rem);
         font-weight: 700;
-        color: var(--white);
+        color: var(--hero-title);
+        text-shadow: var(--hero-title-shadow);
         letter-spacing: -0.04em;
         line-height: 0.98;
         max-width: 9ch;
@@ -136,7 +189,7 @@
         color: var(--ink);
 
         & strong {
-          color: var(--violet-deep);
+          color: var(--accent-deep);
         }
       }
     }
@@ -150,7 +203,7 @@
     }
 
     .panel {
-      background: var(--white);
+      background: var(--surface);
       border: 1px solid var(--line);
       box-shadow: var(--shadow);
       clip-path: var(--cut);
@@ -166,7 +219,7 @@
 
         & h2 {
           font-size: 1.25rem;
-          color: var(--violet-deep);
+          color: var(--accent-deep);
           display: flex;
           align-items: center;
           gap: 10px;
@@ -176,8 +229,8 @@
             place-items: center;
             width: 28px;
             height: 28px;
-            background: var(--violet);
-            color: var(--white);
+            background: var(--accent);
+            color: var(--accent-contrast);
             font-size: 0.8rem;
             font-weight: 700;
             clip-path: polygon(0 0, 100% 0, 100% 70%, 70% 100%, 0 100%);
@@ -193,10 +246,10 @@
         & code {
           font-family: ui-monospace, 'SF Mono', Menlo, monospace;
           font-size: 0.85em;
-          background: var(--mist);
+          background: var(--surface-2);
           padding: 1px 6px;
           border-radius: 3px;
-          color: var(--violet-deep);
+          color: var(--accent-deep);
         }
       }
     }
@@ -206,7 +259,7 @@
       font-family: inherit;
       font-size: 1rem;
       color: var(--ink);
-      background: var(--mist);
+      background: var(--surface-2);
       border: 1px solid var(--line);
       border-radius: var(--radius);
       padding: 12px 14px;
@@ -215,9 +268,9 @@
 
       &:focus {
         outline: none;
-        background: var(--white);
-        border-color: var(--violet-light);
-        box-shadow: 0 0 0 3px rgba(152, 117, 255, 0.28);
+        background: var(--surface);
+        border-color: var(--accent-light);
+        box-shadow: 0 0 0 3px var(--ring);
       }
 
       &::placeholder {
@@ -240,9 +293,10 @@
       white-space: nowrap;
 
       & b {
+        font-family: var(--font-display);
         font-size: 1.2rem;
         font-weight: 800;
-        color: var(--violet);
+        color: var(--accent);
         letter-spacing: -0.02em;
       }
     }
@@ -250,8 +304,8 @@
     .requirement {
       margin-top: 14px;
       padding: 12px 16px;
-      background: var(--mist);
-      border-left: 3px solid var(--violet-light);
+      background: var(--surface-2);
+      border-left: 3px solid var(--accent-light);
       font-size: 0.95rem;
       color: var(--ink-soft);
 
@@ -261,11 +315,11 @@
       }
 
       &[data-state="ok"] {
-        border-left-color: var(--teal);
+        border-left-color: var(--ok);
       }
 
       &[data-state="short"] {
-        border-left-color: var(--pink);
+        border-left-color: var(--highlight);
       }
     }
 
@@ -295,11 +349,11 @@
 
     /* Buttons */
     .btn {
-      font-family: inherit;
+      font-family: var(--font-display);
       font-size: 0.9rem;
       font-weight: 700;
-      color: var(--violet-deep);
-      background: var(--white);
+      color: var(--accent-deep);
+      background: var(--surface);
       border: 1px solid var(--line);
       border-radius: var(--radius);
       padding: 11px 18px;
@@ -320,8 +374,8 @@
       }
 
       &:hover {
-        border-color: var(--violet-light);
-        box-shadow: 0 4px 14px rgba(80, 45, 178, 0.14);
+        border-color: var(--accent-light);
+        box-shadow: var(--shadow-hover);
         transform: translateY(-1px);
       }
 
@@ -331,7 +385,7 @@
       }
 
       &:focus-visible {
-        outline: 3px solid var(--violet-light);
+        outline: 3px solid var(--accent-light);
         outline-offset: 2px;
       }
 
@@ -343,9 +397,9 @@
       }
 
       &[data-variant="primary"] {
-        background: var(--violet);
-        border-color: var(--violet);
-        color: var(--white);
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-contrast);
         font-size: 1rem;
         padding: 15px 26px;
         clip-path: var(--cut);
@@ -353,8 +407,7 @@
         box-shadow: none;
 
         &:hover {
-          background: var(--violet-deep);
-          border-color: var(--violet-deep);
+          filter: brightness(1.12);
           box-shadow: none;
         }
       }
@@ -366,8 +419,8 @@
         color: var(--ink-soft);
 
         &:hover {
-          color: var(--violet-deep);
-          background: var(--mist);
+          color: var(--accent-deep);
+          background: var(--surface-2);
           transform: none;
           box-shadow: none;
         }
@@ -396,8 +449,8 @@
     .error {
       margin-top: 18px;
       padding: 14px 18px;
-      background: #fff1f7;
-      border-left: 3px solid var(--pink);
+      background: var(--surface-2);
+      border-left: 3px solid var(--highlight);
       color: var(--ink);
       font-weight: 500;
     }
@@ -454,16 +507,16 @@
         transition: color 120ms ease, border-color 120ms ease;
 
         &:hover {
-          color: var(--violet-deep);
+          color: var(--accent-deep);
         }
 
         &[aria-selected="true"] {
-          color: var(--violet-deep);
-          border-bottom-color: var(--violet);
+          color: var(--accent-deep);
+          border-bottom-color: var(--accent);
         }
 
         &:focus-visible {
-          outline: 3px solid var(--violet-light);
+          outline: 3px solid var(--accent-light);
           outline-offset: -3px;
         }
       }
@@ -496,7 +549,7 @@
       justify-content: space-between;
       gap: 14px;
       padding: 16px 28px;
-      background: rgba(255, 255, 255, 0.55);
+      background: var(--glass);
       backdrop-filter: blur(8px);
       flex-wrap: wrap;
 
@@ -512,7 +565,7 @@
 
         & kbd {
           font-family: inherit;
-          background: var(--white);
+          background: var(--surface);
           border: 1px solid var(--line);
           border-radius: 3px;
           padding: 0 6px;
@@ -535,13 +588,14 @@
       & .slot-index {
         font-size: 1rem;
         font-weight: 700;
-        color: var(--white);
+        color: var(--page);
         background: var(--ink);
         padding: 6px 12px;
         clip-path: polygon(0 0, 100% 0, 100% 65%, calc(100% - 9px) 100%, 0 100%);
       }
 
       & .slot-time {
+        font-family: var(--font-display);
         font-size: clamp(2.4rem, 7vw, 5rem);
         font-weight: 800;
         color: var(--ink);
@@ -554,12 +608,12 @@
         margin-left: auto;
         font-size: 1rem;
         color: var(--ink);
-        background: rgba(255, 255, 255, 0.6);
+        background: var(--glass);
         padding: 8px 14px;
         clip-path: var(--cut);
 
         & b {
-          color: var(--violet-deep);
+          color: var(--accent-deep);
         }
       }
     }
@@ -571,7 +625,7 @@
     }
 
     .table-card {
-      background: var(--white);
+      background: var(--surface);
       clip-path: var(--cut);
       padding: 16px 18px 20px;
       position: relative;
@@ -589,9 +643,10 @@
         align-items: baseline;
 
         & b {
+          font-family: var(--font-display);
           font-size: 1.7rem;
           font-weight: 800;
-          color: var(--violet);
+          color: var(--accent);
           letter-spacing: -0.03em;
         }
       }
@@ -614,11 +669,11 @@
           flex-shrink: 0;
           width: 16px;
           height: 16px;
-          color: var(--violet);
+          color: var(--accent);
         }
 
         &[data-moved="false"] .mv {
-          color: var(--teal);
+          color: var(--ok);
         }
       }
     }
@@ -655,11 +710,11 @@
       }
 
       & .mv-move {
-        color: var(--violet-deep);
+        color: var(--accent-deep);
       }
 
       & .mv-stay {
-        color: var(--teal);
+        color: var(--ok);
       }
     }
 
@@ -668,7 +723,7 @@
       overflow-x: auto;
       border: 1px solid var(--line);
       box-shadow: var(--shadow);
-      background: var(--white);
+      background: var(--surface);
     }
 
     table.overview {
@@ -688,19 +743,19 @@
       & thead th {
         position: sticky;
         top: 0;
-        background: var(--mist);
+        background: var(--surface-2);
         font-size: 0.72rem;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: var(--ink-soft);
-        border-bottom: 2px solid var(--violet);
+        border-bottom: 2px solid var(--accent);
 
         & small {
           display: block;
           font-size: 0.85rem;
           letter-spacing: 0;
           text-transform: none;
-          color: var(--violet-deep);
+          color: var(--accent-deep);
           font-weight: 700;
           font-variant-numeric: tabular-nums;
         }
@@ -709,10 +764,10 @@
       & tbody th {
         position: sticky;
         left: 0;
-        background: var(--mist);
+        background: var(--surface-2);
         font-size: 0.85rem;
         font-weight: 700;
-        color: var(--violet-deep);
+        color: var(--accent-deep);
         min-width: 90px;
       }
 
@@ -732,7 +787,7 @@
     }
 
     .person-card {
-      background: var(--white);
+      background: var(--surface);
       border: 1px solid var(--line);
       box-shadow: var(--shadow);
       clip-path: var(--cut);
@@ -748,7 +803,7 @@
 
         & h3 {
           font-size: 1.1rem;
-          color: var(--violet-deep);
+          color: var(--accent-deep);
         }
 
         & .moves {
@@ -780,7 +835,7 @@
           }
 
           & .tb {
-            color: var(--violet);
+            color: var(--accent);
             font-weight: 700;
           }
 
@@ -815,9 +870,189 @@
       max-width: 70ch;
     }
 
+    /* Theme picker */
+    .theme-picker {
+      position: absolute;
+      top: 24px;
+      right: 0;
+      z-index: 2;
+      display: inline-flex;
+      background: var(--glass);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px;
+      gap: 2px;
+
+      & button {
+        font-family: var(--font-display);
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+        background: transparent;
+        border: 0;
+        border-radius: 999px;
+        padding: 7px 12px;
+        min-height: 32px;
+        cursor: pointer;
+        transition: background 120ms ease, color 120ms ease;
+
+        &:hover {
+          color: var(--ink);
+        }
+
+        &[aria-pressed="true"] {
+          background: var(--ink);
+          color: var(--page);
+        }
+
+        &:focus-visible {
+          outline: 3px solid var(--accent-light);
+          outline-offset: 2px;
+        }
+      }
+    }
+
+    .hazard {
+      display: none;
+      position: relative;
+      z-index: 1;
+      height: 10px;
+      background: repeating-linear-gradient(-45deg, #ffcf5c 0 18px, #120b10 18px 36px);
+      border-bottom: 2px solid #f6eadb;
+    }
+
+    :root[data-theme="hell"] {
+      & .hazard {
+        display: block;
+      }
+
+      & .hero {
+        & .eyebrow {
+          display: inline-block;
+          font-family: var(--font-display);
+          font-size: 0.68rem;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: #120b10;
+          background: #ffcf5c;
+          padding: 6px 12px;
+          transform: rotate(-2deg);
+          margin-bottom: 18px;
+          box-shadow: 3px 3px 0 #120b10, 5px 5px 0 #ff3d8a;
+        }
+
+        & h1 {
+          text-transform: uppercase;
+          font-weight: 800;
+          letter-spacing: -0.01em;
+        }
+
+        & .orb {
+          display: none;
+        }
+      }
+
+      & .panel, & .table-card, & .person-card, & .grid-wrap, & .stage {
+        clip-path: none;
+        border: 2px solid var(--ink);
+        box-shadow: var(--shadow);
+      }
+
+      & .panel h2 {
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: 1.05rem;
+      }
+
+      & .num {
+        clip-path: none;
+        border-radius: 50%;
+      }
+
+      & .btn {
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: 0.78rem;
+
+        &[data-variant="primary"] {
+          clip-path: none;
+          border: 2px solid var(--ink);
+          box-shadow: 5px 5px 0 var(--ink);
+
+          &:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 6px 6px 0 var(--ink);
+          }
+
+          &:active {
+            transform: translate(3px, 3px);
+            box-shadow: 1px 1px 0 var(--ink);
+          }
+        }
+
+        &[data-variant="small"] {
+          font-size: 0.66rem;
+        }
+      }
+
+      & .stage {
+        background-size: 200% 200%;
+        background-position: 80% 90%;
+      }
+
+      & .stage-bar {
+        border-bottom: 2px solid var(--ink);
+      }
+
+      & .slot-index {
+        transform: rotate(-2deg);
+        clip-path: none;
+        background: var(--highlight);
+        color: #120b10;
+        font-family: var(--font-display);
+        font-size: 0.75rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      & .slot-time {
+        color: #ffcf5c;
+      }
+
+      & .slot-pause b {
+        color: #ffcf5c;
+      }
+
+      & .table-card {
+        border-color: var(--line);
+      }
+
+      & .tabs button[aria-selected="true"] {
+        color: #ffcf5c;
+        border-bottom-color: #ffcf5c;
+      }
+
+      & table.overview thead th {
+        border-bottom-color: var(--ink);
+      }
+
+      & .person-card h3 {
+        font-size: 0.95rem;
+      }
+
+      & .legend {
+        color: var(--ink-soft);
+      }
+    }
+
     @media (max-width: 860px) {
+      .theme-picker {
+        top: 16px;
+      }
+
       .hero {
-        padding: 72px 0 56px;
+        padding: 88px 0 56px;
 
         & .orb-main {
           width: 760px;
@@ -881,10 +1116,15 @@
   </style>
 </head>
 <body>
+  <div class="hazard"></div>
   <div class="container">
     <header class="hero">
       <div class="orb orb-pale"></div>
       <div class="orb orb-main"></div>
+      <div class="theme-picker" role="group" aria-label="Theme">
+        <button type="button" data-theme-choice="rabbit" aria-pressed="true">Rabbit Hole</button>
+        <button type="button" data-theme-choice="hell" aria-pressed="false">Meeting from Hell</button>
+      </div>
       <p class="eyebrow">General Assembly</p>
       <h1>Partner Speed Dating</h1>
       <span class="slash"></span>
@@ -1576,6 +1816,24 @@ Alan Turing
     // ---------- Wiring ----------
 
     const DEMO_PEOPLE = ['Ada Lovelace', 'Grace Hopper', 'Alan Turing', 'Margaret Hamilton', 'Linus Torvalds', 'Barbara Liskov', 'Dennis Ritchie', 'Radia Perlman', 'Ken Thompson', 'Frances Allen', 'Edsger Dijkstra', 'Hedy Lamarr'];
+
+    function applyTheme(name) {
+      if (name === 'hell') document.documentElement.dataset.theme = 'hell';
+      else delete document.documentElement.dataset.theme;
+      document.querySelectorAll('[data-theme-choice]').forEach((button) => {
+        button.setAttribute('aria-pressed', String(button.dataset.themeChoice === name));
+      });
+      try {
+        localStorage.setItem('partner-speed-dating-theme', name);
+      } catch (error) {
+        // storage unavailable
+      }
+    }
+
+    applyTheme(document.documentElement.dataset.theme === 'hell' ? 'hell' : 'rabbit');
+    document.querySelectorAll('[data-theme-choice]').forEach((button) => {
+      button.addEventListener('click', () => applyTheme(button.dataset.themeChoice));
+    });
 
     restore();
     updateRequirement();
