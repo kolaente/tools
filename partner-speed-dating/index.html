@@ -935,6 +935,143 @@
       max-width: 70ch;
     }
 
+    /* Easter eggs */
+    .hell-only {
+      display: none;
+    }
+
+    :root[data-theme="hell"] .hell-only {
+      display: inline;
+    }
+
+    .print-only {
+      display: none;
+    }
+
+    .slot-name {
+      display: none;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--ink);
+      align-self: center;
+    }
+
+    :root[data-theme="hell"] .slot-name {
+      display: inline;
+      color: #ffcf5c;
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .pause-label::before {
+      content: attr(data-rabbit);
+    }
+
+    :root[data-theme="hell"] .pause-label::before {
+      content: attr(data-hell);
+    }
+
+    .fire-drill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #120b10;
+      background: #ffcf5c;
+      padding: 6px 12px;
+      transform: rotate(2deg);
+      align-self: center;
+      animation: fire-drill 700ms ease-in-out infinite alternate;
+    }
+
+    @keyframes fire-drill {
+      from {
+        transform: rotate(2deg) scale(1);
+      }
+      to {
+        transform: rotate(-2deg) scale(1.04);
+      }
+    }
+
+    .rabbit-runner {
+      position: fixed;
+      left: -80px;
+      top: 18px;
+      z-index: 1000;
+      font-size: 2.6rem;
+      pointer-events: none;
+      animation: rabbit-run 2.6s cubic-bezier(0.3, 0, 0.7, 1) forwards, rabbit-hop 260ms ease-in-out infinite alternate;
+    }
+
+    @keyframes rabbit-run {
+      to {
+        left: calc(100vw + 80px);
+      }
+    }
+
+    @keyframes rabbit-hop {
+      from {
+        translate: 0 0;
+      }
+      to {
+        translate: 0 -14px;
+      }
+    }
+
+    .hero[data-falling="true"] {
+      & .orb-main {
+        animation: orb-fall 2.6s cubic-bezier(0.6, -0.2, 0.3, 1) forwards;
+      }
+
+      & h1, & .lede, & .eyebrow, & .slash {
+        animation: text-tumble 2.6s ease-in-out forwards;
+      }
+    }
+
+    @keyframes orb-fall {
+      0% {
+        transform: scale(1);
+      }
+      45% {
+        transform: scale(0.02) translateY(200px);
+      }
+      55% {
+        transform: scale(0.02) translateY(200px);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    /* individual rotate/scale so the slash keeps its own transform */
+    @keyframes text-tumble {
+      0% {
+        rotate: 0deg;
+        scale: 1;
+      }
+      45% {
+        rotate: -360deg;
+        scale: 0.3;
+        opacity: 0;
+      }
+      55% {
+        rotate: -360deg;
+        scale: 0.3;
+        opacity: 0;
+      }
+      100% {
+        rotate: 0deg;
+        scale: 1;
+        opacity: 1;
+      }
+    }
+
     /* Theme picker */
     .theme-picker {
       position: absolute;
@@ -1177,6 +1314,13 @@
       .view {
         page-break-after: always;
       }
+
+      .print-only {
+        display: block;
+        margin-top: 24px;
+        font-size: 0.8rem;
+        color: #666;
+      }
     }
   </style>
 </head>
@@ -1297,6 +1441,7 @@ Alan Turing
       </div>
     </section>
 
+    <p class="print-only" id="printNote"></p>
     <footer>Pairings by circle-method round robin. Seats per round are assigned so that exactly one person per pair stays put, with the who-moves choice balanced across the whole schedule. Everything runs locally in your browser.</footer>
   </div>
 
@@ -1637,7 +1782,8 @@ Alan Turing
         state = 'info';
         tail = ` ${slotCount - needed} extra slot${slotCount - needed === 1 ? '' : 's'} will be ignored.`;
       }
-      requirementBox.innerHTML = `<b>${count} participants</b> need <b>${needed} slots</b> at <b>${tables} tables</b> so everyone meets everyone once.${bye}${tail}`;
+      const unlucky = count === 13 ? ' <span class="hell-only">Unlucky number. One person always sits alone. Fitting.</span>' : '';
+      requirementBox.innerHTML = `<b>${count} participants</b> need <b>${needed} slots</b> at <b>${tables} tables</b> so everyone meets everyone once.${bye}${tail}${unlucky}`;
       requirementBox.dataset.state = state;
     }
 
@@ -1725,6 +1871,9 @@ Alan Turing
       return String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
+    const HELL_ROUNDS = ['Kick-off', 'Status Update', 'Budget Review', 'Quick Sync', 'Alignment Call', 'Reply-All Storm', 'Retrospective', 'Deep Dive', 'Stakeholder Check-in', 'Just One More Thing', 'Escalation', 'Steering Committee', 'Offsite Debrief', 'Lessons Learned', 'Parking Lot'];
+
+    const runIcon = '<svg class="mv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="15" cy="4" r="2"/><path d="M13 8l-3 4 3 3-1 6"/><path d="M10 12l-4 1"/><path d="M13 8l4 3 3-1"/><path d="M12 15l4 3 1 3"/></svg>';
     const moveIcon = '<svg class="mv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>';
     const stayIcon = '<svg class="mv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/></svg>';
 
@@ -1742,25 +1891,32 @@ Alan Turing
     function renderStage() {
       const round = plan.rounds[currentSlot];
       const body = document.getElementById('stageBody');
+      const isLast = currentSlot === plan.rounds.length - 1 && plan.rounds.length > 1;
+      const moved = isLast ? runIcon : moveIcon;
       const cards = round.tables.map((entry, i) => `
         <div class="table-card" style="animation-delay:${i * 25}ms">
           <div class="table-no">Table <b>${entry.table}</b></div>
           <div class="pair">
-            <div class="person" data-moved="${entry.movedA}">${entry.movedA ? moveIcon : stayIcon}<span>${escapeHtml(entry.a.name)}</span></div>
-            <div class="person" data-moved="${entry.movedB}">${entry.movedB ? moveIcon : stayIcon}<span>${escapeHtml(entry.b.name)}</span></div>
+            <div class="person" data-moved="${entry.movedA}">${entry.movedA ? moved : stayIcon}<span>${escapeHtml(entry.a.name)}</span></div>
+            <div class="person" data-moved="${entry.movedB}">${entry.movedB ? moved : stayIcon}<span>${escapeHtml(entry.b.name)}</span></div>
           </div>
         </div>`).join('');
-      const pause = round.paused ? `<div class="slot-pause">Sitting out: <b>${escapeHtml(round.paused.name)}</b></div>` : '';
+      const pause = round.paused
+        ? `<div class="slot-pause"><span class="pause-label" data-rabbit="Down the rabbit hole" data-hell="In the toilet queue"></span>: <b>${escapeHtml(round.paused.name)}</b></div>`
+        : '';
+      const fireDrill = isLast ? '<span class="fire-drill">🔥 Fire drill</span>' : '';
       body.innerHTML = `
         <div class="slot-title">
           <span class="slot-index">Round ${round.index + 1} / ${plan.rounds.length}</span>
           <span class="slot-time">${formatTime(round.slot.start)} – ${formatTime(round.slot.end)}</span>
+          <span class="slot-name">${HELL_ROUNDS[round.index % HELL_ROUNDS.length]}</span>
+          ${fireDrill}
           ${pause}
         </div>
         <div class="table-grid">${cards}</div>
         <div class="legend">
-          <span class="mv-move">${moveIcon} moves to this table</span>
-          <span class="mv-stay">${stayIcon} stays seated</span>
+          <span class="mv-move">${moved} ${isLast ? 'runs for the exit' : 'moves to this table'}</span>
+          <span class="mv-stay">${stayIcon} ${isLast ? 'pretends not to hear the alarm' : 'stays seated'}</span>
         </div>`;
       document.getElementById('prevSlot').disabled = currentSlot === 0;
       document.getElementById('nextSlot').disabled = currentSlot === plan.rounds.length - 1;
@@ -1988,9 +2144,32 @@ Alan Turing
       withEmail.forEach((person, i) => setTimeout(() => window.open(mailtoFor(person)), i * 400));
     });
 
+    document.getElementById('printNote').textContent = `Printed on real paper in the year ${new Date().getFullYear()}. Bold.`;
+
+    // Type "rabbit" anywhere outside an input: the orb becomes a hole, a rabbit runs past.
+    let typed = '';
+    function fallDownTheRabbitHole() {
+      const hero = document.querySelector('.hero');
+      if (hero.dataset.falling === 'true') return;
+      hero.dataset.falling = 'true';
+      const rabbit = document.createElement('span');
+      rabbit.className = 'rabbit-runner';
+      rabbit.textContent = '🐇';
+      rabbit.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(rabbit);
+      setTimeout(() => {
+        rabbit.remove();
+        delete hero.dataset.falling;
+      }, 2700);
+    }
+
     document.addEventListener('keydown', (event) => {
+      if (event.target instanceof Element && event.target.matches('input, textarea')) return;
+      if (event.key.length === 1) {
+        typed = (typed + event.key.toLowerCase()).slice(-6);
+        if (typed === 'rabbit') fallDownTheRabbitHole();
+      }
       if (!plan || resultsSection.classList.contains('hidden')) return;
-      if (event.target.matches('input, textarea')) return;
       if (event.key === 'ArrowLeft') goToSlot(currentSlot - 1);
       if (event.key === 'ArrowRight') goToSlot(currentSlot + 1);
       if (event.key.toLowerCase() === 'f') {
