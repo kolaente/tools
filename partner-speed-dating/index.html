@@ -537,9 +537,74 @@
       color: var(--ink);
       position: relative;
 
+      /* fullscreen = projector: grid fills the screen, JS sets --cols and --card-scale */
       &:fullscreen {
         overflow: auto;
         clip-path: none;
+        display: flex;
+        flex-direction: column;
+        background-size: 100% 100%;
+
+        & .stage-body {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          padding: 3vh 4vw 3vh;
+        }
+
+        & .slot-title {
+          margin-bottom: 3vh;
+
+          & .slot-time {
+            font-size: clamp(3rem, 8vw, 10rem);
+          }
+
+          & .slot-index, & .slot-pause {
+            font-size: calc(1rem * var(--card-scale, 1));
+          }
+        }
+
+        & .table-grid {
+          flex: 1;
+          grid-template-columns: repeat(var(--cols, 4), 1fr);
+          grid-auto-rows: 1fr;
+          gap: 1.6vmin;
+        }
+
+        & .table-card {
+          padding: calc(16px * var(--card-scale, 1)) calc(18px * var(--card-scale, 1)) calc(20px * var(--card-scale, 1));
+          --chamfer: calc(14px * var(--card-scale, 1));
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+
+          & .table-no {
+            font-size: calc(0.75rem * var(--card-scale, 1));
+            margin-bottom: calc(10px * var(--card-scale, 1));
+
+            & b {
+              font-size: calc(1.7rem * var(--card-scale, 1));
+            }
+          }
+
+          & .pair {
+            gap: calc(6px * var(--card-scale, 1));
+          }
+
+          & .person {
+            font-size: calc(1.25rem * var(--card-scale, 1));
+
+            & .mv {
+              width: calc(16px * var(--card-scale, 1));
+              height: calc(16px * var(--card-scale, 1));
+            }
+          }
+        }
+
+        & .legend {
+          font-size: calc(0.88rem * min(var(--card-scale, 1), 1.6));
+          margin-top: 2vh;
+        }
       }
     }
 
@@ -1803,7 +1868,48 @@ Alan Turing
       if (!plan) return;
       currentSlot = Math.max(0, Math.min(plan.rounds.length - 1, index));
       renderStage();
+      fitStage();
     }
+
+    // Pick the column count that lets every table card be as large as possible
+    // while all of them still fit on the fullscreen stage without scrolling.
+    function fitStage() {
+      const stage = document.querySelector('.stage');
+      if (!plan || document.fullscreenElement !== stage) {
+        stage.style.removeProperty('--cols');
+        stage.style.removeProperty('--card-scale');
+        return;
+      }
+      const body = stage.querySelector('.stage-body');
+      const grid = stage.querySelector('.table-grid');
+      const bodyStyle = getComputedStyle(body);
+      const width = body.clientWidth - parseFloat(bodyStyle.paddingLeft) - parseFloat(bodyStyle.paddingRight);
+      let height = body.clientHeight - parseFloat(bodyStyle.paddingTop) - parseFloat(bodyStyle.paddingBottom);
+      for (const sibling of body.children) {
+        if (sibling !== grid) height -= sibling.getBoundingClientRect().height + parseFloat(getComputedStyle(sibling).marginTop) + parseFloat(getComputedStyle(sibling).marginBottom);
+      }
+      const gap = Math.min(window.innerWidth, window.innerHeight) * 0.016;
+      const count = plan.tableCount;
+      const baseWidth = 240;
+      const baseHeight = 150;
+      let best = { cols: 1, scale: 0 };
+      for (let cols = 1; cols <= count; cols++) {
+        const rows = Math.ceil(count / cols);
+        const cardWidth = (width - gap * (cols - 1)) / cols;
+        const cardHeight = (height - gap * (rows - 1)) / rows;
+        const scale = Math.min(cardWidth / baseWidth, cardHeight / baseHeight);
+        if (scale > best.scale) best = { cols, scale };
+      }
+      stage.style.setProperty('--cols', best.cols);
+      stage.style.setProperty('--card-scale', Math.max(1, Math.min(best.scale, 4)).toFixed(2));
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      // second pass: title/legend heights change once the scale is applied
+      fitStage();
+      requestAnimationFrame(fitStage);
+    });
+    window.addEventListener('resize', fitStage);
 
     function goToNow() {
       const now = new Date();
