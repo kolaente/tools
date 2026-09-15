@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Partner Speed Dating</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --white: #ffffff;
+      --mist: #f4f3f6;
+      --lavender: #e9e0ff;
+      --ink: #0d0b12;
+      --ink-soft: #423c53;
+      --ink-faint: #8a8499;
+      --line: #dedae6;
+      --violet: #502db2;
+      --violet-deep: #3d17a6;
+      --violet-light: #9875ff;
+      --pink: #e07ab8;
+      --teal: #17baba;
+      --radius: 4px;
+      --chamfer: 14px;
+      --cut: polygon(0 0, 100% 0, 100% calc(100% - var(--chamfer)), calc(100% - var(--chamfer)) 100%, 0 100%);
+      --orb: radial-gradient(circle at 30% 30%, #a3b2ff 0%, #b27cf2 28%, #d489c8 52%, #8a5cf0 78%, #6a3fd6 100%);
+      --shadow: 0 10px 30px rgba(61, 23, 166, 0.10), 0 1px 2px rgba(13, 11, 18, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: clip;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', 'Inter', 'Helvetica Neue', sans-serif;
+      background: var(--white);
+      color: var(--ink);
+      min-height: 100vh;
+      line-height: 1.55;
+      overflow-x: clip;
+    }
+
+    ::selection {
+      background: var(--violet);
+      color: var(--white);
+    }
+
+    h1, h2, h3 {
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.025em;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 28px 96px;
+      position: relative;
+    }
+
+    /* Slash motif from the brand */
+    .slash {
+      display: block;
+      width: 26px;
+      height: 2px;
+      background: currentColor;
+      transform: rotate(-55deg);
+      transform-origin: left center;
+      margin: 22px 0 18px 4px;
+    }
+
+    /* Header with the gradient orb */
+    .hero {
+      position: relative;
+      padding: 96px 0 72px;
+      isolation: isolate;
+
+      & .orb {
+        position: absolute;
+        z-index: -1;
+        border-radius: 50%;
+        pointer-events: none;
+      }
+
+      & .orb-main {
+        width: 1040px;
+        height: 1040px;
+        left: -360px;
+        top: -460px;
+        background: var(--orb);
+        filter: saturate(1.05);
+      }
+
+      & .orb-pale {
+        width: 620px;
+        height: 620px;
+        right: -220px;
+        top: -360px;
+        background: var(--lavender);
+      }
+
+      & .eyebrow {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--ink);
+        margin-bottom: 6px;
+      }
+
+      & h1 {
+        font-size: clamp(2.8rem, 7.5vw, 5.4rem);
+        font-weight: 700;
+        color: var(--white);
+        letter-spacing: -0.04em;
+        line-height: 0.98;
+        max-width: 9ch;
+      }
+
+      & .slash {
+        color: var(--ink);
+      }
+
+      & .lede {
+        max-width: 46ch;
+        font-size: 1.05rem;
+        font-weight: 500;
+        color: var(--ink);
+
+        & strong {
+          color: var(--violet-deep);
+        }
+      }
+    }
+
+    /* Panels */
+    .setup {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--white);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      clip-path: var(--cut);
+      padding: 26px 26px 30px;
+      position: relative;
+
+      & .panel-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+
+        & h2 {
+          font-size: 1.25rem;
+          color: var(--violet-deep);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+
+          & .num {
+            display: inline-grid;
+            place-items: center;
+            width: 28px;
+            height: 28px;
+            background: var(--violet);
+            color: var(--white);
+            font-size: 0.8rem;
+            font-weight: 700;
+            clip-path: polygon(0 0, 100% 0, 100% 70%, 70% 100%, 0 100%);
+          }
+        }
+      }
+
+      & .hint {
+        font-size: 0.92rem;
+        color: var(--ink-soft);
+        margin-bottom: 12px;
+
+        & code {
+          font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+          font-size: 0.85em;
+          background: var(--mist);
+          padding: 1px 6px;
+          border-radius: 3px;
+          color: var(--violet-deep);
+        }
+      }
+    }
+
+    textarea, input[type="text"], input[type="time"], input[type="number"] {
+      width: 100%;
+      font-family: inherit;
+      font-size: 1rem;
+      color: var(--ink);
+      background: var(--mist);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
+      font-variant-numeric: tabular-nums;
+
+      &:focus {
+        outline: none;
+        background: var(--white);
+        border-color: var(--violet-light);
+        box-shadow: 0 0 0 3px rgba(152, 117, 255, 0.28);
+      }
+
+      &::placeholder {
+        color: var(--ink-faint);
+      }
+    }
+
+    textarea {
+      min-height: 220px;
+      resize: vertical;
+      line-height: 1.55;
+    }
+
+    .stat {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+      white-space: nowrap;
+
+      & b {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: var(--violet);
+        letter-spacing: -0.02em;
+      }
+    }
+
+    .requirement {
+      margin-top: 14px;
+      padding: 12px 16px;
+      background: var(--mist);
+      border-left: 3px solid var(--violet-light);
+      font-size: 0.95rem;
+      color: var(--ink-soft);
+
+      & b {
+        color: var(--ink);
+        font-weight: 700;
+      }
+
+      &[data-state="ok"] {
+        border-left-color: var(--teal);
+      }
+
+      &[data-state="short"] {
+        border-left-color: var(--pink);
+      }
+    }
+
+    .generator {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 10px;
+      align-items: end;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+
+      & label {
+        display: block;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--ink-faint);
+        margin-bottom: 6px;
+        font-weight: 700;
+      }
+
+      & input {
+        padding: 9px 10px;
+      }
+    }
+
+    /* Buttons */
+    .btn {
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--violet-deep);
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 11px 18px;
+      min-height: 44px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      box-shadow: 0 1px 2px rgba(13, 11, 18, 0.06);
+      transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease, border-color 120ms ease;
+
+      & .tri {
+        width: 10px;
+        height: 10px;
+        flex-shrink: 0;
+      }
+
+      &:hover {
+        border-color: var(--violet-light);
+        box-shadow: 0 4px 14px rgba(80, 45, 178, 0.14);
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: none;
+      }
+
+      &:focus-visible {
+        outline: 3px solid var(--violet-light);
+        outline-offset: 2px;
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      &[data-variant="primary"] {
+        background: var(--violet);
+        border-color: var(--violet);
+        color: var(--white);
+        font-size: 1rem;
+        padding: 15px 26px;
+        clip-path: var(--cut);
+        border-radius: 0;
+        box-shadow: none;
+
+        &:hover {
+          background: var(--violet-deep);
+          border-color: var(--violet-deep);
+          box-shadow: none;
+        }
+      }
+
+      &[data-variant="ghost"] {
+        background: transparent;
+        border-color: transparent;
+        box-shadow: none;
+        color: var(--ink-soft);
+
+        &:hover {
+          color: var(--violet-deep);
+          background: var(--mist);
+          transform: none;
+          box-shadow: none;
+        }
+      }
+
+      &[data-variant="small"] {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+        min-height: 36px;
+      }
+    }
+
+    .actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin: 32px 0 0;
+
+      & .note {
+        font-size: 0.88rem;
+        color: var(--ink-faint);
+      }
+    }
+
+    .error {
+      margin-top: 18px;
+      padding: 14px 18px;
+      background: #fff1f7;
+      border-left: 3px solid var(--pink);
+      color: var(--ink);
+      font-weight: 500;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Results */
+    #results {
+      margin-top: 88px;
+    }
+
+    .results-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+
+      & h2 {
+        font-size: clamp(2.2rem, 5vw, 3.4rem);
+        letter-spacing: -0.04em;
+      }
+
+      & .summary {
+        display: flex;
+        gap: 26px;
+        flex-wrap: wrap;
+        padding-bottom: 8px;
+      }
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+
+      & button {
+        font-family: inherit;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: var(--ink-soft);
+        background: transparent;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -1px;
+        padding: 12px 16px;
+        min-height: 44px;
+        cursor: pointer;
+        transition: color 120ms ease, border-color 120ms ease;
+
+        &:hover {
+          color: var(--violet-deep);
+        }
+
+        &[aria-selected="true"] {
+          color: var(--violet-deep);
+          border-bottom-color: var(--violet);
+        }
+
+        &:focus-visible {
+          outline: 3px solid var(--violet-light);
+          outline-offset: -3px;
+        }
+      }
+    }
+
+    .view {
+      &[hidden] {
+        display: none;
+      }
+    }
+
+    /* Presentation view: gradient block like the brand's section bands */
+    .stage {
+      background: var(--orb);
+      background-size: 160% 160%;
+      background-position: 20% 30%;
+      clip-path: polygon(0 0, 100% 0, 100% calc(100% - 42px), calc(100% - 42px) 100%, 0 100%);
+      color: var(--ink);
+      position: relative;
+
+      &:fullscreen {
+        overflow: auto;
+        clip-path: none;
+      }
+    }
+
+    .stage-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px 28px;
+      background: rgba(255, 255, 255, 0.55);
+      backdrop-filter: blur(8px);
+      flex-wrap: wrap;
+
+      & .stage-nav {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      & .kbd-hint {
+        font-size: 0.82rem;
+        color: var(--ink-soft);
+
+        & kbd {
+          font-family: inherit;
+          background: var(--white);
+          border: 1px solid var(--line);
+          border-radius: 3px;
+          padding: 0 6px;
+          color: var(--ink);
+        }
+      }
+    }
+
+    .stage-body {
+      padding: 40px 28px 64px;
+    }
+
+    .slot-title {
+      display: flex;
+      align-items: baseline;
+      gap: 22px;
+      flex-wrap: wrap;
+      margin-bottom: 26px;
+
+      & .slot-index {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--white);
+        background: var(--ink);
+        padding: 6px 12px;
+        clip-path: polygon(0 0, 100% 0, 100% 65%, calc(100% - 9px) 100%, 0 100%);
+      }
+
+      & .slot-time {
+        font-size: clamp(2.4rem, 7vw, 5rem);
+        font-weight: 800;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.045em;
+        line-height: 1;
+      }
+
+      & .slot-pause {
+        margin-left: auto;
+        font-size: 1rem;
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.6);
+        padding: 8px 14px;
+        clip-path: var(--cut);
+
+        & b {
+          color: var(--violet-deep);
+        }
+      }
+    }
+
+    .table-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .table-card {
+      background: var(--white);
+      clip-path: var(--cut);
+      padding: 16px 18px 20px;
+      position: relative;
+      animation: card-in 380ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+
+      & .table-no {
+        font-size: 0.75rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--ink-faint);
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+
+        & b {
+          font-size: 1.7rem;
+          font-weight: 800;
+          color: var(--violet);
+          letter-spacing: -0.03em;
+        }
+      }
+
+      & .pair {
+        display: grid;
+        gap: 6px;
+      }
+
+      & .person {
+        font-size: 1.25rem;
+        font-weight: 600;
+        line-height: 1.25;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--ink);
+
+        & .mv {
+          flex-shrink: 0;
+          width: 16px;
+          height: 16px;
+          color: var(--violet);
+        }
+
+        &[data-moved="false"] .mv {
+          color: var(--teal);
+        }
+      }
+    }
+
+    @keyframes card-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .legend {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--ink);
+
+      & span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      & svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      & .mv-move {
+        color: var(--violet-deep);
+      }
+
+      & .mv-stay {
+        color: var(--teal);
+      }
+    }
+
+    /* Overview grid */
+    .grid-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      background: var(--white);
+    }
+
+    table.overview {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.92rem;
+
+      & th, & td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        border-right: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+        white-space: nowrap;
+      }
+
+      & thead th {
+        position: sticky;
+        top: 0;
+        background: var(--mist);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+        border-bottom: 2px solid var(--violet);
+
+        & small {
+          display: block;
+          font-size: 0.85rem;
+          letter-spacing: 0;
+          text-transform: none;
+          color: var(--violet-deep);
+          font-weight: 700;
+          font-variant-numeric: tabular-nums;
+        }
+      }
+
+      & tbody th {
+        position: sticky;
+        left: 0;
+        background: var(--mist);
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--violet-deep);
+        min-width: 90px;
+      }
+
+      & td {
+        & .name + .name::before {
+          content: '';
+          display: block;
+        }
+      }
+    }
+
+    /* Per person */
+    .people {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 18px;
+    }
+
+    .person-card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      clip-path: var(--cut);
+      padding: 18px 20px 22px;
+
+      & .person-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+
+        & h3 {
+          font-size: 1.1rem;
+          color: var(--violet-deep);
+        }
+
+        & .moves {
+          font-size: 0.8rem;
+          color: var(--ink-soft);
+
+          & b {
+            color: var(--ink);
+          }
+        }
+      }
+
+      & ol {
+        list-style: none;
+        display: grid;
+        gap: 2px;
+        font-size: 0.92rem;
+        font-variant-numeric: tabular-nums;
+
+        & li {
+          display: grid;
+          grid-template-columns: 4.6em 5em 1fr;
+          gap: 10px;
+          padding: 5px 0;
+          border-bottom: 1px solid var(--line);
+
+          & .t {
+            color: var(--ink-soft);
+          }
+
+          & .tb {
+            color: var(--violet);
+            font-weight: 700;
+          }
+
+          &[data-pause="true"] {
+            color: var(--ink-faint);
+            font-style: italic;
+          }
+        }
+      }
+
+      & .person-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+      }
+    }
+
+    .export-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    footer {
+      margin-top: 80px;
+      font-size: 0.85rem;
+      color: var(--ink-faint);
+      border-top: 1px solid var(--line);
+      padding-top: 18px;
+      max-width: 70ch;
+    }
+
+    @media (max-width: 860px) {
+      .hero {
+        padding: 72px 0 56px;
+
+        & .orb-main {
+          width: 760px;
+          height: 760px;
+          left: -300px;
+          top: -340px;
+        }
+      }
+
+      .setup {
+        grid-template-columns: 1fr;
+      }
+
+      .generator {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .panel {
+        padding: 20px 18px 24px;
+      }
+
+      .stage-body {
+        padding: 28px 18px 48px;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+        color: #000;
+      }
+
+      .hero, .setup, .actions, .tabs, .stage-bar, .export-bar, footer, .person-actions {
+        display: none !important;
+      }
+
+      .view[hidden] {
+        display: block !important;
+      }
+
+      .stage {
+        background: #fff;
+        clip-path: none;
+      }
+
+      .panel, .grid-wrap, .table-card, .person-card {
+        box-shadow: none;
+        border: 1px solid #000;
+        clip-path: none;
+        break-inside: avoid;
+      }
+
+      #results {
+        margin-top: 0;
+      }
+
+      .view {
+        page-break-after: always;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="hero">
+      <div class="orb orb-pale"></div>
+      <div class="orb orb-main"></div>
+      <p class="eyebrow">General Assembly</p>
+      <h1>Partner Speed Dating</h1>
+      <span class="slash"></span>
+      <p class="lede">Paste the participants, pick the time slots, hit the button. Everyone meets everyone exactly once, <strong>half the room stays seated each round</strong>, and the walking is split fairly.</p>
+    </header>
+
+    <section class="setup">
+      <div class="panel">
+        <div class="panel-head">
+          <h2><span class="num">1</span>Participants</h2>
+          <div class="stat"><b id="participantCount">0</b> people</div>
+        </div>
+        <p class="hint">One per line (or comma separated). Optional email in angle brackets: <code>Ada Lovelace &lt;ada@example.org&gt;</code></p>
+        <textarea id="participants" placeholder="Ada Lovelace
+Grace Hopper <grace@example.org>
+Alan Turing
+…" spellcheck="false"></textarea>
+        <div class="requirement" id="requirement">Enter at least two participants.</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2><span class="num">2</span>Time slots</h2>
+          <div class="stat"><b id="slotCount">0</b> of <span id="slotsNeeded">–</span> needed</div>
+        </div>
+        <p class="hint">One slot per line as <code>10:00-10:05</code>. A lone start time like <code>10:06</code> ends when the next slot starts.</p>
+        <textarea id="slots" placeholder="10:00-10:05
+10:06-10:11
+10:12-10:17" spellcheck="false"></textarea>
+        <div class="generator">
+          <div>
+            <label for="genStart">Start</label>
+            <input type="time" id="genStart" value="10:00">
+          </div>
+          <div>
+            <label for="genDuration">Minutes</label>
+            <input type="number" id="genDuration" value="5" min="1" max="120">
+          </div>
+          <div>
+            <label for="genGap">Gap</label>
+            <input type="number" id="genGap" value="1" min="0" max="60">
+          </div>
+          <button class="btn" id="generateSlots" type="button">Fill slots</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="actions">
+      <button class="btn" data-variant="primary" id="calculate" type="button">Calculate pairings &amp; seats <svg class="tri" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><path d="M1 0l8 5-8 5z"/></svg></button>
+      <button class="btn" data-variant="ghost" id="loadDemo" type="button">Load demo data</button>
+      <span class="note">Inputs are saved in this browser automatically.</span>
+    </div>
+    <div class="error hidden" id="error"></div>
+
+    <section id="results" class="hidden">
+      <div class="results-head">
+        <div>
+          <h2>The plan</h2>
+          <span class="slash"></span>
+        </div>
+        <div class="summary">
+          <div class="stat"><b id="sumRounds">0</b> rounds</div>
+          <div class="stat"><b id="sumTables">0</b> tables</div>
+          <div class="stat"><b id="sumMoves">0</b> moves total</div>
+          <div class="stat"><b id="sumSpread">0</b> moves per person</div>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button role="tab" aria-selected="true" data-view="stage" type="button">Presentation</button>
+        <button role="tab" aria-selected="false" data-view="overview" type="button">Overview</button>
+        <button role="tab" aria-selected="false" data-view="people" type="button">Per person</button>
+      </div>
+
+      <div class="view" id="view-stage">
+        <div class="stage">
+          <div class="stage-bar">
+            <div class="stage-nav">
+              <button class="btn" data-variant="small" id="prevSlot" type="button">&larr; Prev</button>
+              <button class="btn" data-variant="small" id="nowSlot" type="button">Now</button>
+              <button class="btn" data-variant="small" id="nextSlot" type="button">Next &rarr;</button>
+            </div>
+            <span class="kbd-hint"><kbd>&larr;</kbd> <kbd>&rarr;</kbd> switch rounds · <kbd>F</kbd> fullscreen</span>
+          </div>
+          <div class="stage-body" id="stageBody"></div>
+        </div>
+      </div>
+
+      <div class="view" id="view-overview" hidden>
+        <div class="export-bar">
+          <button class="btn" data-variant="small" id="downloadCsv" type="button">Download CSV</button>
+          <button class="btn" data-variant="small" id="printPlan" type="button">Print</button>
+        </div>
+        <div class="grid-wrap">
+          <table class="overview" id="overviewTable"></table>
+        </div>
+      </div>
+
+      <div class="view" id="view-people" hidden>
+        <div class="export-bar">
+          <button class="btn" data-variant="small" id="copyAllPeople" type="button">Copy all schedules</button>
+          <button class="btn" data-variant="small" id="mailAll" type="button">Open email drafts for everyone</button>
+        </div>
+        <div class="people" id="peopleGrid"></div>
+      </div>
+    </section>
+
+    <footer>Pairings by circle-method round robin. Seats per round are assigned so that exactly one person per pair stays put, with the who-moves choice balanced across the whole schedule. Everything runs locally in your browser.</footer>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'partner-speed-dating';
+
+    const participantsInput = document.getElementById('participants');
+    const slotsInput = document.getElementById('slots');
+    const requirementBox = document.getElementById('requirement');
+    const errorBox = document.getElementById('error');
+    const resultsSection = document.getElementById('results');
+
+    let plan = null;
+    let currentSlot = 0;
+
+    // ---------- Parsing ----------
+
+    function parseParticipants(text) {
+      const seen = new Set();
+      const people = [];
+      text.split(/[\n,;]+/).forEach((raw) => {
+        const line = raw.trim();
+        if (!line) return;
+        const match = line.match(/^(.*?)\s*<([^>]+)>\s*$/);
+        const name = (match ? match[1] : line).trim();
+        const email = match ? match[2].trim() : null;
+        if (!name || seen.has(name.toLowerCase())) return;
+        seen.add(name.toLowerCase());
+        people.push({ name, email });
+      });
+      return people;
+    }
+
+    function toMinutes(text) {
+      const match = text.match(/^(\d{1,2})[:.](\d{2})$/);
+      if (!match) return null;
+      const hours = Number(match[1]);
+      const minutes = Number(match[2]);
+      if (hours > 23 || minutes > 59) return null;
+      return hours * 60 + minutes;
+    }
+
+    function formatTime(minutes) {
+      const wrapped = ((minutes % 1440) + 1440) % 1440;
+      return String(Math.floor(wrapped / 60)).padStart(2, '0') + ':' + String(wrapped % 60).padStart(2, '0');
+    }
+
+    function parseSlots(text) {
+      const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
+      const slots = [];
+      for (const line of lines) {
+        const parts = line.split(/\s*[-–—]\s*|\s+to\s+/i).map((part) => part.trim());
+        const start = toMinutes(parts[0] || '');
+        if (start === null) {
+          throw new Error(`Cannot read time slot "${line}". Use HH:MM or HH:MM-HH:MM.`);
+        }
+        const end = parts[1] ? toMinutes(parts[1]) : null;
+        if (parts[1] && end === null) {
+          throw new Error(`Cannot read end time in "${line}".`);
+        }
+        slots.push({ start, end });
+      }
+      const duration = Number(document.getElementById('genDuration').value) || 5;
+      slots.forEach((slot, i) => {
+        if (slot.end === null) {
+          slot.end = slots[i + 1] ? slots[i + 1].start : slot.start + duration;
+        }
+      });
+      return slots;
+    }
+
+    function slotsNeededFor(count) {
+      if (count < 2) return 0;
+      return count % 2 === 0 ? count - 1 : count;
+    }
+
+    // ---------- Scheduling ----------
+
+    // Circle method: index 0 fixed, everyone else rotates one step per round.
+    function roundRobin(count) {
+      const hasBye = count % 2 === 1;
+      const size = hasBye ? count + 1 : count;
+      const ring = Array.from({ length: size }, (_, i) => i);
+      const rounds = [];
+      for (let r = 0; r < size - 1; r++) {
+        const pairs = [];
+        for (let i = 0; i < size / 2; i++) {
+          pairs.push([ring[i], ring[size - 1 - i]]);
+        }
+        rounds.push(pairs);
+        ring.splice(1, 0, ring.pop());
+      }
+      return { rounds, byeIndex: hasBye ? count : null };
+    }
+
+    // Hungarian algorithm (min cost), square matrix. Returns assignment[row] = column.
+    function hungarian(cost) {
+      const n = cost.length;
+      const u = new Array(n + 1).fill(0);
+      const v = new Array(n + 1).fill(0);
+      const p = new Array(n + 1).fill(0);
+      const way = new Array(n + 1).fill(0);
+      for (let i = 1; i <= n; i++) {
+        p[0] = i;
+        let j0 = 0;
+        const minv = new Array(n + 1).fill(Infinity);
+        const used = new Array(n + 1).fill(false);
+        do {
+          used[j0] = true;
+          const i0 = p[j0];
+          let delta = Infinity;
+          let j1 = 0;
+          for (let j = 1; j <= n; j++) {
+            if (used[j]) continue;
+            const current = cost[i0 - 1][j - 1] - u[i0] - v[j];
+            if (current < minv[j]) {
+              minv[j] = current;
+              way[j] = j0;
+            }
+            if (minv[j] < delta) {
+              delta = minv[j];
+              j1 = j;
+            }
+          }
+          for (let j = 0; j <= n; j++) {
+            if (used[j]) {
+              u[p[j]] += delta;
+              v[j] -= delta;
+            } else {
+              minv[j] -= delta;
+            }
+          }
+          j0 = j1;
+        } while (p[j0] !== 0);
+        do {
+          const j1 = way[j0];
+          p[j0] = p[j1];
+          j0 = j1;
+        } while (j0);
+      }
+      const assignment = new Array(n);
+      for (let j = 1; j <= n; j++) {
+        if (p[j]) assignment[p[j] - 1] = j - 1;
+      }
+      return assignment;
+    }
+
+    function mulberry32(seed) {
+      return function () {
+        seed |= 0;
+        seed = (seed + 0x6D2B79F5) | 0;
+        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function shuffled(array, random) {
+      const copy = array.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    // One full schedule for a given round order. Per round, tables are assigned by
+    // Hungarian: staying is worth a lot, and worth a bit more for people who already
+    // walked more (fairness tie-break). Round order is the real lever for fairness,
+    // since the pairing structure itself is fixed by the circle method.
+    function buildSchedule(allRounds, byeIndex, count, roundOrder) {
+      const rounds = roundOrder.map((i) => allRounds[i]);
+      const tableCount = Math.floor(count / 2);
+      const prevTable = new Array(count).fill(null);
+      const moves = new Array(count).fill(0);
+      const result = [];
+
+      for (let r = 0; r < rounds.length; r++) {
+        const pairs = rounds[r].filter(([a, b]) => a !== byeIndex && b !== byeIndex);
+        const pausedPair = rounds[r].find(([a, b]) => a === byeIndex || b === byeIndex);
+        const paused = pausedPair ? (pausedPair[0] === byeIndex ? pausedPair[1] : pausedPair[0]) : null;
+
+        let assignment;
+        if (r === 0) {
+          assignment = pairs.map((_, i) => i);
+        } else {
+          const cost = pairs.map(([a, b]) => {
+            const row = new Array(tableCount).fill(1000);
+            for (const person of [a, b]) {
+              if (prevTable[person] !== null) {
+                row[prevTable[person]] = 1000 - (100 + moves[person]);
+              }
+            }
+            return row;
+          });
+          assignment = hungarian(cost);
+        }
+
+        const tables = pairs.map(([a, b], i) => {
+          const table = assignment[i];
+          const movedA = r > 0 && prevTable[a] !== table;
+          const movedB = r > 0 && prevTable[b] !== table;
+          return { table, a, b, movedA, movedB };
+        }).sort((x, y) => x.table - y.table);
+
+        const seatedNow = new Array(count).fill(null);
+        for (const entry of tables) {
+          seatedNow[entry.a] = entry.table;
+          seatedNow[entry.b] = entry.table;
+          if (entry.movedA) moves[entry.a]++;
+          if (entry.movedB) moves[entry.b]++;
+        }
+        if (paused !== null && r > 0) moves[paused]++;
+        for (let i = 0; i < count; i++) prevTable[i] = seatedNow[i];
+
+        result.push({ tables, paused });
+      }
+
+      const totalMoves = moves.reduce((sum, m) => sum + m, 0);
+      const spread = Math.max(...moves) - Math.min(...moves);
+      const mean = totalMoves / count;
+      const variance = moves.reduce((sum, m) => sum + (m - mean) ** 2, 0) / count;
+      return { rounds: result, moves, totalMoves, spread, variance, roundOrder };
+    }
+
+    function isBetter(candidate, best) {
+      if (!best) return true;
+      if (candidate.totalMoves !== best.totalMoves) return candidate.totalMoves < best.totalMoves;
+      if (candidate.spread !== best.spread) return candidate.spread < best.spread;
+      return candidate.variance < best.variance;
+    }
+
+    // Random round orders, then hill-climb on the best one by swapping two rounds.
+    function buildBestSchedule(count, roundCount) {
+      const { rounds: allRounds, byeIndex } = roundRobin(count);
+      const roundIndexes = Array.from({ length: allRounds.length }, (_, i) => i);
+      const evaluate = (order) => buildSchedule(allRounds, byeIndex, count, order.slice(0, roundCount));
+      const budget = count > 40 ? 60 : 200;
+      const random = mulberry32(42);
+
+      let best = evaluate(roundIndexes);
+      for (let attempt = 1; attempt < budget; attempt++) {
+        const candidate = evaluate(shuffled(roundIndexes, random));
+        if (isBetter(candidate, best)) best = candidate;
+      }
+
+      let order = best.roundOrder.slice();
+      if (order.length < roundIndexes.length) {
+        order = order.concat(roundIndexes.filter((i) => !order.includes(i)));
+      }
+      for (let step = 0; step < budget; step++) {
+        const i = Math.floor(random() * order.length);
+        const j = Math.floor(random() * order.length);
+        if (i === j) continue;
+        const trial = order.slice();
+        [trial[i], trial[j]] = [trial[j], trial[i]];
+        const candidate = evaluate(trial);
+        if (isBetter(candidate, best)) {
+          best = candidate;
+          order = trial;
+        }
+      }
+      return best;
+    }
+
+    function toPlan(people, slots, schedule) {
+      const person = (index) => people[index];
+      const rounds = schedule.rounds.map((round, r) => ({
+        slot: slots[r],
+        index: r,
+        paused: round.paused === null ? null : person(round.paused),
+        tables: round.tables.map((entry) => ({
+          table: entry.table + 1,
+          a: person(entry.a),
+          b: person(entry.b),
+          movedA: entry.movedA,
+          movedB: entry.movedB,
+        })),
+      }));
+      const moves = {};
+      schedule.moves.forEach((m, localIndex) => { moves[person(localIndex).name] = m; });
+
+      const perPerson = new Map(people.map((p) => [p.name, []]));
+      rounds.forEach((round) => {
+        round.tables.forEach((entry) => {
+          perPerson.get(entry.a.name).push({ round, table: entry.table, partner: entry.b, moved: entry.movedA });
+          perPerson.get(entry.b.name).push({ round, table: entry.table, partner: entry.a, moved: entry.movedB });
+        });
+        if (round.paused) {
+          perPerson.get(round.paused.name).push({ round, table: null, partner: null, moved: false });
+        }
+      });
+      perPerson.forEach((list) => list.sort((x, y) => x.round.index - y.round.index));
+
+      return {
+        people,
+        rounds,
+        moves,
+        perPerson,
+        tableCount: Math.floor(people.length / 2),
+        totalMoves: schedule.totalMoves,
+      };
+    }
+
+    // ---------- UI: inputs ----------
+
+    function updateRequirement() {
+      const people = parseParticipants(participantsInput.value);
+      const count = people.length;
+      const needed = slotsNeededFor(count);
+      document.getElementById('participantCount').textContent = count;
+      document.getElementById('slotsNeeded').textContent = needed || '–';
+
+      let slotCount = 0;
+      try {
+        slotCount = parseSlots(slotsInput.value).length;
+      } catch (error) {
+        slotCount = 0;
+      }
+      document.getElementById('slotCount').textContent = slotCount;
+
+      if (count < 2) {
+        requirementBox.textContent = 'Enter at least two participants.';
+        requirementBox.dataset.state = 'none';
+        return;
+      }
+      const tables = Math.floor(count / 2);
+      const bye = count % 2 === 1 ? ' One person pauses each round.' : '';
+      let state = 'info';
+      let tail = '';
+      if (slotCount === needed) {
+        state = 'ok';
+        tail = ' Slots match.';
+      } else if (slotCount > 0 && slotCount < needed) {
+        state = 'short';
+        tail = ` Only ${slotCount} slot${slotCount === 1 ? '' : 's'} entered – not everyone will meet.`;
+      } else if (slotCount > needed) {
+        state = 'info';
+        tail = ` ${slotCount - needed} extra slot${slotCount - needed === 1 ? '' : 's'} will be ignored.`;
+      }
+      requirementBox.innerHTML = `<b>${count} participants</b> need <b>${needed} slots</b> at <b>${tables} tables</b> so everyone meets everyone once.${bye}${tail}`;
+      requirementBox.dataset.state = state;
+    }
+
+    function generateSlots() {
+      const people = parseParticipants(participantsInput.value);
+      const needed = slotsNeededFor(people.length) || 5;
+      const start = toMinutes(document.getElementById('genStart').value) ?? 600;
+      const duration = Math.max(1, Number(document.getElementById('genDuration').value) || 5);
+      const gap = Math.max(0, Number(document.getElementById('genGap').value) || 0);
+      const lines = [];
+      let cursor = start;
+      for (let i = 0; i < needed; i++) {
+        lines.push(`${formatTime(cursor)}-${formatTime(cursor + duration)}`);
+        cursor += duration + gap;
+      }
+      slotsInput.value = lines.join('\n');
+      persist();
+      updateRequirement();
+    }
+
+    function persist() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          participants: participantsInput.value,
+          slots: slotsInput.value,
+          start: document.getElementById('genStart').value,
+          duration: document.getElementById('genDuration').value,
+          gap: document.getElementById('genGap').value,
+        }));
+      } catch (error) {
+        // storage unavailable – fine, inputs just won't survive a reload
+      }
+    }
+
+    function restore() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        if (!saved) return;
+        participantsInput.value = saved.participants || '';
+        slotsInput.value = saved.slots || '';
+        if (saved.start) document.getElementById('genStart').value = saved.start;
+        if (saved.duration) document.getElementById('genDuration').value = saved.duration;
+        if (saved.gap !== undefined) document.getElementById('genGap').value = saved.gap;
+      } catch (error) {
+        // ignore corrupt state
+      }
+    }
+
+    function showError(message) {
+      errorBox.textContent = message;
+      errorBox.classList.remove('hidden');
+    }
+
+    function calculate() {
+      errorBox.classList.add('hidden');
+      const people = parseParticipants(participantsInput.value);
+      if (people.length < 2) {
+        showError('Need at least two participants.');
+        return;
+      }
+      let slots;
+      try {
+        slots = parseSlots(slotsInput.value);
+      } catch (error) {
+        showError(error.message);
+        return;
+      }
+      if (slots.length === 0) {
+        showError('Enter at least one time slot, or use "Fill slots".');
+        return;
+      }
+      const needed = slotsNeededFor(people.length);
+      const roundCount = Math.min(needed, slots.length);
+      const schedule = buildBestSchedule(people.length, roundCount);
+      plan = toPlan(people, slots, schedule);
+      currentSlot = 0;
+      renderPlan();
+      resultsSection.classList.remove('hidden');
+      resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ---------- UI: results ----------
+
+    function escapeHtml(text) {
+      return String(text).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    const moveIcon = '<svg class="mv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>';
+    const stayIcon = '<svg class="mv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/></svg>';
+
+    function renderPlan() {
+      const moveValues = Object.values(plan.moves);
+      document.getElementById('sumRounds').textContent = plan.rounds.length;
+      document.getElementById('sumTables').textContent = plan.tableCount;
+      document.getElementById('sumMoves').textContent = plan.totalMoves;
+      document.getElementById('sumSpread').textContent = `${Math.min(...moveValues)}–${Math.max(...moveValues)}`;
+      renderStage();
+      renderOverview();
+      renderPeople();
+    }
+
+    function renderStage() {
+      const round = plan.rounds[currentSlot];
+      const body = document.getElementById('stageBody');
+      const cards = round.tables.map((entry, i) => `
+        <div class="table-card" style="animation-delay:${i * 25}ms">
+          <div class="table-no">Table <b>${entry.table}</b></div>
+          <div class="pair">
+            <div class="person" data-moved="${entry.movedA}">${entry.movedA ? moveIcon : stayIcon}<span>${escapeHtml(entry.a.name)}</span></div>
+            <div class="person" data-moved="${entry.movedB}">${entry.movedB ? moveIcon : stayIcon}<span>${escapeHtml(entry.b.name)}</span></div>
+          </div>
+        </div>`).join('');
+      const pause = round.paused ? `<div class="slot-pause">Sitting out: <b>${escapeHtml(round.paused.name)}</b></div>` : '';
+      body.innerHTML = `
+        <div class="slot-title">
+          <span class="slot-index">Round ${round.index + 1} / ${plan.rounds.length}</span>
+          <span class="slot-time">${formatTime(round.slot.start)} – ${formatTime(round.slot.end)}</span>
+          ${pause}
+        </div>
+        <div class="table-grid">${cards}</div>
+        <div class="legend">
+          <span class="mv-move">${moveIcon} moves to this table</span>
+          <span class="mv-stay">${stayIcon} stays seated</span>
+        </div>`;
+      document.getElementById('prevSlot').disabled = currentSlot === 0;
+      document.getElementById('nextSlot').disabled = currentSlot === plan.rounds.length - 1;
+    }
+
+    function renderOverview() {
+      const head = plan.rounds.map((round) => `<th>Round ${round.index + 1}<small>${formatTime(round.slot.start)}–${formatTime(round.slot.end)}</small></th>`).join('');
+      const rows = [];
+      for (let t = 1; t <= plan.tableCount; t++) {
+        const cells = plan.rounds.map((round) => {
+          const entry = round.tables.find((e) => e.table === t);
+          if (!entry) return '<td>–</td>';
+          return `<td><span class="name">${escapeHtml(entry.a.name)}</span><span class="name">${escapeHtml(entry.b.name)}</span></td>`;
+        }).join('');
+        rows.push(`<tr><th>Table ${t}</th>${cells}</tr>`);
+      }
+      if (plan.rounds.some((round) => round.paused)) {
+        const cells = plan.rounds.map((round) => `<td>${round.paused ? escapeHtml(round.paused.name) : '–'}</td>`).join('');
+        rows.push(`<tr><th>Pause</th>${cells}</tr>`);
+      }
+      document.getElementById('overviewTable').innerHTML = `<thead><tr><th></th>${head}</tr></thead><tbody>${rows.join('')}</tbody>`;
+    }
+
+    function scheduleText(person) {
+      const lines = plan.perPerson.get(person.name).map((entry) => {
+        const time = `${formatTime(entry.round.slot.start)}–${formatTime(entry.round.slot.end)}`;
+        return entry.table === null
+          ? `${time}  pause`
+          : `${time}  Table ${entry.table}  with ${entry.partner.name}`;
+      });
+      return `Speed dating schedule for ${person.name}\n\n${lines.join('\n')}`;
+    }
+
+    function renderPeople() {
+      const grid = document.getElementById('peopleGrid');
+      grid.innerHTML = plan.people.map((person, i) => {
+        const rows = plan.perPerson.get(person.name).map((entry) => entry.table === null
+          ? `<li data-pause="true"><span class="t">${formatTime(entry.round.slot.start)}</span><span>pause</span><span></span></li>`
+          : `<li><span class="t">${formatTime(entry.round.slot.start)}</span><span class="tb">Table ${entry.table}</span><span>${escapeHtml(entry.partner.name)}</span></li>`).join('');
+        const mail = person.email
+          ? `<a class="btn" data-variant="small" href="${mailtoFor(person)}">Email</a>`
+          : '';
+        return `
+          <div class="person-card">
+            <div class="person-head">
+              <h3>${escapeHtml(person.name)}</h3>
+              <span class="moves"><b>${plan.moves[person.name]}</b> moves</span>
+            </div>
+            <ol>${rows}</ol>
+            <div class="person-actions">
+              <button class="btn" data-variant="small" data-copy="${i}" type="button">Copy</button>
+              ${mail}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function mailtoFor(person) {
+      const subject = encodeURIComponent('Your speed dating schedule');
+      const body = encodeURIComponent(scheduleText(person));
+      return `mailto:${encodeURIComponent(person.email)}?subject=${subject}&body=${body}`;
+    }
+
+    function downloadCsv() {
+      const rows = [['round', 'start', 'end', 'table', 'participant_1', 'participant_2']];
+      plan.rounds.forEach((round) => {
+        round.tables.forEach((entry) => {
+          rows.push([round.index + 1, formatTime(round.slot.start), formatTime(round.slot.end), entry.table, entry.a.name, entry.b.name]);
+        });
+        if (round.paused) {
+          rows.push([round.index + 1, formatTime(round.slot.start), formatTime(round.slot.end), 'pause', round.paused.name, '']);
+        }
+      });
+      const csv = rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'speed-dating-plan.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function copyText(text, button) {
+      try {
+        await navigator.clipboard.writeText(text);
+        const label = button.textContent;
+        button.textContent = 'Copied';
+        setTimeout(() => { button.textContent = label; }, 1200);
+      } catch (error) {
+        showError('Clipboard blocked by the browser – select and copy manually.');
+      }
+    }
+
+    function switchView(name) {
+      document.querySelectorAll('.tabs [role="tab"]').forEach((tab) => {
+        tab.setAttribute('aria-selected', String(tab.dataset.view === name));
+      });
+      document.querySelectorAll('.view').forEach((view) => {
+        view.hidden = view.id !== `view-${name}`;
+      });
+    }
+
+    function goToSlot(index) {
+      if (!plan) return;
+      currentSlot = Math.max(0, Math.min(plan.rounds.length - 1, index));
+      renderStage();
+    }
+
+    function goToNow() {
+      const now = new Date();
+      const minutes = now.getHours() * 60 + now.getMinutes();
+      let index = plan.rounds.findIndex((round) => minutes < round.slot.end);
+      if (index === -1) index = plan.rounds.length - 1;
+      goToSlot(index);
+    }
+
+    // ---------- Wiring ----------
+
+    const DEMO_PEOPLE = ['Ada Lovelace', 'Grace Hopper', 'Alan Turing', 'Margaret Hamilton', 'Linus Torvalds', 'Barbara Liskov', 'Dennis Ritchie', 'Radia Perlman', 'Ken Thompson', 'Frances Allen', 'Edsger Dijkstra', 'Hedy Lamarr'];
+
+    restore();
+    updateRequirement();
+
+    [participantsInput, slotsInput].forEach((input) => {
+      input.addEventListener('input', () => {
+        persist();
+        updateRequirement();
+      });
+    });
+    ['genStart', 'genDuration', 'genGap'].forEach((id) => {
+      document.getElementById(id).addEventListener('input', persist);
+    });
+
+    document.getElementById('generateSlots').addEventListener('click', generateSlots);
+    document.getElementById('calculate').addEventListener('click', calculate);
+    document.getElementById('loadDemo').addEventListener('click', () => {
+      participantsInput.value = DEMO_PEOPLE.join('\n');
+      generateSlots();
+    });
+
+    document.querySelectorAll('.tabs [role="tab"]').forEach((tab) => {
+      tab.addEventListener('click', () => switchView(tab.dataset.view));
+    });
+
+    document.getElementById('prevSlot').addEventListener('click', () => goToSlot(currentSlot - 1));
+    document.getElementById('nextSlot').addEventListener('click', () => goToSlot(currentSlot + 1));
+    document.getElementById('nowSlot').addEventListener('click', goToNow);
+    document.getElementById('downloadCsv').addEventListener('click', downloadCsv);
+    document.getElementById('printPlan').addEventListener('click', () => window.print());
+
+    document.getElementById('peopleGrid').addEventListener('click', (event) => {
+      const button = event.target.closest('[data-copy]');
+      if (!button) return;
+      copyText(scheduleText(plan.people[Number(button.dataset.copy)]), button);
+    });
+    document.getElementById('copyAllPeople').addEventListener('click', (event) => {
+      copyText(plan.people.map(scheduleText).join('\n\n---\n\n'), event.currentTarget);
+    });
+    document.getElementById('mailAll').addEventListener('click', () => {
+      const withEmail = plan.people.filter((person) => person.email);
+      if (withEmail.length === 0) {
+        showError('No participant has an email address. Add them as "Name <mail@example.org>".');
+        return;
+      }
+      withEmail.forEach((person, i) => setTimeout(() => window.open(mailtoFor(person)), i * 400));
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (!plan || resultsSection.classList.contains('hidden')) return;
+      if (event.target.matches('input, textarea')) return;
+      if (event.key === 'ArrowLeft') goToSlot(currentSlot - 1);
+      if (event.key === 'ArrowRight') goToSlot(currentSlot + 1);
+      if (event.key.toLowerCase() === 'f') {
+        const stage = document.querySelector('.stage');
+        if (document.fullscreenElement) document.exitFullscreen();
+        else stage.requestFullscreen?.();
+      }
+    });
+  </script>
+</body>
+</html>
