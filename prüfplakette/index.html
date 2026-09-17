@@ -732,17 +732,12 @@
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     }
 
-    function slug(text) {
-      const map = { ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' };
-      return text.toLowerCase()
-        .replace(/[äöüß]/g, ch => map[ch])
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 60).replace(/-+$/, '');
-    }
+    const slug = text => text
+      .replace(/[^\p{L}\p{N}]+/gu, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60).replace(/-+$/, '');
 
-    const fileName = (s, ext) => `${slug(s.text) || 'pruefplakette'}-${s.diameter}mm-${s.startYear}.${ext}`;
+    const fileName = (s, ext) => `${slug(s.text) || 'Prüfplakette'}-${s.diameter}mm-${s.startYear}.${ext}`;
 
     function exportSvg() {
       const s = readForm();
