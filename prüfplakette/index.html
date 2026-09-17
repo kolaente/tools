@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prüfplaketten-Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.5.0/dist/svg2pdf.umd.min.js"></script>
+  <style>
+    :root {
+      --paper: #f2efe6;
+      --paper-deep: #e9e5d9;
+      --sheet: #fbfaf6;
+      --ink: #161512;
+      --ink-soft: #55524a;
+      --ink-faint: #8c887c;
+      --rule: #cfcabc;
+      --rule-strong: #161512;
+      --plakette: #ffd500;
+      --focus: #1f5fbf;
+      --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+      --font-body: 'IBM Plex Sans', system-ui, sans-serif;
+      --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { -webkit-font-smoothing: antialiased; }
+
+    body {
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.5;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image:
+        linear-gradient(var(--rule) 1px, transparent 1px),
+        linear-gradient(90deg, var(--rule) 1px, transparent 1px);
+      background-size: 32px 32px;
+      background-position: -1px -1px;
+      min-height: 100vh;
+    }
+
+    ::selection { background: var(--plakette); color: var(--ink); }
+
+    .frame {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 28px 64px;
+    }
+
+    /* Masthead */
+    .masthead {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 36px 0 14px;
+      border-bottom: 2px solid var(--rule-strong);
+      animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+
+    .masthead h1 {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: clamp(2.6rem, 6vw, 4.2rem);
+      line-height: 0.95;
+      letter-spacing: -0.01em;
+      text-transform: uppercase;
+    }
+
+    .masthead h1 em {
+      font-style: normal;
+      color: transparent;
+      -webkit-text-stroke: 1.5px var(--ink);
+    }
+
+    .masthead p {
+      max-width: 34em;
+      color: var(--ink-soft);
+      margin-top: 8px;
+    }
+
+    .stamp {
+      flex-shrink: 0;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      text-align: right;
+      line-height: 1.7;
+    }
+
+    .stamp a { color: inherit; }
+
+    /* Workspace */
+    .workspace {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 28px;
+      margin-top: 28px;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .workspace { grid-template-columns: 1fr; }
+      .masthead { flex-direction: column; align-items: flex-start; }
+      .stamp { text-align: left; }
+    }
+
+    /* Spec panel */
+    .spec {
+      background: var(--sheet);
+      border: 1px solid var(--rule);
+      box-shadow: 0 1px 0 var(--rule), 0 12px 32px -20px rgba(22, 21, 18, 0.35);
+      animation: rise 0.5s 0.08s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+
+    fieldset {
+      border: 0;
+      border-top: 1px solid var(--rule);
+      padding: 18px 20px 20px;
+      display: grid;
+      gap: 14px;
+    }
+
+    fieldset:first-child { border-top: 0; }
+
+    legend {
+      float: left;
+      width: 100%;
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 1.25rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    legend::before {
+      content: attr(data-n);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: var(--ink-faint);
+    }
+
+    label {
+      display: grid;
+      gap: 5px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--ink-soft);
+    }
+
+    label .unit {
+      font-family: var(--font-mono);
+      font-style: normal;
+      font-weight: 400;
+      color: var(--ink-faint);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    input[type="number"], textarea {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      color: var(--ink);
+      padding: 8px 10px;
+      border: 1px solid var(--rule);
+      border-radius: 2px;
+      background: #fff;
+      width: 100%;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    textarea {
+      font-family: var(--font-body);
+      resize: vertical;
+      line-height: 1.4;
+    }
+
+    input:focus-visible, textarea:focus-visible, button:focus-visible {
+      outline: none;
+      border-color: var(--focus);
+      box-shadow: 0 0 0 3px rgba(31, 95, 191, 0.2);
+    }
+
+    /* Range */
+    .range {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .range output {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--ink-faint);
+      min-width: 3.5ch;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 24px;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 2px;
+      background: var(--rule-strong);
+    }
+
+    input[type="range"]::-moz-range-track {
+      height: 2px;
+      background: var(--rule-strong);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      margin-top: -7px;
+      border-radius: 50%;
+      background: var(--sheet);
+      border: 2px solid var(--ink);
+      transition: transform 0.12s;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--sheet);
+      border: 2px solid var(--ink);
+    }
+
+    input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.2); }
+
+    /* Swatches */
+    .swatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .swatch {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 0, 0, 0.18);
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.12s;
+    }
+
+    .swatch:hover { transform: scale(1.1); }
+
+    .swatch.active::after {
+      content: '';
+      position: absolute;
+      inset: -5px;
+      border-radius: 50%;
+      border: 2px solid var(--ink);
+    }
+
+    .color-field {
+      display: inline-grid;
+      grid-template-columns: auto auto;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--ink-faint);
+    }
+
+    input[type="color"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: 1px solid rgba(0, 0, 0, 0.18);
+      border-radius: 50%;
+      background: none;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 50%; }
+    input[type="color"]::-moz-color-swatch { border: 0; border-radius: 50%; }
+
+    .check {
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--ink);
+    }
+
+    /* Actions */
+    .actions {
+      display: grid;
+      gap: 8px;
+      padding: 20px;
+      border-top: 1px solid var(--rule);
+      background: var(--paper-deep);
+    }
+
+    .btn {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 1.1rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 12px 16px;
+      border: 1px solid var(--ink);
+      border-radius: 2px;
+      background: var(--sheet);
+      color: var(--ink);
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 0 var(--ink);
+      transition: transform 0.1s, box-shadow 0.1s, background-color 0.15s;
+    }
+
+    .btn:hover { background: #fff; }
+
+    .btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 0 0 var(--ink);
+    }
+
+    .btn.primary {
+      background: var(--plakette);
+    }
+
+    .btn.primary:hover { background: #ffe14d; }
+
+    .btn small {
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      color: var(--ink-soft);
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .btn-row .btn { justify-content: center; }
+
+    .btn[disabled] {
+      opacity: 0.5;
+      cursor: wait;
+    }
+
+    .note {
+      font-size: 0.78rem;
+      color: var(--ink-faint);
+      line-height: 1.45;
+    }
+
+    /* Bench (preview) */
+    .bench {
+      position: sticky;
+      top: 20px;
+      animation: rise 0.5s 0.16s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    }
+
+    @media (max-width: 860px) {
+      .bench { position: static; order: -1; }
+    }
+
+    .bench-stage {
+      position: relative;
+      background: var(--sheet);
+      border: 1px solid var(--rule);
+      padding: 48px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 420px;
+      box-shadow: inset 0 0 0 1px #fff;
+    }
+
+    .bench-stage::before,
+    .bench-stage::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border: 1px solid var(--ink-faint);
+    }
+
+    .bench-stage::before { top: 10px; left: 10px; border-right: 0; border-bottom: 0; }
+    .bench-stage::after { bottom: 10px; right: 10px; border-left: 0; border-top: 0; }
+
+    .bench-stage svg {
+      width: min(100%, 460px);
+      height: auto;
+      filter: drop-shadow(0 8px 18px rgba(22, 21, 18, 0.22));
+    }
+
+    .bench-stage svg .bg { transition: fill 0.2s; }
+
+    .bench-readout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 22px;
+      padding: 12px 2px;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      color: var(--ink-soft);
+    }
+
+    .bench-readout b {
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .bench-readout .status { margin-left: auto; color: var(--ink-faint); }
+    .bench-readout .status.ok { color: #2f7a3a; }
+
+    .defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation: none !important; transition: none !important; }
+    }
+
+  </style>
+</head>
+<body>
+  <svg class="defs" aria-hidden="true"><defs id="defs"></defs></svg>
+
+  <div class="frame">
+    <header class="masthead">
+      <div>
+        <h1>Prüf<em>plakette</em></h1>
+        <p>Runde Plaketten mit Monatsring und Jahresfeldern. Text, Farbe, Jahr und Durchmesser einstellen, druckfertig als PDF oder SVG exportieren.</p>
+      </div>
+      <div class="stamp">
+        Druckdaten · Vektor<br>
+        Schrift als Pfade<br>
+        <a href="/">← alle Tools</a>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <form class="spec" id="controls" onsubmit="return false">
+        <fieldset>
+          <legend data-n="01">Inhalt</legend>
+          <label>Text in der Mitte
+            <textarea id="text" rows="3" spellcheck="false"></textarea>
+          </label>
+          <label>Textgröße
+            <div class="range">
+              <input type="range" id="fontSize" min="60" max="140" step="5">
+              <output for="fontSize" id="fontSizeOut"></output>
+            </div>
+          </label>
+          <div class="row">
+            <label>Startjahr
+              <input type="number" id="startYear" min="2000" max="2099">
+            </label>
+            <label>Jahresfelder
+              <input type="number" id="yearCount" min="1" max="12">
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend data-n="02">Farbe</legend>
+          <label>Hintergrund
+            <div class="swatches" id="swatches">
+              <span class="color-field"><input type="color" id="color" title="Eigene Farbe"><span id="colorHex"></span></span>
+            </div>
+          </label>
+          <label>Schrift &amp; Linien
+            <span class="color-field"><input type="color" id="textColor"><span id="textColorHex"></span></span>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend data-n="03">Format</legend>
+          <div class="row">
+            <label><span>Durchmesser <i class="unit">mm</i></span>
+              <input type="number" id="diameter" min="10" max="150" step="0.5">
+            </label>
+            <label><span>Beschnitt <i class="unit">mm</i></span>
+              <input type="number" id="bleed" min="0" max="10" step="0.5">
+            </label>
+          </div>
+          <label class="check">
+            <input type="checkbox" id="cutLine">
+            <span>Schnittlinie mitdrucken</span>
+          </label>
+        </fieldset>
+
+        <div class="actions">
+          <div class="btn-row">
+            <button type="button" class="btn primary" id="pdfBtn">PDF</button>
+            <button type="button" class="btn" id="svgBtn">SVG</button>
+            <button type="button" class="btn" id="pngBtn">PNG</button>
+          </div>
+          <p class="note">Endformat inkl. Beschnitt, Schrift in Pfade gewandelt – keine Fonts nötig. PNG mit 600 dpi. Einstellungen stehen in der URL.</p>
+        </div>
+      </form>
+
+      <section class="bench">
+        <div class="bench-stage" id="preview"></div>
+        <div class="bench-readout" id="readout"></div>
+      </section>
+    </main>
+
+  </div>
+
+  <script>
+    const PRESETS = ['#ffd500', '#e30613', '#009fe3', '#00a651', '#f39200', '#ffffff', '#b3b3b3'];
+    const DEFAULTS = {
+      text: '„Ausgeliehen“ vom\nBundeszentrum\nseit',
+      fontSize: 100,
+      startYear: new Date().getFullYear(),
+      yearCount: 6,
+      color: '#ffd500',
+      textColor: '#000000',
+      diameter: 30,
+      bleed: 3.5,
+      cutLine: false,
+    };
+    const FIELDS = Object.keys(DEFAULTS);
+    const FONT_URLS = {
+      text: 'https://cdn.jsdelivr.net/npm/@fontsource/open-sans@5/files/open-sans-latin-600-normal.woff',
+      digits: 'https://cdn.jsdelivr.net/npm/@fontsource/open-sans@5/files/open-sans-latin-700-normal.woff',
+    };
+
+    const $ = id => document.getElementById(id);
+    const esc = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const r3 = n => Number(n.toFixed(3));
+
+    let fonts = null;
+
+    function loadState() {
+      try {
+        if (location.hash.length > 1) {
+          return { ...DEFAULTS, ...JSON.parse(decodeURIComponent(location.hash.slice(1))) };
+        }
+      } catch {}
+      return { ...DEFAULTS };
+    }
+
+    function readForm() {
+      const s = {};
+      for (const k of FIELDS) {
+        const el = $(k);
+        if (el.type === 'checkbox') s[k] = el.checked;
+        else if (el.type === 'number' || el.type === 'range') s[k] = Number(el.value) || DEFAULTS[k];
+        else s[k] = el.value;
+      }
+      s.yearCount = Math.min(12, Math.max(1, Math.round(s.yearCount)));
+      return s;
+    }
+
+    function writeForm(s) {
+      for (const k of FIELDS) {
+        const el = $(k);
+        if (el.type === 'checkbox') el.checked = s[k]; else el.value = s[k];
+      }
+    }
+
+    // Text as <text> until fonts arrive, then as outlined paths.
+    function glyphs(kind, str, x, y, size, rot) {
+      const rotate = rot ? ` transform="rotate(${r3(rot)} ${r3(x)} ${r3(y)})"` : '';
+      const font = fonts && fonts[kind];
+      if (!font) {
+        const family = "'Open Sans', Arial, sans-serif";
+        const weight = kind === 'text' ? 600 : 700;
+        return `<text x="${r3(x)} " y="${r3(y)}" font-family="${family}" font-weight="${weight}" font-size="${r3(size)}" text-anchor="middle" dominant-baseline="central"${rotate}>${esc(str)}</text>`;
+      }
+      const upem = font.unitsPerEm;
+      // Digits centre on cap height, running text on the em box (like dominant-baseline: central).
+      const capHeight = font.tables.os2 && font.tables.os2.sCapHeight || upem * 0.72;
+      const shift = kind === 'digits' ? capHeight / 2 : (font.ascender + font.descender) / 2;
+      const baseline = y + shift * size / upem;
+      const width = font.getAdvanceWidth(str, size);
+      const d = font.getPath(str, x - width / 2, baseline, size).toPathData(3);
+      return `<path d="${d}"${rotate}/>`;
+    }
+
+    // Proportions taken from the 30 mm original: ring ends just inside the cut edge.
+    function buildInner(s) {
+      const rc = s.diameter / 2;
+      const page = s.diameter + 2 * s.bleed;
+      const c = page / 2;
+      const R = rc * 0.985, rMonth = rc * 0.665, rYear = rc * 0.59, rNum = rc * 0.80;
+      const stroke = rc * 0.0175;
+      const pt = (r, deg) => {
+        const a = deg * Math.PI / 180;
+        return [r3(c + r * Math.sin(a)), r3(c - r * Math.cos(a))];
+      };
+      const line = (r1, r2, deg) => {
+        const [x1, y1] = pt(r1, deg), [x2, y2] = pt(r2, deg);
+        return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+      };
+      const digit = (txt, deg, rot, size) => {
+        const [x, y] = pt(rNum, deg);
+        return glyphs('digits', txt, x, y, size, rot);
+      };
+
+      const lines = [], nums = [];
+      // 12 month sectors of 20° each, split symmetrically around 12 o'clock.
+      for (let m = 1; m <= 12; m++) {
+        const deg = -130 + m * 20;
+        lines.push(line(rMonth, R, deg - 10));
+        nums.push(digit(String(m), deg, deg, rc * 0.185));
+      }
+      // Years share the remaining 120° at the bottom, digits pointing inward.
+      const yStart = 120, ySpan = 120, step = ySpan / s.yearCount;
+      for (let i = 0; i <= s.yearCount; i++) lines.push(line(rYear, R, yStart + i * step));
+      const yearSize = rc * Math.min(0.165, 1.0 / s.yearCount);
+      for (let i = 0; i < s.yearCount; i++) {
+        const deg = yStart + (i + 0.5) * step;
+        nums.push(digit(String(s.startYear + i).slice(-2), deg, deg + 180, yearSize));
+      }
+      const [ax, ay] = pt(rYear, yStart), [bx, by] = pt(rYear, yStart + ySpan);
+      lines.push(`<path d="M ${ax} ${ay} A ${r3(rYear)} ${r3(rYear)} 0 0 1 ${bx} ${by}"/>`);
+
+      const fs = rc * 0.115 * s.fontSize / 100;
+      const lh = fs * 1.25;
+      const textLines = s.text.split('\n');
+      const y0 = c - (textLines.length - 1) * lh / 2;
+      const text = textLines.map((l, i) => l.trim() ? glyphs('text', l, c, y0 + i * lh, fs, 0) : '').join('');
+
+      const cut = s.cutLine
+        ? `<circle cx="${r3(c)}" cy="${r3(c)}" r="${r3(rc)}" fill="none" stroke="#888" stroke-width="0.1" stroke-dasharray="0.8 0.8"/>`
+        : '';
+
+      return `<rect class="bg" width="${r3(page)}" height="${r3(page)}" fill="${s.color}"/>` +
+        `<g stroke="${s.textColor}" stroke-width="${r3(stroke)}" fill="none">${lines.join('')}</g>` +
+        `<g fill="${s.textColor}">${nums.join('')}${text}</g>` + cut;
+    }
+
+    function buildSvg(s) {
+      const page = r3(s.diameter + 2 * s.bleed);
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${page} ${page}" width="${page}mm" height="${page}mm">${buildInner(s)}</svg>`;
+    }
+
+    function render() {
+      const s = readForm();
+      const page = r3(s.diameter + 2 * s.bleed);
+      const c = page / 2, rc = s.diameter / 2;
+      const inner = buildInner(s);
+
+      $('defs').innerHTML = `<g id="plk">${inner}</g>`;
+
+      // Preview dims the bleed so the round end result is obvious.
+      const bleedMask = s.bleed > 0
+        ? `<path fill="#fff" fill-opacity="0.55" fill-rule="evenodd" d="M0 0H${page}V${page}H0Z M${c - rc} ${c} a${rc} ${rc} 0 1 0 ${s.diameter} 0 a${rc} ${rc} 0 1 0 -${s.diameter} 0Z"/>` +
+          `<circle cx="${c}" cy="${c}" r="${rc}" fill="none" stroke="#161512" stroke-opacity="0.35" stroke-width="0.12" stroke-dasharray="0.6 0.6"/>`
+        : '';
+      $('preview').innerHTML = `<svg viewBox="0 0 ${page} ${page}"><use href="#plk"/>${bleedMask}</svg>`;
+
+      const fmt = n => String(n).replace('.', ',');
+      $('readout').innerHTML =
+        `<span>Ø <b>${fmt(s.diameter)} mm</b></span>` +
+        `<span>Beschnitt <b>${fmt(s.bleed)} mm</b></span>` +
+        `<span>Datei <b>${fmt(page)} × ${fmt(page)} mm</b></span>` +
+        `<span>Jahre <b>${s.startYear}–${s.startYear + s.yearCount - 1}</b></span>` +
+        `<span class="status ${fonts ? 'ok' : ''}">${fonts ? 'Schrift als Pfade' : 'Schriften laden …'}</span>`;
+
+      $('fontSizeOut').value = s.fontSize + '%';
+      $('colorHex').textContent = s.color;
+      $('textColorHex').textContent = s.textColor;
+      document.querySelectorAll('.swatch').forEach(b => b.classList.toggle('active', b.dataset.color === s.color));
+      history.replaceState(null, '', '#' + encodeURIComponent(JSON.stringify(s)));
+    }
+
+    async function loadFonts() {
+      const load = async url => opentype.parse(await fetch(url).then(r => r.arrayBuffer()));
+      try {
+        const [text, digits] = await Promise.all([load(FONT_URLS.text), load(FONT_URLS.digits)]);
+        fonts = { text, digits };
+      } catch (e) {
+        console.error('Schriften konnten nicht geladen werden', e);
+        $('readout').querySelector('.status').textContent = 'Schriften nicht geladen – Export enthält Text statt Pfade';
+        return;
+      }
+      render();
+    }
+
+    function download(blob, name) {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+
+    const fileName = (s, ext) => `pruefplakette-${s.diameter}mm-${s.startYear}.${ext}`;
+
+    function exportSvg() {
+      const s = readForm();
+      download(new Blob([buildSvg(s)], { type: 'image/svg+xml' }), fileName(s, 'svg'));
+    }
+
+    function exportPng() {
+      const s = readForm();
+      const page = s.diameter + 2 * s.bleed;
+      const px = Math.round(page / 25.4 * 600);
+      const img = new Image();
+      const url = URL.createObjectURL(new Blob([buildSvg(s)], { type: 'image/svg+xml' }));
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = c.height = px;
+        c.getContext('2d').drawImage(img, 0, 0, px, px);
+        URL.revokeObjectURL(url);
+        c.toBlob(b => download(b, fileName(s, 'png')), 'image/png');
+      };
+      img.src = url;
+    }
+
+    async function exportPdf() {
+      const s = readForm();
+      const page = s.diameter + 2 * s.bleed;
+      const el = new DOMParser().parseFromString(buildSvg(s), 'image/svg+xml').documentElement;
+      const doc = new jspdf.jsPDF({ unit: 'mm', format: [page, page] });
+      await doc.svg(el, { x: 0, y: 0, width: page, height: page });
+      doc.save(fileName(s, 'pdf'));
+    }
+
+    function busy(btn, fn) {
+      return async () => {
+        btn.disabled = true;
+        try { await fn(); } finally { btn.disabled = false; }
+      };
+    }
+
+    function init() {
+      const swatches = $('swatches');
+      const custom = swatches.firstElementChild;
+      for (const c of PRESETS) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'swatch';
+        b.dataset.color = c;
+        b.style.background = c;
+        b.title = c;
+        b.addEventListener('click', () => { $('color').value = c; render(); });
+        swatches.insertBefore(b, custom);
+      }
+      writeForm(loadState());
+      $('controls').addEventListener('input', render);
+      $('svgBtn').addEventListener('click', exportSvg);
+      $('pngBtn').addEventListener('click', busy($('pngBtn'), exportPng));
+      $('pdfBtn').addEventListener('click', busy($('pdfBtn'), exportPdf));
+      render();
+      loadFonts();
+    }
+
+    init();
+  </script>
+</body>
+</html>
