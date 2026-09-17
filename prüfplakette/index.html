@@ -732,7 +732,17 @@
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     }
 
-    const fileName = (s, ext) => `pruefplakette-${s.diameter}mm-${s.startYear}.${ext}`;
+    function slug(text) {
+      const map = { ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' };
+      return text.toLowerCase()
+        .replace(/[äöüß]/g, ch => map[ch])
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60).replace(/-+$/, '');
+    }
+
+    const fileName = (s, ext) => `${slug(s.text) || 'pruefplakette'}-${s.diameter}mm-${s.startYear}.${ext}`;
 
     function exportSvg() {
       const s = readForm();
