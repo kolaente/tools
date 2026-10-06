@@ -497,7 +497,7 @@
           </label>
           <div class="row">
             <label>Startjahr
-              <input type="number" id="startYear" min="2000" max="2099">
+              <input type="number" id="startYear" min="1200" max="9999">
             </label>
             <label>Jahresfelder
               <input type="number" id="yearCount" min="1" max="12">
@@ -594,6 +594,7 @@
         else s[k] = el.value;
       }
       s.yearCount = Math.min(12, Math.max(1, Math.round(s.yearCount)));
+      s.startYear = Math.min(9999 - s.yearCount + 1, Math.max(1200, Math.round(s.startYear)));
       return s;
     }
 
